@@ -150,7 +150,7 @@ const setPaymentData = (curPaymentPrice=false) => {
       <div data-id="" data-type="" data-count="" data-master="" class="menu" onclick="">
         <div class="count addition"><i class="ph ph-plus"></i></div>
         <h2>추가 금액</h2>
-        <span class="price">${payment_history.extra_charge.toLocaleString()} 원</span>
+        <span class="price">${payment_history.extra_charge.toLocaleString()}원</span>
       </div>  
     </li>`)
   }
@@ -245,10 +245,10 @@ const clickDiscount = (event) => {
           <span class="cash_input">원</span>
         </div>
         <div class="percent_num_btns">
-          <button>10%</button>
-          <button>20%</button>
-          <button>30%</button>
-          <button>50%</button>
+          <button onclick="clickDiscountPercent(event, 10)">10%</button>
+          <button onclick="clickDiscountPercent(event, 20)">20%</button>
+          <button onclick="clickDiscountPercent(event, 30)">30%</button>
+          <button onclick="clickDiscountPercent(event, 50)">50%</button>
         </div>
       </div>
       <div class="split_payment_amount">
@@ -426,10 +426,26 @@ const clickDirectBtn = (event) => {
 
 // 더치 페이 버튼 클릭 시
 const clickDutchBtn = (event) => {
+  
   const _modalLeftEl = document.querySelector('.payment .modal-content .modal-body .top .content');
   _modalLeftEl.classList.remove('direct')
   _modalLeftEl.classList.add('dutch')
   _modalLeftEl.dataset.type='dutch'
+}
+
+// 할인 퍼센트 버튼 클릭 시
+const clickDiscountPercent = (event, num) => {
+  const _modalLeftEl = document.querySelector('.payment .modal-content .modal-body .top .content');
+  const curType = _modalLeftEl.dataset.type;
+  const total = Number(_modalLeftEl.dataset.total.replace(/,/g, ''));
+  const _input = document.querySelector(`.payment .modal-content .modal-body .top .content.${curType} .payment_amount input.${curType}_input`);
+
+  _input.value = Math.min(num, 100);
+  const discount = (num/100)*total;
+  payment_history.discount = discount;
+  document.querySelector('.split_payment_amount span.percent').innerHTML = `${(total-discount).toLocaleString()}원`
+  changePaymentAmount(curType, _input)
+
 }
 
 // 숫자 패드 클릭 시
@@ -467,11 +483,11 @@ const clickNumberPad = (event) => {
 
       document.querySelector('.split_payment_amount span').innerHTML = `${_input.value}원`
     }
-    if(curType == 'percent'){ // 할인 원
+    if(curType == 'percent'){ // 할인 페선트
       _input.value = Math.min(Number(_input.value.replace(/,/g, '')), 100);
       const discount = (Number(_input.value)/100)*total;
       payment_history.discount = discount;
-      document.querySelector('.split_payment_amount span.percent').innerHTML = `${(total-discount).toLocaleString()}`
+      document.querySelector('.split_payment_amount span.percent').innerHTML = `${(total-discount).toLocaleString()}원`
     }
     changePaymentAmount(curType, _input)
 

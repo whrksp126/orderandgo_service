@@ -15,6 +15,7 @@
 }
 .store_product main nav ul li{
   padding: 20px;
+  line-height: 1;
 }
 .store_product main nav ul li.active{
   background: #F3FAFA;
@@ -31,6 +32,7 @@
   flex-flow: column;
   align-items: start;
   height: initial;
+  gap: 0;
 }
 
 .store_product section ul li{
@@ -238,6 +240,9 @@ section ul li .submit_btn {
   flex: 1;
   border-bottom: 1px solid #ccc;
 }
+.set_menu_product main article .article_bottom ul li.active{
+  background: #F3FAFA; 
+}
 .set_menu_product main article .article_bottom ul li:first-child{
   position: sticky;
   top: 0;
@@ -246,8 +251,12 @@ section ul li .submit_btn {
   border-bottom: 1px solid #000;
   font-weight: 700;
 }
+.set_menu_product main article .article_bottom ul li:first-child div{
+  justify-content: center;
+}
 .set_menu_product main article .article_bottom ul li:last-child{
   border-bottom: none;
+  box-shadow: 0 0px 0 1px #ccc;
 }
 .set_menu_product main article .article_bottom ul li > div{
   min-height: 34px;
@@ -256,19 +265,75 @@ section ul li .submit_btn {
   padding: 5px 10px;
   display: flex;
   align-items: center;
+  justify-content: left;
 }
+.custom-checkbox{
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none; /* 텍스트 선택 방지 */
+}
+
+.custom-checkbox input[type="checkbox"] {
+  visibility: hidden;
+}
+.custom-checkbox .checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 13.5px;
+  width: 13.5px;
+  border: 1px solid #000;
+  border-radius: 3px;
+  background-color: rgba(0,0,0,0); /* 체크박스 배경색 */
+}
+
+/* 체크박스에 체크했을 때의 스타일 */
+.custom-checkbox input:checked ~ .checkmark {
+  background-color: #1FAA9C; /* 체크했을 때의 배경색 */
+  border: 1px solid #1FAA9C;
+}
+
+/* 체크 표시 스타일 */
+.custom-checkbox .checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+/* 체크했을 때 체크 표시 보이기 */
+.custom-checkbox input:checked ~ .checkmark:after {
+  display: block;
+}
+
+/* 체크 표시 디자인 */
+.custom-checkbox .checkmark:after {
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  -webkit-transform: rotate(45deg);
+  -ms-transform: rotate(45deg);
+  transform: rotate(45deg);
+}
+
+
 .set_menu_product main article .article_bottom ul li div:not(:first-child){
   border-left: 1px solid #ccc;
 }
 
 .set_menu_product main article .article_bottom ul li div:nth-child(2){
-  flex: 1;
+  flex: .5;
 }
 .set_menu_product main article .article_bottom ul li div:nth-child(3){
-  flex: 1;
+  flex: .5;
 }
 .set_menu_product main article .article_bottom ul li div:nth-child(4){
-  flex: 2;
+  flex: .7;
 }
 .set_menu_product main article .article_bottom ul li:not(:first-child) div:nth-child(4){
   display: flex;
@@ -287,13 +352,14 @@ section ul li .submit_btn {
   background: #F43E25;
 }
 .set_menu_product main article .article_bottom ul li div:nth-child(5){
+  text-align: start;
   flex: 1;
 }
 .set_menu_product main article .article_bottom ul li div:nth-child(6){
-  flex: 1;
+  flex: .3;
 }
 .set_menu_product main article .article_bottom ul li:not(:first-child) div:nth-child(6){
-  text-align: end;
+  justify-content: right;
 }
 
 .set_menu_product main aside {
@@ -346,7 +412,7 @@ section ul li .submit_btn {
   justify-content: center;
   width: 100%;
   height: 100%;
-  font-size: 40px;
+  font-size: 30px;
 }
 .set_menu_product main aside .top .main_img img{
   position: absolute;
@@ -393,7 +459,6 @@ section ul li .submit_btn {
   display: flex;
   align-items: center;
   justify-content:center;
-  
   width: 40px;
   height: 40px;
   padding: 12px;
@@ -499,6 +564,7 @@ section ul li .submit_btn {
   height: 100%;
   display: flex;
   align-items: center;
+  color: #CCC;
 }
 .set_menu_product main aside .middle label .add_option_btn {
   display: flex;
@@ -593,11 +659,13 @@ section ul li .submit_btn {
 .set_menu_product main.open_aside aside .top .imgs {
   flex-flow: row;    
   padding-right: 20px;
+  gap: 15px;
 }
 .set_menu_product main.open_aside aside .top .imgs label{
   width: 200px;
   height: 200px;
   padding: 0;
+  font-size: 30px;
 }
 .set_menu_product main.open_aside aside .middle {
   flex-flow: initial;

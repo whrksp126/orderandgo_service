@@ -30,7 +30,7 @@ def login():
             password = request.form.get('password')
             result = get_admin_user_login(tel, password)
             stores = get_store(current_user.id)
-            store_list = [];
+            store_list = []
             for store in stores:
                 store_list.append({
                     'store_id' : store.store_id,

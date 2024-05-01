@@ -123,7 +123,6 @@ def create_payment_database(store_id, data):
                                     .scalar()
         
         if data['total_price'] == p['price']+p['extra_charge']-p['discount']:     # 1. 일반결제
-            print("@@@@111")
             # TablePaymentList, Payment 생성하기
             table_payment_list_item = create_table_payment_list(store_id, table_id, first_ordered_time, str(data['order_list']), p['discount'], p['extra_charge'], p['payment_history'], payment_time)
             
@@ -137,7 +136,6 @@ def create_payment_database(store_id, data):
             is_finished = True
 
         else:                                   # 2. 분할 결제
-            print("@@@@222")
             check_table_payment_list = db.session.query(TablePaymentList)\
                                                 .filter(TablePaymentList.store_id == store_id)\
                                                 .filter(TablePaymentList.table_id == table_id)\
@@ -145,7 +143,6 @@ def create_payment_database(store_id, data):
                                                 .first()
 
             if check_table_payment_list is None:   # 2-1. 첫번째 분할결제
-                print("@@@@222-1")
                 # TablePaymentList, Payment 생성하기
                 if p['payment_history']['isDutch'] :
                     p['payment_history']['curDutch'] = p['payment_history']['curDutch'] + 1
@@ -163,7 +160,6 @@ def create_payment_database(store_id, data):
                                     .scalar()
                 
                 if sum_payment+p['price'] != data['total_price']:  # 2-2. 분할결제중
-                    print("@@@@222-2")
                     create_payment(check_table_payment_list.id, p['method'], 1, p['price'], payment_time)
 
                     # paid, is_finished
@@ -171,7 +167,6 @@ def create_payment_database(store_id, data):
                     is_finished = False
 
                 else:                                   # 2-3. 마지막 분할결제
-                    print("@@@@222-3")
                     create_payment(check_table_payment_list.id, p['method'], 1, p['price'], payment_time)
                     # Table과 관련된 Order, TableOrderList 삭제하기
                     delete_order_tableorderlist(store_id, table_id)

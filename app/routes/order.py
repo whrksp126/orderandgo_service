@@ -17,7 +17,10 @@ def menu_order():
     except:
         return jsonify("failed"), 400
     
-    return jsonify("Success"), 200
+    return jsonify({
+        'message': 'Success',
+        'code' : 200
+        }), 200
 
 
 # 테이블 주문 취소
@@ -28,7 +31,10 @@ def api_delete_order():
     print("order###", order_id_list)
     res = delete_order(order_id_list)
     if res:  
-        response = jsonify({'message': 'Success'})
+        response = jsonify({
+        'message': 'Success',
+        'code' : 200
+        })
         response.status_code = 200
         return response
 

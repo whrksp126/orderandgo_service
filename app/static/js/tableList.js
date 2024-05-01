@@ -1,3 +1,14 @@
+const socket = io.connect('http://' + document.domain + ':' + location.port); 
+socket.emit('pos_login', {user_type: 'pos'}, (response) => {
+  alert(response.msg)
+});
+
+socket.on('update_pos', function(data) {
+  // 받은 주문 정보로 포스기 UI 업데이트
+  console.log('새로운 주문 업데이트:', data);
+  // 필요한 UI 업데이트 로직
+});
+
 let tableData;
 let cachingData = null;
 fetch('/pos/get_table_page', {
@@ -221,6 +232,7 @@ const clickMoveAndjoinBtn = (event) => {
   _mainEl.classList.add('move')
   _mainEl.classList.remove('group')
   _mainEl.classList.add('disabled')
+  console.log('여기서 들어감')
   cachingData = JSON.parse(JSON.stringify(tableData));
 
 
@@ -428,12 +440,13 @@ const clickTransparentMoveTable = (event) => {
   const _table = document.querySelector('main section article .items');
   const curPage = Number(_table.dataset.page);
   const itemId = _target.dataset.id;
-
+  console.log(cachingData)
   const targetData = 
     cachingData
       .find((category)=>category.categoryId == Number(curCategoryId))
       .pageList[curPage].tableList
       .find((table)=>table.tableId == Number(itemId))
+  
   const targetStatusId = targetData.statusId;
   const curCachingDataLen = cachingSetTableData.length;
   if(targetStatusId != 0 && curCachingDataLen == 0) {
@@ -450,38 +463,55 @@ const clickTransparentMoveTable = (event) => {
     if (targetData.tableId == cachingSetTableData[0].tableId) return
     // 테이블 합석
     console.log(cachingSetTableData[0],targetData)
-    tableMoveList.push({
-      start_table_id : cachingSetTableData[0].tableId,
-      end_table_id : targetData.tableId,
+    const modal = openDefaultModal();
+    modal.container.classList.add('success');
+    modal.middle.innerHTML = `
+      <i class="ph ph-warning-circle"></i>
+      <div> 
+        <span>${cachingSetTableData[0].table}에서 ${targetData.table}(으)로 합석처리 합니다.</span>
+        <p>합석 후에는 되돌릴 수 없습니다.</p>
+      </div>
+    `
+    modal.bottom.innerHTML = modalBottomHtml([
+      {class: 'close brand', text: '취소', fun: `onclick=""`},
+      {class: 'close brand_fill', text: '합석', fun: `onclick=""`}
+    ]);
+    modal.bottom.querySelector('.brand_fill').addEventListener('click', ()=>{
+      tableMoveList.push({
+        start_table_id : cachingSetTableData[0].tableId,
+        end_table_id : targetData.tableId,
+      })
+      console.log(`${cachingSetTableData[0].table}에서 ${targetData.table}(으)로 합석합니다.`)
+      delete cachingSetTableData[0].select;
+  
+      targetData.orderList = mergeOrderLists(cachingSetTableData[0], targetData).orderList;
+      
+      cachingSetTableData[0] = createEmptyTable(cachingSetTableData[0]);
+  
+      const tables_html = changeTableHtml(cachingData
+        .find((category)=>category.categoryId == Number(curCategoryId))
+        .pageList[curPage].tableList
+      )
+      const _table = document.querySelector('main section article .items');
+      _table.innerHTML = tables_html;
+  
+      // 초기화
+      cachingSetTableData.length = 0
     })
-    console.log(`${cachingSetTableData[0].table}에서 ${targetData.table}(으)로 합석합니다.`)
-    delete cachingSetTableData[0].select;
-
-    targetData.orderList = mergeOrderLists(cachingSetTableData[0], targetData).orderList;
     
-    cachingSetTableData[0] = createEmptyTable(cachingSetTableData[0]);
-
-    const tables_html = changeTableHtml(cachingData
-      .find((category)=>category.categoryId == Number(curCategoryId))
-      .pageList[curPage].tableList
-    )
-    const _table = document.querySelector('main section article .items');
-    _table.innerHTML = tables_html;
-
-    // 초기화
-    cachingSetTableData.length = 0
   }else if(targetStatusId == 0 && curCachingDataLen != 0){
-    console.log(cachingSetTableData[0],targetData)
+    console.log('cachingSetTableData,',cachingSetTableData)
+    console.log('targetData,',targetData)
     tableMoveList.push({
       start_table_id : cachingSetTableData[0].tableId,
       end_table_id : targetData.tableId,
     })
     // 테이블 이동
-    console.log(`${cachingSetTableData[0].table}에서 ${targetData.table}(으)로 이동합니다.`)
+    console.log(`${cachingSetTableData[0].table}에서 ${targetData.table}(으)로 이동합니다.`)    
     delete cachingSetTableData[0].select;
-
     for( key in targetData) {
       if(key != 'table' && key != 'tableId' && key != 'position'){
+        console.log(key, targetData[key], cachingSetTableData[0][key])
         targetData[key] = JSON.parse(JSON.stringify(cachingSetTableData[0][key]));   
       }
     }
@@ -546,31 +576,24 @@ const clickCombineMoveCancelBtn = (event) => {
 }
 
 // 이동/합석 저장 버튼 클릭 시
-const clickCombineMoveSaveBtn = (event) => {
+const clickCombineMoveSaveBtn = async (event) => {
   changeStyleOnSet();
   // 백으로 저장 api 호출하기
-  const data = setMoveTableList(tableMoveList)
-  tableData = JSON.parse(JSON.stringify(data));
-  console.log(tableData)
-  fetch(`/pos/set_table`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(data)
+  const url = `/pos/set_table`;
+  const method = 'PUT';
+  const fetchData = setMoveTableList(tableMoveList).map((data)=>{
+    return {
+      start_table_id : [data.start_table_id[data.start_table_id.length-1]],
+      end_table_id : data.end_table_id
+    }
   })
-  .then(response => response.json())
-  .then(data => {
-    // 받은 데이터 처리
-    console.log(data);
-    // window.location.href = '/pos/tableList'
-  })
-  .catch(error => {
-    console.error('Error:', error);
-  });
+  // const fetchData = setMoveTableList(tableMoveList);
+
+  console.log('fetchData,',fetchData)
+  const result = await fetchDataAsync(url, method, fetchData);
+  console.log(result);
   cachingData = null;
-  // 테이블 이동/합석 내역 초기화
-  tableMoveList.length=0;
+  tableMoveList.length=0; // 테이블 이동/합석 내역 초기화
 }
 
 // 테이블 이동/합석 내역 데이터 정리
@@ -588,12 +611,10 @@ const setMoveTableList = (inputList) => {
         delete resultList[resultIndex].end_table_id
       }
     }
-  
     const dataObject = { start_table_id: curStartList, end_table_id: current.end_table_id }
     if (dataObject.start_table_id.includes(dataObject.end_table_id)) {
       dataObject.start_table_id = dataObject.start_table_id.filter((value) => value !== dataObject.end_table_id);
     }
-    
     resultList.push(dataObject);
   }
   return resultList = resultList.filter(item => item.hasOwnProperty('end_table_id'));
@@ -605,7 +626,7 @@ const createEmptyTable = (tableData) => {
   tableData['groupColor'] = ''
   tableData['groupId'] = ''
   tableData['groupNum'] = ''
-  tableData['isGroup'] = 0
+  // tableData['isGroup'] = 0
   tableData['orderList'] = []
   tableData['status'] = '빈 테이블'
   tableData['statusId'] = 0
@@ -621,3 +642,4 @@ const changeStyleOnSet = () => {
   _mainEl.classList.remove('disabled')
   _aside.classList.remove('active');
 }
+

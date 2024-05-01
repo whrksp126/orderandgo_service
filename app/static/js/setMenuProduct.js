@@ -41,7 +41,7 @@ callAllMenuList();
 const createMenuTable = (data) => {
   const html = `
     <li class="table_header">
-      <div><input type="checkbox" onclick="clickAllCheckBox(event)"></div>
+      <div><label class="custom-checkbox"><input type="checkbox" onclick="clickAllCheckBox(event)"><span class="checkmark"></span></label></div>
       <div>메인카테고리</div>
       <div>서브카테고리</div>
       <div>메뉴명</div>
@@ -50,7 +50,12 @@ const createMenuTable = (data) => {
     </li>
     ${data.map(({ id, main_category_id, main_category_name, sub_category_id, sub_category_name, name, price, option })=>`
     <li data-id="${id}" onclick="clickCallMenuData(event)">
-      <div><input type="checkbox"></div>
+      <div>
+        <label class="custom-checkbox">
+          <input type="checkbox">
+          <span class="checkmark"></span>
+        </label>
+      </div>
       <div>${main_category_name}</div>
       <div>${sub_category_name}</div>
       <div>
@@ -347,9 +352,11 @@ const createCategoryBoxHtml = (category,type,ko_category) => {
 // 테이블에서 메뉴 클릭 시
 const clickCallMenuData = (event) => {
   const target = event.currentTarget;
-  const menu_id = Number(findParentTarget(target, 'li').dataset.id);
+  const _li = findParentTarget(target, 'li');
+  const menu_id = Number(_li.dataset.id);
   // 메뉴 id로 메뉴 데이터 호출 후 html 리로딩
-  
+  document.querySelector('.set_menu_product main article .article_bottom ul li.active')?.classList?.remove('active');
+  _li.classList.add('active');
   
   const _asideEl = document.querySelector('.set_menu_product main aside');
   const onSuccess = (data) => {
@@ -431,7 +438,7 @@ const clickDeleteOptionBtn = (event) => {
 }
 
 // 메뉴 데이터 저장 버튼 클릭 시
-const clickSaveMenuData = (event, type, id) => {
+const clickSaveMenuData = async (event, type, id) => {
   const elements = document.querySelectorAll('*[data-type="form"]');
   const new_data = {};
   const form_data = [];
@@ -470,19 +477,23 @@ const clickSaveMenuData = (event, type, id) => {
       new_data[title] = value;
     }
   })
-  new_data['id'] = id
-  const data = {
+  new_data['id'] = id;
+  const url = `/store/set_menu` ;
+  const method = type == 'PATCH' ? 'PATCH' : 'POST';
+  const fetchData = {
     json_data : new_data,
     form_data : form_data
   }
-  console.log(data);
-  const method = type == 'PATCH' ? 'PATCH' : 'POST';
-  fetchData(`/store/set_menu`, method, data, (data)=>{
-    console.log(data)
-    if(data.code == 200){
-      
-    }
-  },true)
+  const result = await fetchDataAsync(url, method, fetchData, true);
+  if(result.code == 200) {
+    const modal = openDefaultModal();
+    modal.container.classList.add('success');
+    modal.middle.innerHTML = `
+      <i class="ph ph-check-circle"></i>
+      <span>${result.msg}</span>
+    `
+    modal.bottom.innerHTML = modalBottomHtml([{class: 'close brand_fill', text: '확인', fun: ``}]);
+  }
 }
 
 // 체크박스 전체 토글

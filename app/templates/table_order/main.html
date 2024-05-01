@@ -2,8 +2,9 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>OrderAndGo</title>
+  <title>orderandgo</title>
   <link rel="icon" type="image/x-icon" href="/static/images/common/logo.png">
 
   <!-- 시작 초기 css 설정 -->
@@ -11,23 +12,25 @@
   <link rel="stylesheet" href="/static/css/reset.css">
   <link rel="stylesheet" href="/static/css/common.css">
   <link rel="stylesheet" href="/static/css/animation.css">
-
-  <script src="/static/js/htmls.js"></script>
-
   <!-- 아이콘 -->
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
   <!-- 전용 css -->
-  <!-- <link rel="stylesheet" href="/static/css/store.css"> -->
+  <!-- <link rel="stylesheet" href="/static/css/table_order.css"> -->
+  <!-- 전용 css -->
   <link rel="stylesheet" href="/static/css/pos.css">
+
+  <script src="/static/js/htmls.js"></script>
+
+  <!-- socket.io -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+
 </head>
-<body>
-  
-  <div id="container" class="set_menu_position order">
-    <div class="background_area"></div>
+<body class="table_order">
+  <div id="container" class="order">
     <header>
       <!-- <h1>POS - Header</h1>-->
-      <a class="back_btn" href="/store/product">
+      <a class="back_btn" href="/pos/tableList">
         <i class="ph-bold ph-caret-left"></i>
       </a>
       <div class="center">
@@ -58,9 +61,6 @@
               <button>카테고리 3</button>
             </li>
           </ul>
-          <button class="set_category_btn" onclick="clickSetCategory(event, 'MAIN')">
-            <i class="ph ph-gear-six"></i>
-          </button>
         </nav>
         <nav class="sub">
           <!-- <h1>POS - Nav</h1> -->
@@ -75,13 +75,15 @@
               <button>카테고리 3</button>
             </li>
           </ul>
-          <button class="set_category_btn" onclick="clickSetCategory(event, 'SUB')">
-            <i class="ph ph-gear-six"></i>
-          </button>
         </nav>
         <article>
           <div class="menus items">
-            <button class="menu item hidden"></button>
+            <button class="menu item">
+              <div class="title">
+                <h2>메뉴명</h2>
+              </div>
+              <span class="price">16,000원</span>
+            </button>
             <button class="menu item hidden"></button>
             <button class="menu item hidden"></button>
             <button class="menu item hidden"></button>
@@ -119,7 +121,7 @@
           </button>
         </article>
         <!-- 메뉴판 페이지에서 메뉴 옵션 선택 영역 -->
-        <aside class="option_container">
+        <aside class="option_container ">
           <div class="menus items">
             <button class="menu item">
               <div class="title">
@@ -128,6 +130,12 @@
               <span class="price">16,000원</span>
             </button>
           </div>
+          <button class="change_page_btn prev_page_btn">
+            <i class="ph ph-caret-left"></i>
+          </button>
+          <button class="change_page_btn next_page_btn">
+            <i class="ph ph-caret-right"></i>
+          </button>
         </aside>
         <div class="option_background" onclick="closeOptionContainer(event)"></div>
       </section>
@@ -146,9 +154,6 @@
           </button>
           <button onclick="clickOrderHistoryBtn(event)" data-check="false" class="order_history">
             주문내역
-          </button>
-          <button onclick="clickBasketBtn(event)" class="new_order">
-            장바구니
           </button>
         </div>
         <ul class="basket middle">
@@ -171,7 +176,7 @@
             <span class="price">원</span>
           </div>
           <ul>
-            <li><button onclick="clickOrder(event)">주문하기</button></li>
+            <li class="order" data-iscancel="false" onclick="clickOrder(event)"><button>주문하기</button></li>
             <li class="pay" onclick="clickPayment(event)"><button>결제하기</button></li>
           </ul>
         </div>
@@ -179,14 +184,7 @@
     </main>
   </div>
   
-  <!-- 직원 요청 및 호출에 대한 처리 영역 -->
-  <div id="alarm"></div>
-
-  <!-- 공통 스크립트 -->
   <script src="/static/js/common.js"></script>
-  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js" ></script>
-
-  <!-- 전용 스크립트 -->
-  <script src="/static/js/setMenuPosition.js"></script>
+  <script src="/static/js/tableOrder.js"></script>
 </body>
 </html>

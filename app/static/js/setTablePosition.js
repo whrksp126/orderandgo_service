@@ -53,6 +53,7 @@ const createTableHtml = (data, categoryNum, pageNum) => {
 
 // 카테고리 클릭 시
 const changeTableCategory = (event, index) => {
+  curCategoryIndex = index;
   const _table = document.querySelector('main section article .items');
   const PAGE_INDEX = 0;
   createTableHtml(tableData, index, PAGE_INDEX);  
@@ -75,34 +76,21 @@ const clickTableArea = async (event) => {
   if(isHas){ // 유효한 테이블 클릭
     const isTrash = findParentTarget(event.target, 'i.ph-trash') != undefined ? true : false;
     const isSetName = findParentTarget(event.target, 'i.ph-pencil') != undefined ? true : false;
-    if(isSetName){ // 연필 클릭 시
+    if(isSetName || isTrash){ // 연필 클릭 시
       const tableName = _target.dataset.name;
       const id = Number(_target.dataset.id);
-      openModalFun(event)
-      const _modal = document.querySelector('.modal');
-      const _modalTitle = document.querySelector('.modal-content h1');
-      const _modalBody = document.querySelector('.modal-content .modal-body');
-      _modalTitle.innerHTML = '테이블 명 변경'
-      let html = `
-        <div class="top">
-          <input type="text" value="${tableName}"/>
-        </div>
-        <div class="bottom">
-          <button onclick="callChangeTableName(event,${id})">적용</button> 
-        </div>
-      `
-      _modalBody.innerHTML = html;
+      const modal = openDefaultModal();
+      modal.top.innerHTML = modalTopHtml('테이블 명 변경');
+      modal.middle.innerHTML = `
+        <h3>테이블 명</h3>
+        <input type="text" value="${tableName}"/>
+      `;
+      const btns = [
+        {class:`red`, text:`삭제`, fun:`onclick="callDeleteTable(event, ${id})"`},
+        {class:`brand_fill`, text:`저장`, fun:`onclick="callChangeTableName(event,${id})"`},
+      ]
+      modal.bottom.innerHTML = modalBottomHtml(btns);
       return;
-    }
-    if(isTrash){ // 삭제 클릭 
-      const id = Number(_target.dataset.id);
-      const onSuccess = ()=>{
-        _target.dataset.has = false; 
-        _target.innerHTML = `<i class="ph ph-plus"></i>`
-      }
-      await callDeleteTable(id, onSuccess)
-      return;
-      
     }
     if(state.has_click_item){ // 테이블 위치 변경 api 요청
       const data = {
@@ -163,52 +151,44 @@ const clickTableArea = async (event) => {
       return ;
     }else{
       // 테이블 추가 api 요청;
-      const data = {
+      const url = `/adm/create_table`;
+      const method = 'POST';
+      console.log('curCategoryIndex,,',curCategoryIndex)
+      const fetchData = {
         name :`${tableData[curCategoryIndex].name} ${position}`,
         seat_count : 4,
         table_category: tableData[curCategoryIndex].id,
         page : page+1,
         position : position,
-      }
-      const onSuccess = (data) => {
-        if(data.code == 200){
-
-        }
-        _target.dataset.has = true;
-        _target.dataset.name = `${tableData[curCategoryIndex].name} ${position}`;
-        _target.dataset.id = data.id;
-        _target.innerHTML = `
-          <h2>${tableData[curCategoryIndex].name} ${position}</h2>
+      };
+      const result = await fetchDataAsync(url, method, fetchData);
+      console.log('result,',result)
+      _target.dataset.has = true;
+      _target.dataset.name = `${tableData[curCategoryIndex].name} ${position}`;
+      _target.dataset.id = result.table_id;
+      _target.innerHTML = `
+        <h2>${tableData[curCategoryIndex].name} ${position}</h2>
+        <div class="icons">
+          <i class="ph ph-pencil"></i>
           <i class="ph ph-trash"></i>
-          <div class="active"><i class="ph ph-arrows-out-cardinal"></i></div>
-        `
-      }
-      await callCreateTable(data, onSuccess)
+        </div>
+        <div class="active"><i class="ph ph-arrows-out-cardinal"></i></div>
+      `
     }
   }
 }
 
-
-const callCreateTable = async (data, onSuccess) => { // 테이블 생성
-  fetchData('/adm/create_table', 'POST', data, onSuccess)
-}
-
 const callChangeTablePostion = async (data, onSuccess) => { // 테이블 위치 변경
-  console.log(data, onSuccess)
   fetchData('/adm/update_table_position', 'PATCH', data, onSuccess)
 }
 
-const callDeleteTable = async (id, onSuccess) => { // 테이블 삭제
+const callDeleteTable = async (event, id) => { // 테이블 삭제
   const result = await fetchDataAsync(`/store/set_table`, 'DELETE', {id: id});
-  console.log(result)
-  onSuccess(result)
-  // fetch(`/adm/table/${id}`, {
-  //   method: 'DELETE',
-  // })
-  // .then(data => onSuccess(data))
-  // .catch(error => {
-  //   console.error('Error:', error);
-  // });
+  if(result.code != 200) alert(result.msg);
+  const target = document.querySelector(`button.item[data-id="${id}"]`);
+  target.dataset.has = false; 
+  target.innerHTML = `<i class="ph ph-plus"></i>`;
+  document.querySelector('.modal').click();
 }
 const callChangeTableName = async (event, id) => {
   const _modal = document.querySelector('.modal');
@@ -217,12 +197,14 @@ const callChangeTableName = async (event, id) => {
     table_id : id,
     name : text,
   }
-  const onSuccess = (data) => {
-    const target = document.querySelector(`button.item[data-id="${id}"]`)
-    target.querySelector('h2').innerHTML = text;
-    _modal.click;
+  const result = await fetchDataAsync('/adm/update_table_name', 'PATCH', data)
+  if(result.code != 200){
+    return alert(result.msg);
   }
-  await fetchData('/adm/update_table_name', 'PATCH', data, onSuccess);
+  const target = document.querySelector(`button.item[data-id="${id}"]`)
+  target.querySelector('h2').innerHTML = text;
+  target.dataset.name = text;
+  removeModal();
 }
 
 // 페이지 변경 클릭 시
@@ -302,7 +284,7 @@ const clickDeleteCategoryItem = async (event) => {
     if(result.status){
       _li.remove(); 
     }else{
-      alert('')
+      alert('이용 중인 테이블 있어 삭제가 불가능합니다.')
     }
   }
 }

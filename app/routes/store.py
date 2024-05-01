@@ -444,7 +444,10 @@ def set_menu():
             check_options_exist(menu.id) # DB에 등록된 옵션이 있는지 확인 후 있으면 삭제하고
             create_menu_option(options, menu.id) # 메뉴 옵션 재등록함
 
-        return jsonify({'message': '메뉴가 성공적으로 수정되었습니다.'}), 200
+        return jsonify({
+            'code' : 200,
+            'msg': '저장이 완료되었습니다.'
+            }), 200
     
     # 메뉴 삭제
     if request.method == 'DELETE':
@@ -476,11 +479,13 @@ def set_table():
             # 삭제 진행
             is_delete_talbe = delete_table(table_id)
             if is_delete_talbe == True:
-                return jsonify({'message': '테이블이 성공적으로 삭제되었습니다.', 'code': 200}), 200
+                return jsonify({'msg': '테이블이 성공적으로 삭제되었습니다.', 'code': 200}), 200
             else:
-                return jsonify({'message': '없는 테이블입니다.', 'code': 400}), 200
+                return jsonify({'msg': '없는 테이블입니다.', 'code': 400}), 200
+        elif table_yn == False:
+            return jsonify({'msg': '이용 중인 테이블로 삭제가 불가능합니다.', 'code': 422}), 200
         else:
-            return jsonify({'message': '이용 중인 테이블로 삭제가 불가능합니다.', 'code': 422}), 200
+            return table_yn
     
 @store_bp.route('/get_table', methods=['GET'])
 def get_table():
@@ -546,7 +551,7 @@ def set_table_category():
         # id, store_id, category_name, position
         store_id = current_user.id
         json_data = request.get_json()
-        create_table_category(json_data, store_id)
+        table_category = create_table_category(json_data, store_id)
 
         '''
         json_data = [
@@ -556,17 +561,22 @@ def set_table_category():
                 "position": 1
             },
             {
-                "id": null,
+                "id": None,
                 "category_name": "2층",
                 "position": 2
             }
         ]
         '''
-
-        return jsonify({
-            'code' : 200,
-            'msg': '테이블 카테고리가 성공적으로 저장되었습니다.'
-        }), 200
+        if table_category == True:
+            return jsonify({
+                'code' : 200,
+                'msg': '테이블 카테고리가 성공적으로 저장되었습니다.'
+            }), 200
+        else:
+            return jsonify({
+                'code' : 400,
+                'msg': '테이블 카테고리 저장에 실패하였습니다.'
+            }), 400
 
 # 테이블 카테고리 삭제 시 테이블 이용 중 유무 확인 API
 # 테이블 카테고리 삭제 버튼 클릭 시 해당 카테고리에 테이블 있는지 조회하는 기능

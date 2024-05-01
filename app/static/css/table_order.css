@@ -1,0 +1,160 @@
+.table_order main {
+  display: initial;
+  height: auto;
+  background: initial;
+}
+.table_order main section{
+  position: initial;
+  overflow: initial;
+}
+.table_order section{
+  width: auto;
+  height: auto;
+  padding: initial;
+  background: initial;
+  border-bottom: initial;
+}
+.table_order main section nav {
+  display: flex;
+  padding: 0px 20px;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #CCC;
+  background: #FFF;
+}
+.table_order main section nav ul{
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+}
+.table_order :not(.order) main section nav ul li button{
+  padding: 16px 2px;
+  height: 50px;
+  color: #CCC;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+.table_order main section nav ul li[data-state="active"] button{
+  color: var(--main, #1FAA9C);
+  border-bottom: 2px solid var(--main, #1FAA9C);
+  margin-bottom: -1px;
+}
+.table_order main section nav .btn_set {
+  color: #CCC;
+  font-size: 20px;
+}
+.table_order main section nav .btn_set {
+  color: #CCC;
+  font-size: 20px;
+}
+.table_order main section article .items{
+  height: 100%;
+}
+.table_order main section article .item[data-has="false"] {
+  background: rgba(0, 0, 0, 0);
+  border: 1px solid rgba(0, 0, 0, 0);
+}
+
+
+
+
+
+
+
+
+
+.table_order main {
+  display: flex;
+}
+.table_order main > section {
+  flex: 1;
+}
+.table_order main section nav{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0px 20px;
+  gap: 15px;
+  border-bottom: 1px solid #ccc;
+}
+.table_order main section nav.main{
+  border-bottom: 0px;
+}
+.table_order main section nav.sub{
+  background: #F3FAFA;
+  border-bottom: 1px solid #CCC;
+}
+
+
+.table_order main section nav ul{
+  display: flex;
+  gap: 15px;
+}
+.table_order main section nav ul li {
+  color: #CCC;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+.table_order main section nav ul li button {
+  padding: 16px 2px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+.table_order main section nav ul li[data-state="active"] button{
+  color: var(--main, #1FAA9C);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+.table_order main section nav:not(.sub) ul li[data-state="active"] button{
+  /*border-bottom: 2px solid var(--main, #1FAA9C);*/
+  position: relative;
+}
+.table_order main section nav:not(.sub) ul li[data-state="active"] button::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--main, #1FAA9C);
+}
+.table_order main section nav.sub li button {
+  padding: 13px 2px;
+}
+#container.order main section article{
+  height: calc(100vh - (40px + 49px + 42px));
+}
+
+.table_order main > aside {
+  max-width: 284px;
+  width: 100%;
+  border-left: 1px solid #CCCCCC;
+}
+.table_order main section > aside{
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 20px;
+  border-radius: 20px 20px 0px 0px;
+  background: #FFFFFF;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+  visibility: hidden;
+  opacity: 0;
+  transform: translate(0, 100%);
+  transition: .25s;
+}
+.table_order main section > aside.active{
+  visibility: visible;
+  opacity: 1;
+  transform: translate(0, 0);
+  z-index: 2;
+}

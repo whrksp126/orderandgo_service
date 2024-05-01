@@ -2,7 +2,6 @@ from flask import render_template, jsonify, request
 from app.models.menu import select_main_category, select_sub_category, select_menu_all, select_menu, select_menu_option, select_menu_option_all, select_menu_all_to_main_category
 from app.models.order import find_order_list, get_orders_by_store_id
 from flask_login import login_required, current_user
-
 from app.routes import pos_bp
 import json
 
@@ -10,11 +9,24 @@ from app.routes import pos_bp
 from app.models.table import \
     move_table, \
     select_table_category, \
-    update_table_category, \
     delete_table_category, \
     select_table, \
     set_table_group
 from app.models import db, Menu, MenuOption
+
+from app import socketio
+from flask_socketio import join_room, emit
+
+
+@socketio.on('pos_login')
+def pos_login(data):
+    if data.get('user_type') == 'pos':
+        # 포스기 클라이언트를 'pos_group'이라는 방에 추가
+        join_room('pos_group')
+        print('data::',data)
+        emit('login_response', {'message': '로그인이 성공하여 POS 그룹에 추가되었습니다.'})
+        return {'msg': '로그인이 성공하여 POS 그룹에 추가되었습니다.'}
+
 
 
 @pos_bp.route('/tableList')
@@ -102,6 +114,7 @@ def get_table_page():
                     "statusId": statusId,
                     "status": "",
                     "groupId" : table.is_group,
+                    "groupNum" : None,
                     "groupColor" : table.group_color,
                     "orderList" : orderList,
                 }
@@ -114,12 +127,13 @@ def get_table_page():
                     "statusId": 0,
                     "status": "",
                     "groupId" : table.is_group,
+                    "groupNum" : None,
                     "groupColor" : table.group_color,
                     "orderList" : [],
                 }
 
         # 페이지별로 그룹화
-        page_list = [];
+        page_list = []
         current_page = None
         for table in sorted_tables:
             if table.page != current_page:
@@ -137,7 +151,6 @@ def get_table_page():
             "pageList" : page_list
         })
 
-    print("@@@@", all_table_list)
     return jsonify(all_table_list)
 
     # # JSON 파일 경로 설정

@@ -543,7 +543,6 @@ def api_check_delete_category():
                             .join(SubCategory, SubCategory.id == Menu.menu_category_id)\
                             .filter(SubCategory.id == sub_category_id)\
                             .all()
-    # print("\n\n\n@@@@@check:",check)
     if len(check) == 0:
         return jsonify({'status': True}), 200
     else:

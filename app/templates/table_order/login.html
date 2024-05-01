@@ -2,8 +2,9 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>OrderAndGo</title>
+  <title>orderandgo</title>
   <link rel="icon" type="image/x-icon" href="/static/images/common/logo.png">
 
   <!-- 시작 초기 css 설정 -->
@@ -11,21 +12,21 @@
   <link rel="stylesheet" href="/static/css/reset.css">
   <link rel="stylesheet" href="/static/css/common.css">
   <link rel="stylesheet" href="/static/css/animation.css">
-
-
-  <script src="/static/js/htmls.js"></script>
-
   <!-- 아이콘 -->
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
   <!-- 전용 css -->
-  <link rel="stylesheet" href="/static/css/store.css">
+  <link rel="stylesheet" href="/static/css/table_order.css">
+
+  <!-- socket.io -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+
 </head>
-<body class="set_table_position">
+<body class="table_order">
   <div id="container">
     <header>
       <!-- <h1>POS - Header</h1>-->
-      <a class="back_btn" onclick="whistory.back();">
+      <a class="back_btn" onclick="window.location.href='/'">
         <i class="ph-bold ph-caret-left"></i>
       </a>
       <div class="center">
@@ -53,31 +54,7 @@
           </button>
         </nav>
         <article>
-          <div class="tables items" data-page="0">
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-            
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-          </div>
+          <div class="tables items" data-page="0"></div>
           <button class="change_page_btn prev_page_btn" onclick="clickChangeTablePosition(event, 'prev')">
             <i class="ph ph-caret-left"></i>
           </button>
@@ -88,12 +65,7 @@
       </section>
     </main>
   </div>
-  
-  <!-- 공통 스크립트 -->
   <script src="/static/js/common.js"></script>
-  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js" ></script>
-
-  <!-- 전용 스크립트 -->
-  <script src="/static/js/setTablePosition.js"></script>
+  <script src="/static/js/tableOrder.js"></script>
 </body>
 </html>

@@ -40,7 +40,7 @@ const createHtml = (menuPageData) => {
 
   const _menuList = document.querySelector('main section article .items');
   subCategoryData[indexData.sub].pageList.sort((a, b) => a.page - b.page);
-  const menuListData = subCategoryData[indexData.sub].pageList[indexData.page].menuList;
+  const menuListData = subCategoryData[indexData.sub]?.pageList[indexData.page]?.menuList ?? [];
   _menuList.innerHTML = changeMenuHtml(menuListData)
   _menuList.setAttribute('data-page', indexData.page);
 

@@ -42,13 +42,13 @@ main section nav ul li {
 main section nav ul li button {
   padding: 16px 2px;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.3px;
 }
 main section nav ul li[data-state="active"] button{
   color: var(--main, #1FAA9C);
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.3px;
 }
 main section nav:not(.sub) ul li[data-state="active"] button{
@@ -739,7 +739,7 @@ main section > aside .custom_btns button{
 .payment main section article .top .other_btns button{
   height: 50px;
   padding: 8px 20px;
-  border-radius: 10px;
+  border-radius: 8px;
   border: 1px solid #CCC;
   background: #FFF;
   font-size: 18px;
@@ -832,6 +832,7 @@ main section > aside .custom_btns button{
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
+  line-height: 1;
 }
 .payment .basket_container .order_btns .bottom div{
   display: flex;
@@ -1072,6 +1073,7 @@ main section > aside .custom_btns button{
   color: #FFF;
   font-size: 16px;
   font-weight: 700;
+  height: 50px;
 }
 
 .success_payment .modal-content .modal-top{

@@ -26,9 +26,16 @@ button.brand_fill {
   border: 1px solid var(--backgound-color-1fa);
   color: var(--background-color-ff);
 }
+
 button.brand {
   color: var(--backgound-color-1fa);
   border: 1px solid var(--backgound-color-1fa);
+  background: var(--background-color-ff);
+}
+
+button.red {
+  color: #F43E25;
+  border: 1px solid #F43E25;
   background: var(--background-color-ff);
 }
 
@@ -108,7 +115,6 @@ button.brand {
   width: 100vw;
   height: 100vh;
   background-color: rgba(0, 0, 0, 0.4);
-  font-family: Inter;
 }
 
 .modal .modal_content{
@@ -127,7 +133,6 @@ button.brand {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 30px;
-  font-family: Inter;
   font-size: 18px;
   font-weight: 700;
   line-height: normal;
@@ -246,6 +251,23 @@ button.brand {
   font-weight: 700;
 }
 
+.modal.success {}
+.modal .modal_content .modal_top{
+  display: none;
+}
+.modal.success .modal_content .modal_middle{
+  display: flex;
+  flex-flow: column;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 20px;
+  font-size: 20px;
+}
+.modal.success .modal_content .modal_middle i{
+  color: #1FAA9C;
+  font-size: 35px;
+}
+
 /* .modal {
   position: fixed;
   z-index: 2;
@@ -280,7 +302,7 @@ button.brand {
 }
 
 .modal-content h1 {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
 }
 

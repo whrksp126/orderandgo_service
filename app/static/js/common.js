@@ -1,4 +1,17 @@
-const lastPath = window.location.href.split('/').pop();
+
+function getLastPath() {
+  const paths = window.location.pathname.split('/');
+  return paths[paths.length - 1];
+}
+const lastPath = getLastPath();
+
+// url 파리미터 조회
+function getTableIdFromCurrentUrl(key) {
+  const currentUrl = window.location.href;
+  const params = new URLSearchParams(new URL(currentUrl).search);
+  const value = params.get(key);
+  return value ? value : false;
+}
 
 // 비동기 fetch api
 async function fetchDataAsync(url, method, data, form=false){
@@ -163,10 +176,13 @@ function displayCurrentDateTime() {
   const formattedDate = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}(${days[now.getDay()]})`;
   const formattedTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
   const formattedDateTime = `${formattedDate} ${formattedTime}`;
-  document.querySelector('header .center .header_info .cur_time').textContent = formattedDateTime;
-  // 다음 업데이트를 위해 남은 시간을 계산
-  const secondsUntilNextUpdate = 60 - now.getSeconds();
-  setTimeout(displayCurrentDateTime, secondsUntilNextUpdate * 1000);
+  const _curTime = document.querySelector('header .center .header_info .cur_time');
+  if(_curTime){
+    _curTime.textContent = formattedDateTime;
+    // 다음 업데이트를 위해 남은 시간을 계산
+    const secondsUntilNextUpdate = 60 - now.getSeconds();
+    setTimeout(displayCurrentDateTime, secondsUntilNextUpdate * 1000);
+  }
 }
 displayCurrentDateTime();
 

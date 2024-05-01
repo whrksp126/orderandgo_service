@@ -41,6 +41,7 @@ time, mark, audio, video {
 }
 html {
   scroll-behavior:smooth;
+  overscroll-behavior: none;
 }
 html, body {
   height: 100%;
@@ -162,6 +163,64 @@ textarea {
 @font-face {
   font-family: 'Figtree';
   src: url('../fonts/figtree/Figtree-Black.tt') format('opentype');
+  font-weight: 900;
+  font-style: normal;
+}
+
+
+
+
+@font-face {
+  font-family: 'Pretendard Variable';
+  src: url('../fonts/pretendard/Pretendard-Thin.ttf') format('opentype');
+  font-weight: 100;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Pretendard Variable';
+  src: url('../fonts/pretendard/Pretendard-ExtraLight.ttf') format('opentype');
+  font-weight: 200;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Pretendard Variable';
+  src: url('../fonts/pretendard/Pretendard-Light.ttf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Pretendard Variable';
+  src: url('../fonts/pretendard/Pretendard-Regular.ttf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Pretendard Variable';
+  src: url('../fonts/pretendard/Pretendard-Medium.ttf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Pretendard Variable';
+  src: url('../fonts/pretendard/Pretendard-SemiBold.ttf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Pretendard Variable';
+  src: url('../fonts/pretendard/Pretendard-Bold.ttf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Pretendard Variable';
+  src: url('../fonts/pretendard/Pretendard-ExtraBold.ttf') format('opentype');
+  font-weight: 800;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Pretendard Variable';
+  src: url('../fonts/pretendard/Pretendard-Black.ttf') format('opentype');
   font-weight: 900;
   font-style: normal;
 }

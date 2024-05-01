@@ -36,20 +36,17 @@ const initGetMenuList = async () => {
 }
 initGetMenuList();
 
-
 // 테이블 주문 내역 가져오기
-fetch(`/pos/get_table_order_list/${lastPath}`, {
-  method: 'GET',
-})
-.then(response => response.json())
-.then(data => {
-  // 받은 데이터 처리
-  console.log(data)
-  if(data.length != 0){
+const initGetTableOrderList = async () => {
+  const url = `/pos/get_table_order_list/${lastPath}`;
+  const method = `GET`;
+  const fetchData = {};
+  const result = await fetchDataAsync(url, method, fetchData);
+  if(result.length != 0){
     const _orderListBtns = document.querySelectorAll('.basket_container > .count_btns button.order_history, .basket_container > .count_btns button.new_order')
     _orderListBtns.forEach(btn => btn.dataset.active = true);
   }
-  order_history=data.map((order)=>({
+  order_history=result.map((order)=>({
     id: order.id,
     order_id : order.order_id,
     masterName : setMasterName(order),
@@ -58,11 +55,34 @@ fetch(`/pos/get_table_order_list/${lastPath}`, {
     count: 1,
     options: order.options,
   }))
+}
+initGetTableOrderList();
+// // 테이블 주문 내역 가져오기
+// fetch(`/pos/get_table_order_list/${lastPath}`, {
+//   method: 'GET',
+// })
+// .then(response => response.json())
+// .then(data => {
+//   // 받은 데이터 처리
+//   console.log(data)
+//   if(data.length != 0){
+//     const _orderListBtns = document.querySelectorAll('.basket_container > .count_btns button.order_history, .basket_container > .count_btns button.new_order')
+//     _orderListBtns.forEach(btn => btn.dataset.active = true);
+//   }
+//   order_history=data.map((order)=>({
+//     id: order.id,
+//     order_id : order.order_id,
+//     masterName : setMasterName(order),
+//     name: order.name,
+//     price: order.price,
+//     count: 1,
+//     options: order.options,
+//   }))
 
-})
-.catch(error => {
-  console.error('Error:', error);
-});
+// })
+// .catch(error => {
+//   console.error('Error:', error);
+// });
 
 // 주문내역 버튼 클릭 시
 const clickOrderHistoryBtn = (event) => {
@@ -122,7 +142,7 @@ const createHtml = (menuPageData) => {
   `).join('');
 
   const _menuList = document.querySelector('main section article .items');
-  const menuListData = subCategoryData[indexData.sub].pageList[indexData.page].menuList;
+  const menuListData = subCategoryData[indexData.sub]?.pageList[indexData.page]?.menuList ?? [];
   _menuList.innerHTML = changeMenuHtml(menuListData)
   _menuList.setAttribute('data-page', indexData.page);
 
@@ -703,7 +723,7 @@ const clickOrder = async (event) => {
       order_list : deepCopy(menuAllData)
     };
     const result = await fetchDataAsync(url, method, fetchData);
-    if(result.data = 'Success'){
+    if(result.code == 200){
       window.location.href = '/pos/tableList'
     }
   }else{ // 주문취소
@@ -712,7 +732,7 @@ const clickOrder = async (event) => {
     const method = `POST`;
     const fetchData = {order_id_list:cancel_order_list.map((data)=>data.order_id)}
     const result = await fetchDataAsync(url, method, fetchData)
-    if(result.data = 'Success'){
+    if(result.code == 200){
       window.location.href = '/pos/tableList'
     }
   }
