@@ -19,6 +19,8 @@ CLIENT_SECRET = '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'
 REDIRECT_URI = 'https://order.ghmate.com/login_google/callback'  # 이 값은 Google API Console에서 설정한 리디렉션 URI와 동일해야 합니다.
 
 
+
+# 로그인 라우트: 구글 OAuth2 인증 요청
 @main_bp.route('/login/google')
 def login_google():
     # OAuth2Session 생성
@@ -41,13 +43,16 @@ def authorize_google():
     # 상태(state)를 가져옴
     state = session.pop('oauth_state', None)
 
-    # OAuth2Session 생성
-    oauth = OAuth2Session(CLIENT_ID, redirect_uri=REDIRECT_URI, state=state, scope=['openid', 'email', 'profile'])
-
     # 사용자가 리디렉션된 후에 받은 정보를 가져옵니다.
     authorization_response = request.url
 
     # 사용자가 인증을 마치고 리디렉션 된 후, 코드를 얻어서 토큰을 교환합니다.
+    oauth = OAuth2Session(CLIENT_ID, redirect_uri=REDIRECT_URI, state=state, scope=['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email', 'openid'])
+
+    # 상태(state) 확인
+    if state is None or state != request.args.get('state'):
+        return 'Invalid OAuth state', 400
+
     token = oauth.fetch_token(
         'https://accounts.google.com/o/oauth2/token',
         authorization_response=authorization_response,
