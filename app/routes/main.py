@@ -1,7 +1,7 @@
 from flask import render_template, redirect, url_for, request, session
 from app.routes import main_bp
 from app.models.store import create_store, update_store
-from flask_login import current_user, login_required
+from flask_login import current_user, login_required, login_user
 
 
 @main_bp.route('/')
@@ -65,4 +65,49 @@ def authorize_google():
     email = userinfo['email']
     print("@@@userinfo", userinfo)
 
+    # # 이메일 주소로 사용자 조회
+    # user = User.query.filter_by(email=email).first()
+
+    # # 사용자가 존재하지 않으면 회원가입
+    # if not user:
+    #     # 회원가입을 위한 정보를 세션에 저장
+    #     session['oauth_userinfo'] = userinfo
+    #     return redirect(url_for('main_bp.register'))
+
+    # # 사용자가 존재하면 로그인
+    # login_user(user)
+
     return "Authentication Successful!"
+
+
+# # 회원가입 라우트
+# @main_bp.route('/register', methods=['GET', 'POST'])
+# def register():
+#     # 회원가입 양식 제출 처리
+#     if request.method == 'POST':
+#         # 세션에서 사용자 정보 가져오기
+#         userinfo = session.get('oauth_userinfo')
+#         if not userinfo:
+#             return "Error: No userinfo found", 400
+
+#         # 이메일과 기타 정보 추출
+#         email = userinfo['email']
+#         # 추가 필요한 사용자 정보가 있다면 여기에서 추출
+
+#         # 사용자 생성
+#         new_user = User(email=email)
+#         # 기타 정보가 있다면 여기에서 추가
+
+#         db.session.add(new_user)
+#         db.session.commit()
+
+#         # 회원가입 후 로그인
+#         login_user(new_user)
+
+#         # 회원가입 완료 후, 세션에서 사용자 정보 제거
+#         session.pop('oauth_userinfo', None)
+
+#         return "Registration Successful!"
+
+#     # GET 요청일 경우 회원가입 양식 보여주기 => 쓸 일 없음
+#     return render_template('register.html')
