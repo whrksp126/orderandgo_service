@@ -32,8 +32,8 @@ def authorize_google():
 
     # 사용자에게 인증을 받기 위해 authorization_url로 리다이렉트합니다.
     print('Please go to %s and authorize access.' % authorization_url)
-    print("#####", request)
-    
+    print("#####", request.url)
+
     # 사용자가 리디렉션된 후에 받은 정보를 가져옵니다.
     authorization_response = request.url
 
