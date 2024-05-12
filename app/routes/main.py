@@ -22,7 +22,7 @@ REDIRECT_URI = 'https://order.ghmate.com/login_google/callback'  # 이 값은 Go
 
 
 # 로그인 라우트: 구글 OAuth2 인증 요청
-@login_bp.route('/login/google')
+@main_bp.route('/login/google')
 def login_google():
     # OAuth2Session 생성
     oauth = OAuth2Session(CLIENT_ID, redirect_uri=REDIRECT_URI, scope=['openid', 'email', 'profile'])
