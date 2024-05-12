@@ -58,7 +58,11 @@ def authorize_google():
         authorization_response=authorization_response,
         client_secret=CLIENT_SECRET
     )
+    print("@@@token", token)
 
-    print(token)
+    # 토큰에서 사용자 정보 추출
+    userinfo = oauth.get('https://www.googleapis.com/oauth2/v1/userinfo').json()
+    email = userinfo['email']
+    print("@@@userinfo", userinfo)
 
     return "Authentication Successful!"
