@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, request
+from flask import render_template, redirect, url_for, request, session
 from app.routes import main_bp
 from app.models.store import create_store, update_store
 from flask_login import current_user, login_required
@@ -19,8 +19,6 @@ CLIENT_SECRET = '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'
 REDIRECT_URI = 'https://order.ghmate.com/login_google/callback'  # 이 값은 Google API Console에서 설정한 리디렉션 URI와 동일해야 합니다.
 
 
-
-
 # 로그인 라우트: 구글 OAuth2 인증 요청
 @main_bp.route('/login/google')
 def login_google():
@@ -31,22 +29,21 @@ def login_google():
     authorization_url, state = oauth.authorization_url(
         'https://accounts.google.com/o/oauth2/auth',
     )
+
+    # 상태(state)를 세션에 저장
+    session['oauth_state'] = state
+
     return redirect(authorization_url)
 
 
 # 인증 콜백 라우트: OAuth2 인증 완료 후 실행
 @main_bp.route('/login_google/callback')
 def authorize_google():
+    # 상태(state)를 가져옴
+    state = session.pop('oauth_state', None)
+
     # OAuth2Session 생성
-    oauth = OAuth2Session(CLIENT_ID, redirect_uri=REDIRECT_URI, scope=['openid', 'email', 'profile'])
-
-    # 인증 요청을 생성합니다.
-    authorization_url, state = oauth.authorization_url(
-        'https://accounts.google.com/o/oauth2/auth',
-    )
-
-    # 사용자에게 인증을 받기 위해 authorization_url로 리다이렉트합니다.
-    print('Please go to %s and authorize access.' % authorization_url)
+    oauth = OAuth2Session(CLIENT_ID, redirect_uri=REDIRECT_URI, state=state, scope=['openid', 'email', 'profile'])
 
     # 사용자가 리디렉션된 후에 받은 정보를 가져옵니다.
     authorization_response = request.url
@@ -59,3 +56,5 @@ def authorize_google():
     )
 
     print(token)
+
+    return "Authentication Successful!"
