@@ -92,12 +92,11 @@ def authorize_google():
     # 토큰에서 사용자 정보 추출
     userinfo = oauth.get('https://www.googleapis.com/oauth2/v1/userinfo').json()
     email = userinfo['email']
-    print("####", userinfo)
     print("@@@userinfo", userinfo)
 
 
     # firestore 테스트
-    user_id = userinfo['user_id']
+    user_id = userinfo['id']
     # words = request.json.get('words', [])
     words = 'test'
     save_user_data(user_id, {'words': words})
