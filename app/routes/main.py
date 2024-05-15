@@ -30,7 +30,7 @@ db = None
 def create_firestore_client():
     global db
     if db is None:
-        key_path = 'vocaandgo-be62cab96920.json'
+        key_path = 'app/vocaandgo-be62cab96920.json'
         # Firestore 클라이언트 생성
         db = firestore.Client.from_service_account_json(key_path)
     return db
