@@ -25,16 +25,25 @@ from google.cloud import firestore
 
 
 # Firestore 인스턴스 생성
-db = firestore.Client()
+db = None
+
+def create_firestore_client():
+    global db
+    if db is None:
+        # Firestore 클라이언트 생성
+        db = firestore.Client.from_service_account_json(CLIENT_ID)
+    return db
 
 # Firestore에서 사용자의 데이터를 가져오는 함수
 def get_user_data(user_id):
+    db = create_firestore_client()
     user_ref = db.collection('users').document(user_id)
     user_data = user_ref.get().to_dict()
     return user_data if user_data else {}
 
 # Firestore에 사용자의 데이터를 저장하는 함수
 def save_user_data(user_id, data):
+    db = create_firestore_client()
     user_ref = db.collection('users').document(user_id)
     user_ref.set(data)
 
