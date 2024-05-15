@@ -20,6 +20,26 @@ REDIRECT_URI = 'https://order.ghmate.com/login_google/callback'  # 이 값은 Go
 
 
 
+
+from google.cloud import firestore
+
+
+# Firestore 인스턴스 생성
+db = firestore.Client()
+
+# Firestore에서 사용자의 데이터를 가져오는 함수
+def get_user_data(user_id):
+    user_ref = db.collection('users').document(user_id)
+    user_data = user_ref.get().to_dict()
+    return user_data if user_data else {}
+
+# Firestore에 사용자의 데이터를 저장하는 함수
+def save_user_data(user_id, data):
+    user_ref = db.collection('users').document(user_id)
+    user_ref.set(data)
+
+
+
 # 로그인 라우트: 구글 OAuth2 인증 요청
 @main_bp.route('/login/google')
 def login_google():
@@ -64,6 +84,14 @@ def authorize_google():
     userinfo = oauth.get('https://www.googleapis.com/oauth2/v1/userinfo').json()
     email = userinfo['email']
     print("@@@userinfo", userinfo)
+
+
+    # firestore 테스트
+    user_id = userinfo['user_id']
+    # words = request.json.get('words', [])
+    words = 'test'
+    save_user_data(user_id, {'words': words})
+
 
     # # 이메일 주소로 사용자 조회
     # user = User.query.filter_by(email=email).first()
