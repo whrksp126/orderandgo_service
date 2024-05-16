@@ -12,16 +12,8 @@ def index():
 
 
 from requests_oauthlib import OAuth2Session
-
-# Google OAuth2 정보 설정
-CLIENT_ID = '1029120969045-qe419opo6hme2kdk45j98qghc3tafo2u.apps.googleusercontent.com'
-CLIENT_SECRET = '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'
-REDIRECT_URI = 'https://order.ghmate.com/login_google/callback'  # 이 값은 Google API Console에서 설정한 리디렉션 URI와 동일해야 합니다.
-
-
-
-
 from google.cloud import firestore
+from config import OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET, OAUTH_REDIRECT_URI
 
 
 # Firestore 인스턴스 생성
@@ -54,7 +46,7 @@ def save_user_data(user_id, data):
 @main_bp.route('/login/google')
 def login_google():
     # OAuth2Session 생성
-    oauth = OAuth2Session(CLIENT_ID, redirect_uri=REDIRECT_URI, scope=['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email', 'openid'])
+    oauth = OAuth2Session(OAUTH_CLIENT_ID, redirect_uri=OAUTH_REDIRECT_URI, scope=['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email', 'openid'])
 
     # 인증 요청을 생성합니다.
     authorization_url, state = oauth.authorization_url(
@@ -77,7 +69,7 @@ def authorize_google():
     authorization_response = request.url
 
     # 사용자가 인증을 마치고 리디렉션 된 후, 코드를 얻어서 토큰을 교환합니다.
-    oauth = OAuth2Session(CLIENT_ID, redirect_uri=REDIRECT_URI, state=state, scope=['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email', 'openid'])
+    oauth = OAuth2Session(OAUTH_CLIENT_ID, redirect_uri=OAUTH_REDIRECT_URI, state=state, scope=['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email', 'openid'])
 
     # 상태(state) 확인
     if state is None or state != request.args.get('state'):
@@ -86,7 +78,7 @@ def authorize_google():
     token = oauth.fetch_token(
         'https://accounts.google.com/o/oauth2/token',
         authorization_response=authorization_response,
-        client_secret=CLIENT_SECRET
+        client_secret=OAUTH_CLIENT_SECRET
     )
     print("@@@token", token)
 
