@@ -151,8 +151,8 @@ def authorize_google():
 
 @main_bp.route("/backup", methods=["POST"])
 def backup():
-    if 'credentials' not in session:
-        return redirect(url_for('login'))
+    # if 'credentials' not in session:
+        # return redirect(url_for('login'))
     
     credentials = Credentials(**session['credentials'])
     drive_service = build('drive', 'v3', credentials=credentials)
