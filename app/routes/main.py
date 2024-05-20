@@ -149,7 +149,7 @@ def authorize_google():
 #     return render_template('register.html')
 
 
-@main_bp.route("/backup", methods=["POST"])
+@main_bp.route('/backup')
 def backup():
     # if 'credentials' not in session:
         # return redirect(url_for('login'))
