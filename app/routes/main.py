@@ -1,7 +1,13 @@
-from flask import render_template, redirect, url_for, request, session
+from flask import render_template, redirect, url_for, request, session, jsonify
 from app.routes import main_bp
 from app.models.store import create_store, update_store
 from flask_login import current_user, login_required, login_user
+
+import json
+
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 
 
 @main_bp.route('/')
@@ -88,11 +94,11 @@ def authorize_google():
     print("@@@userinfo", userinfo)
 
 
-    # firestore 테스트
-    user_id = userinfo['id']
-    # words = request.json.get('words', [])
-    words = 'test'
-    save_user_data(user_id, {'words': words})
+    # # firestore 테스트
+    # user_id = userinfo['id']
+    # # words = request.json.get('words', [])
+    # words = 'test'
+    # save_user_data(user_id, {'words': words})
 
 
     # # 이메일 주소로 사용자 조회
@@ -141,3 +147,18 @@ def authorize_google():
 
 #     # GET 요청일 경우 회원가입 양식 보여주기 => 쓸 일 없음
 #     return render_template('register.html')
+
+
+@main_bp.route("/backup", methods=["POST"])
+def backup():
+    if 'credentials' not in session:
+        return redirect(url_for('login'))
+    
+    credentials = Credentials(**session['credentials'])
+    drive_service = build('drive', 'v3', credentials=credentials)
+    
+    file_metadata = {'name': 'wordlist_backup.json'}
+    media = MediaFileUpload('wordlist_backup.json', mimetype='application/json')
+    file = drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+    
+    return jsonify({"file_id": file.get('id')})
