@@ -57,6 +57,8 @@ def login_google():
     # 인증 요청을 생성합니다.
     authorization_url, state = oauth.authorization_url(
         'https://accounts.google.com/o/oauth2/auth',
+        access_type="offline",
+        prompt="consent"
     )
 
     # 상태(state)를 세션에 저장
@@ -75,7 +77,14 @@ def authorize_google():
     authorization_response = request.url
 
     # 사용자가 인증을 마치고 리디렉션 된 후, 코드를 얻어서 토큰을 교환합니다.
-    oauth = OAuth2Session(OAUTH_CLIENT_ID, redirect_uri=OAUTH_REDIRECT_URI, state=state, scope=['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email', 'openid'])
+    oauth = OAuth2Session(OAUTH_CLIENT_ID, redirect_uri=OAUTH_REDIRECT_URI, state=state, 
+                          scope=[
+                                'https://www.googleapis.com/auth/userinfo.profile',
+                                'https://www.googleapis.com/auth/userinfo.email',
+                                'openid',
+                                'https://www.googleapis.com/auth/drive.file'
+                              ]
+                        )
 
     # 상태(state) 확인
     if state is None or state != request.args.get('state'):
