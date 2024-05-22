@@ -52,7 +52,14 @@ def save_user_data(user_id, data):
 @main_bp.route('/login/google')
 def login_google():
     # OAuth2Session 생성
-    oauth = OAuth2Session(OAUTH_CLIENT_ID, redirect_uri=OAUTH_REDIRECT_URI, scope=['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email', 'openid'])
+    oauth = OAuth2Session(OAUTH_CLIENT_ID, redirect_uri=OAUTH_REDIRECT_URI, 
+                          scope=[
+                              'https://www.googleapis.com/auth/userinfo.profile', 
+                              'https://www.googleapis.com/auth/userinfo.email', 
+                              'openid',
+                              'https://www.googleapis.com/auth/drive.file'
+                            ]
+                        )
 
     # 인증 요청을 생성합니다.
     authorization_url, state = oauth.authorization_url(
