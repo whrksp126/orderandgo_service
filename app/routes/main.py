@@ -63,6 +63,7 @@ def login_google():
 
     # 상태(state)를 세션에 저장
     session['oauth_state'] = state
+    print("@@@state", state)
 
     return redirect(authorization_url)
 
