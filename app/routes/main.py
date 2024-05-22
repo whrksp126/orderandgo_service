@@ -92,6 +92,7 @@ def authorize_google():
     userinfo = oauth.get('https://www.googleapis.com/oauth2/v1/userinfo').json()
     email = userinfo['email']
     print("@@@userinfo", userinfo)
+    print("['credentials']", userinfo['credentials'])
 
 
     # # firestore 테스트
