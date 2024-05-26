@@ -109,7 +109,7 @@ def authorize_google():
     userinfo = oauth.get('https://www.googleapis.com/oauth2/v1/userinfo').json()
     email = userinfo['email']
     print("@@@userinfo", userinfo)
-    
+
     # 토큰 정보를 세션에 저장
     session['credentials'] = token
 
@@ -172,8 +172,18 @@ def authorize_google():
 def backup():
     # if 'credentials' not in session:
         # return redirect(url_for('login'))
+
+
+    # token에서 Credentials 객체 생성
+    token = session['token']
+    credentials = Credentials(
+        token=token['access_token'],
+        refresh_token=token.get('refresh_token'),
+        token_uri='https://oauth2.googleapis.com/token',
+        client_id=OAUTH_CLIENT_ID,
+        client_secret=OAUTH_CLIENT_SECRET
+    )
     
-    credentials = Credentials(**session['credentials'])
     drive_service = build('drive', 'v3', credentials=credentials)
     
     file_metadata = {'name': 'wordlist_backup.json'}
