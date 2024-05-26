@@ -5,9 +5,12 @@ from flask_login import current_user, login_required, login_user
 
 import json
 
+
+import io
+import json
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
+from googleapiclient.http import MediaIoBaseUpload, MediaFileUpload, MediaIoBaseDownload
 
 
 @main_bp.route('/')
@@ -186,8 +189,17 @@ def backup():
     
     drive_service = build('drive', 'v3', credentials=credentials)
     
+
+    # JSON 데이터를 메모리 스트림으로 변환
+    json_data = {
+        "example_key": "example_value",
+        "another_key": 12345
+    }
+    json_str = json.dumps(json_data)
+    json_bytes = io.BytesIO(json_str.encode('utf-8'))
+    
     file_metadata = {'name': 'wordlist_backup.json'}
-    media = MediaFileUpload('wordlist_backup.json', mimetype='application/json')
+    media = MediaIoBaseUpload(json_bytes, mimetype='application/json')
     file = drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
     
     return jsonify({"file_id": file.get('id')})
