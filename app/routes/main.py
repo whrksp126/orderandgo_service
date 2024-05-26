@@ -111,7 +111,7 @@ def authorize_google():
     print("@@@userinfo", userinfo)
 
     # 토큰 정보를 세션에 저장
-    session['credentials'] = token
+    session['token'] = token
 
     # # firestore 테스트
     # user_id = userinfo['id']
