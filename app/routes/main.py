@@ -109,8 +109,9 @@ def authorize_google():
     userinfo = oauth.get('https://www.googleapis.com/oauth2/v1/userinfo').json()
     email = userinfo['email']
     print("@@@userinfo", userinfo)
-    print("['credentials']", userinfo['credentials'])
-
+    
+    # 토큰 정보를 세션에 저장
+    session['credentials'] = token
 
     # # firestore 테스트
     # user_id = userinfo['id']
