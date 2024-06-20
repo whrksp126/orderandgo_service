@@ -260,12 +260,17 @@ button.red {
   flex-flow: column;
   align-items: center;
   gap: 20px;
+  padding: 20px 0;
   margin-bottom: 20px;
   font-size: 20px;
 }
 .modal.success .modal_content .modal_middle i{
   color: #1FAA9C;
-  font-size: 35px;
+  font-size: 45px;
+}
+.modal.success .modal_content .modal_middle span{
+  font-size: 20px;
+  font-weight: 700;
 }
 
 /* .modal {

@@ -233,6 +233,11 @@ const setMenuHtmlEmptyData = {
 // 메뉴데이터 수정 html 만들기
 const setMenuHtml = ({id, imgList,name,price,description,category,options, is_soldout}) => {
   const imgCountArray = new Array(4).fill(false);
+  const sortImgList = imgList.sort((a, b) => {
+    const numA = parseInt(a.match(/_(\d+)\.png/)[1], 10);
+    const numB = parseInt(b.match(/_(\d+)\.png/)[1], 10);
+    return numA - numB;
+  });
   const checkedMainCategory = category.main.filter(({checked})=>checked);
   const checkedSubCategory = category.sub.filter(({checked})=>checked);
   const html = `
@@ -241,22 +246,31 @@ const setMenuHtml = ({id, imgList,name,price,description,category,options, is_so
       <i class="ph ph-caret-right"></i>
     </button>
     <div class="top scrollbar_hidden">
-      <div class="main_img ${imgList[0] != undefined ? `active` : `` }" data-index="1">
+      <div class="main_img ${sortImgList[0] != undefined ? `active` : `` }" data-index="1">
         <label for="main_menu_img"><i class="ph ph-plus"></i></label>
         <input id="main_menu_img" hidden multiple  type="file" onchange="multiPreviewImage(event)">
-        <img src="${imgList[0] != undefined ? `${imgList[0]}` : ``}" alt="">
+        <img src="${sortImgList[0] != undefined ? `${sortImgList[0]}` : ``}" alt="">
         <button class="delete_btn" onclick="clickDeleteImg(event)">
           <i class="ph ph-trash"></i>
         </button>
       </div>
       <div class="imgs">
-      ${imgCountArray.map((data, index)=>`
-        <div class="img_box ${imgList[index] != undefined ? `active` : ``}" data-index="${index + 1}">
+        ${imgCountArray.map((data, index)=>{
+        const regex = /_(\d+)\.png$/;
+        const match = sortImgList[0]?.match(regex);
+        let is_match = false;
+        let match_img = null;
+        if(match && Number(match[1]) == index+1){
+          is_match = true;
+          match_img = sortImgList.shift();
+        }
+        return`
+        <div class="img_box ${is_match ? `active` : ``}" data-index="${index + 1}">
           <label for="menu_img_${index + 1}"><i class="ph ph-plus"></i></label>
           <input data-title="image" data-type="form" id="menu_img_${index + 1}" hidden type="file" onchange="previewImage(event)">
-          <img src="${imgList[index] != undefined ? `${imgList[index]}` : ``}" alt="" onclick="clickMenuImg(event)">
-        </div>
-      `).join('')}
+          <img src="${is_match ? `${match_img}` : ``}" alt="" onclick="clickMenuImg(event)">
+        </div>`
+        }).join('')}
       </div>
     </div>
     <div class="middle scrollbar_hidden">
@@ -326,7 +340,6 @@ const setMenuHtml = ({id, imgList,name,price,description,category,options, is_so
 
 // 메뉴 설정에서 카테고리 html 만들기
 const createCategoryBoxHtml = (category,type,ko_category) => {
-  console.log(category,type,ko_category)
   const checkedCategorys = category[type].filter(({checked})=>checked);
   const html = `
     <button 
@@ -375,7 +388,6 @@ const setMenuOptionDrag = () => {
     handle: ".drag_btn"
   }
   const sortable = Sortable.create(el,option);
-  console.log(sortable)
 }
 
 // 메뉴 추가 버튼 클릭 시
@@ -456,7 +468,7 @@ const clickSaveMenuData = async (event, type, id) => {
       if(imgData == '') return
       form_data.push({
         key : element.id,
-        value : getUriToBlobToFile(imgData)
+        value : imgData.startsWith('/static/images/') ? imgData : getUriToBlobToFile(imgData),
       })
       new_data[title].push(element.id);
     }

@@ -1,6 +1,6 @@
 const socket = io.connect('http://' + document.domain + ':' + location.port); 
 socket.emit('pos_login', {user_type: 'pos'}, (response) => {
-  alert(response.msg)
+  // alert(response.msg)
 });
 
 socket.on('update_pos', function(data) {

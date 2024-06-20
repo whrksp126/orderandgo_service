@@ -20,7 +20,9 @@ main ul {
   height:100%;
 }
 main ul li a {
+  position: relative;
   display:flex;
+  flex-flow: column;
   align-items: center;
   justify-content:center;
   width: 100%;
@@ -29,4 +31,10 @@ main ul li a {
   border-radius: 10px;
   font-size: 25px;
   font-weight: 800;
+}
+main ul li a p{
+  position: absolute;
+  top: 110px;
+  font-size: 14px;
+  font-weight: 400;
 }

@@ -288,14 +288,13 @@ def get_menu():
             sub_category['checked'] = True
         else:
             sub_category['checked'] = False
-    
-    
+    image_list = menu.image.split(', ') if getattr(menu, 'image', None) else []
     menu_data = {
         'id' : menu.id,
         'name' : menu.name,
         'price': menu.price,
         'is_soldout' : menu.is_soldout,
-        'imgList' : [],
+        'imgList' : image_list,
         'description': menu.main_description,
         'options' : option_data,
         'category': {
@@ -355,30 +354,22 @@ def set_menu():
 
         # 이미지 저장
         for index, menu_name in enumerate(json_data['image']):
-            file = request.files.get(menu_name)
             UPLOAD_FOLDER = 'app/static/images/store_'
             upload_path = f'{UPLOAD_FOLDER}{store_id}/menu_{current_menu_id}' # app/static/images/store_16/menu_30
-            
+            file = request.files.get(menu_name)
+            menu_num = menu_name[9:]
+            file_name = f'{name}_{menu_num}.png'
+            db_image_path = '/' + upload_path.replace('app/', '') + '/' + file_name
             # 서버에 스토어 아이디에 해당하는 폴더 유무 확인 후 생성
             if not os.path.exists(upload_path):
                 os.makedirs(upload_path)
-            file_name = f'{name}_{index}.png'
-
-            # 저장
             file.save(os.path.join(upload_path, file_name))
-
-            # 디비에 저장할 이미지 경로
-            images.append(upload_path + file_name)
-        print('이미지 저장 완료')
-
-        # 'image' 키의 값을 리스트에서 문자열로 변환
+            images.append(db_image_path)
         images_as_string = ', '.join(images)
-
         # 메뉴 create
         menu = create_menu(name, price, images_as_string, main_description, is_soldout, store_id, menu_category_id, page, position)
 
-        # 메뉴 옵션 create
-        if options:
+        if options: # 메뉴 옵션 create
             create_menu_option(options, menu.id)
 
         return jsonify({'message': '메뉴가 성공적으로 생성되었습니다.'}), 201
@@ -394,45 +385,38 @@ def set_menu():
         main_description = json_data['main_description']
         #sub_description = json_data['sub_description']
         is_soldout = False # null 허용X -> false 기본값으로 넣고 있음
-        #print(type(json_data['main_category']))
         menu_category_id = json_data['main_category']
         #page = menu_data['page']
         #position = menu_data['position']
         options = json_data['options']
         
+        # # 이미지 저장
         images = []
-
         UPLOAD_FOLDER = 'app/static/images/store_'
         upload_path = f'{UPLOAD_FOLDER}{store_id}/menu_{menu_id}'
-        print(upload_path)
-        print(os.path.isfile(upload_path))
-
-        import shutil
-        # 이미지 저장
-        if json_data['image']:
-            # 서버에 스토어 아이디에 해당하는 폴더 유무 확인 후 있으면 폴더 삭제
-            if os.path.exists(upload_path):
-                try:
-                    shutil.rmtree(upload_path)
-                    print('폴더 삭제 완료')
-                except Exception as e:
-                    print(f'폴더 삭제 오류: {str(e)}')
-            
-            # 이미지 저장하기
-            for index, menu_name in enumerate(json_data['image']):
-                file = request.files.get(menu_name)
-
-                # 서버에 스토어 아이디에 해당하는 폴더 유무 확인 후 생성
-                if not os.path.exists(upload_path):
-                    os.makedirs(upload_path)
-                file_name = f'{name}_{index}.png'
-
-                # 저장
+        # 서버에 스토어 아이디에 해당하는 폴더 유무 확인 후 생성
+        if not os.path.exists(upload_path):
+            os.makedirs(upload_path)   
+        menu = select_menu(menu_id)[0]
+        db_image_list = menu.image.split(', ') if getattr(menu, 'image', None) else []
+        # 이미지 저장하기
+        for index, menu_name in enumerate(json_data['image']):
+            file = request.files.get(menu_name)
+            menu_num = menu_name[9:]
+            file_name = f'{name}_{menu_num}.png'
+            db_image_path = '/' + upload_path.replace('app/', '') + '/' + file_name
+            db_image_list = [item for item in db_image_list if item != db_image_path]
+            if file is None: # 변경된 파일이 없음
+                images.append(db_image_path)
+            else: # 변경된 파일이 있음
+                image_path = os.path.join(upload_path, file_name)
+                if os.path.exists(image_path): # 파일 존재 여부 확인 및 삭제
+                    os.remove(image_path)
                 file.save(os.path.join(upload_path, file_name))
-
-                # 디비에 저장할 이미지 경로
-                images.append(upload_path + file_name)
-
+                images.append(db_image_path)
+        for db_image in db_image_list: # 삭제된 이미지 삭제
+            if os.path.exists('app' + db_image): 
+                os.remove('app' + db_image)
         # 'image' 키의 값을 리스트에서 문자열로 변환
         images_as_string = ', '.join(images)
 
@@ -457,6 +441,18 @@ def set_menu():
         if menu_yn == True:
             # 삭제 진행
             is_delete_menu = delete_menu(menu_id)
+
+            import shutil
+            # 서버에 스토어 아이디에 해당하는 폴더 유무 확인 후 있으면 폴더 삭제
+            store_id = current_user.id
+            UPLOAD_FOLDER = 'app/static/images/store_'
+            upload_path = f'{UPLOAD_FOLDER}{store_id}/menu_{menu_id}'
+            if os.path.exists(upload_path):
+                try:
+                    shutil.rmtree(upload_path)
+                    print('폴더 삭제 완료')
+                except Exception as e:
+                    print(f'폴더 삭제 오류: {str(e)}')
             if is_delete_menu == True:
                 return jsonify({'message': '메뉴가 성공적으로 삭제되었습니다.', 'code': 200}), 200
             else:
