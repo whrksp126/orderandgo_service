@@ -1,13 +1,13 @@
-const socket = io.connect('http://' + document.domain + ':' + location.port); 
-socket.emit('pos_login', {user_type: 'pos'}, (response) => {
-  // alert(response.msg)
-});
+// const socket = io.connect('http://' + document.domain + ':' + location.port); 
+// socket.emit('pos_login', {user_type: 'pos'}, (response) => {
+//   // alert(response.msg)
+// });
 
-socket.on('update_pos', function(data) {
-  // 받은 주문 정보로 포스기 UI 업데이트
-  console.log('새로운 주문 업데이트:', data);
-  // 필요한 UI 업데이트 로직
-});
+// socket.on('update_pos', function(data) {
+//   // 받은 주문 정보로 포스기 UI 업데이트
+//   console.log('새로운 주문 업데이트:', data);
+//   // 필요한 UI 업데이트 로직
+// });
 
 let tableData;
 let cachingData = null;

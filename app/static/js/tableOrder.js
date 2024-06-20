@@ -1,7 +1,7 @@
-const socket = io.connect('http://' + document.domain + ':' + location.port); 
-socket.emit('table_order_login', {user_type: 'table_order'}, (response) => {
-  alert(response.msg)
-});
+// const socket = io.connect('http://' + document.domain + ':' + location.port); 
+// socket.emit('table_order_login', {user_type: 'table_order'}, (response) => {
+//   alert(response.msg)
+// });
 
 const STORE = {
   table_list : null,
