@@ -3,39 +3,44 @@
   height: calc(100vh - 40px);
   background: #F5F5F5;
 }
-.store_product main nav{
+
+.store_product main nav {
   width: 250px;
   background: #FFF;
   box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.15);
 }
-.store_product main nav ul{
+
+.store_product main nav ul {
   color: #000;
   font-size: 18px;
   font-weight: 700;
 }
-.store_product main nav ul li{
+
+.store_product main nav ul li {
   padding: 20px;
   line-height: 1;
 }
-.store_product main nav ul li.active{
+
+.store_product main nav ul li.active {
   background: #F3FAFA;
   color: #1FAA9C;
 }
+
 .store_product section {
   flex: 1;
   height: initial;
-  padding: 0 20px;
   background: none;
   border-bottom: none;
 }
+
 .store_product section ul {
   flex-flow: column;
   align-items: start;
   height: initial;
-  gap: 0;
+  gap: 10px;
 }
 
-.store_product section ul li{
+.store_product section ul li {
   display: flex;
   align-items: center;
   gap: 20px;
@@ -48,6 +53,7 @@
   font-size: 16px;
   font-weight: 700;
 }
+
 .store_product section ul li a {
   display: flex;
   align-items: center;
@@ -60,45 +66,52 @@
   font-size: 14px;
   font-weight: 600;
 }
+
 .store_product section ul li a.disabled {
   visibility: hidden;
   opacity: 0;
 }
+
 .store_product section ul li a i {
   font-size: 24px;
 }
+
 main {
   display: flex;
   height: calc(100vh - 40px - 60px);
   background: #F5F5F5;
 }
+
 section {
   width: 100%;
   height: 60px;
   padding: 0 20px;
   background: #FFF;
   border-bottom: 1px solid #CCC;
-  
+
 }
 
-section ul{
+section ul {
   display: flex;
   align-items: center;
   gap: 20px;
   height: 100%;
 }
-section ul li{
+
+section ul li {
   display: flex;
   align-items: center;
   gap: 10px;
   flex: 1;
 }
+
 section ul li.right {
   gap: 20px;
   flex: 2;
   width: 100%;
 }
-section ul li.right > div{
+
+section ul li.right>div {
   display: flex;
   align-items: center;
   flex: 1;
@@ -106,23 +119,28 @@ section ul li.right > div{
   width: 100%;
 }
 
-section ul li.right > div button{
+section ul li.right>div button {
   flex: 1;
 }
-section ul li.right > div .search_box{
+
+section ul li.right>div .search_box {
   flex: 2.7;
 }
-section ul li h2{
+
+section ul li h2 {
   font-size: 14px;
   font-weight: 700;
 }
-section ul li > button {
-  height:37px;
+
+section ul li>button {
+  height: 37px;
 }
+
 section ul li .dropdown-box {
   position: relative;
   flex: 1;
 }
+
 section ul li .dropdown-box .dropdown-list {
   top: 110%;
   display: flex;
@@ -134,13 +152,15 @@ section ul li .dropdown-box .dropdown-list {
   border-radius: 6px;
   transition: all .4s;
 }
+
 section ul li .dropdown-box .dropdown-list li {
   width: 100%;
   max-height: 37px;
   padding: 12px;
 }
+
 section ul li .input_box {
-  display: flex;    
+  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
@@ -149,6 +169,7 @@ section ul li .input_box {
   padding: 12px;
 
 }
+
 section ul li .submit_btn {
   width: 60px;
   padding: 10px;
@@ -163,20 +184,20 @@ section ul li .submit_btn {
 /* 매장 메뉴 관리 페이지 */
 
 .set_menu_product section ul li button,
-.set_menu_product section ul li input{
+.set_menu_product section ul li input {
   gap: 10px;
   height: 37px;
   font-size: 14px;
 }
+
 .set_menu_product main {
   gap: 20px;
   padding: 20px;
   justify-content: space-between;
 }
-.set_menu_product main.open_aside{
-  
-}
-.set_menu_product main > * {
+
+
+.set_menu_product main>* {
   position: relative;
   padding: 20px;
   border-radius: 10px;
@@ -192,17 +213,20 @@ section ul li .submit_btn {
   flex: 1;
   width: 100%;
 }
-.set_menu_product main article .article_top{
+
+.set_menu_product main article .article_top {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
-.set_menu_product main article .article_top .buttons{
+
+.set_menu_product main article .article_top .buttons {
   display: flex;
   align-items: center;
   gap: 10px;
 }
-.set_menu_product main article .article_top .buttons button{
+
+.set_menu_product main article .article_top .buttons button {
   padding: 8px 15px;
   border-radius: 5px;
   border: 1px solid #111;
@@ -210,14 +234,17 @@ section ul li .submit_btn {
   font-size: 14px;
   font-weight: 700;
 }
+
 .set_menu_product main article .article_top .buttons button.delete_btn {
   border: 1px solid #F43E25;
   color: #F43E25;
 }
+
 .set_menu_product main article .article_top .buttons button.add_btn {
   border: 1px solid #1FAA9C;
   color: #1FAA9C;
 }
+
 .set_menu_product main article .article_bottom {
   position: relative;
   flex: 1;
@@ -228,6 +255,7 @@ section ul li .submit_btn {
   overflow: hidden;
   overflow-x: auto;
 }
+
 .set_menu_product main article .article_bottom ul {
   position: relative;
   min-width: 630px;
@@ -235,15 +263,18 @@ section ul li .submit_btn {
   text-align: center;
   overflow: auto;
 }
-.set_menu_product main article .article_bottom ul li{
+
+.set_menu_product main article .article_bottom ul li {
   display: flex;
   flex: 1;
   border-bottom: 1px solid #ccc;
 }
-.set_menu_product main article .article_bottom ul li.active{
-  background: #F3FAFA; 
+
+.set_menu_product main article .article_bottom ul li.active {
+  background: #F3FAFA;
 }
-.set_menu_product main article .article_bottom ul li:first-child{
+
+.set_menu_product main article .article_bottom ul li:first-child {
   position: sticky;
   top: 0;
   left: 0;
@@ -252,34 +283,41 @@ section ul li .submit_btn {
   border-bottom: 1px solid #000;
   font-weight: 700;
 }
-.set_menu_product main article .article_bottom ul li:first-child div{
+
+.set_menu_product main article .article_bottom ul li:first-child div {
   justify-content: center;
 }
-.set_menu_product main article .article_bottom ul li:last-child{
+
+.set_menu_product main article .article_bottom ul li:last-child {
   border-bottom: none;
   box-shadow: 0 0px 0 1px #ccc;
 }
-.set_menu_product main article .article_bottom ul li > div{
+
+.set_menu_product main article .article_bottom ul li>div {
   min-height: 34px;
 }
-.set_menu_product main article .article_bottom ul li div{
+
+.set_menu_product main article .article_bottom ul li div {
   padding: 5px 10px;
   display: flex;
   align-items: center;
   justify-content: left;
 }
-.custom-checkbox{
+
+.custom-checkbox {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  user-select: none; /* 텍스트 선택 방지 */
+  user-select: none;
+  /* 텍스트 선택 방지 */
 }
 
 .custom-checkbox input[type="checkbox"] {
   visibility: hidden;
 }
+
 .custom-checkbox .checkmark {
   position: absolute;
   top: 0;
@@ -288,12 +326,14 @@ section ul li .submit_btn {
   width: 13.5px;
   border: 1px solid #000;
   border-radius: 3px;
-  background-color: rgba(0,0,0,0); /* 체크박스 배경색 */
+  background-color: rgba(0, 0, 0, 0);
+  /* 체크박스 배경색 */
 }
 
 /* 체크박스에 체크했을 때의 스타일 */
-.custom-checkbox input:checked ~ .checkmark {
-  background-color: #1FAA9C; /* 체크했을 때의 배경색 */
+.custom-checkbox input:checked~.checkmark {
+  background-color: #1FAA9C;
+  /* 체크했을 때의 배경색 */
   border: 1px solid #1FAA9C;
 }
 
@@ -305,7 +345,7 @@ section ul li .submit_btn {
 }
 
 /* 체크했을 때 체크 표시 보이기 */
-.custom-checkbox input:checked ~ .checkmark:after {
+.custom-checkbox input:checked~.checkmark:after {
   display: block;
 }
 
@@ -323,43 +363,76 @@ section ul li .submit_btn {
 }
 
 
-.set_menu_product main article .article_bottom ul li div:not(:first-child){
+.set_menu_product main article .article_bottom ul li div:not(:first-child) {
   border-left: 1px solid #ccc;
 }
 
-.set_menu_product main article .article_bottom ul li div:nth-child(2){
+.set_menu_product main article .article_bottom ul li div:nth-child(2) {
   flex: .5;
 }
-.set_menu_product main article .article_bottom ul li div:nth-child(3){
+
+.set_menu_product main article .article_bottom ul li div:nth-child(3) {
   flex: .5;
 }
-.set_menu_product main article .article_bottom ul li div:nth-child(4){
+
+.set_menu_product main article .article_bottom ul li div:nth-child(4) {
   flex: .7;
 }
-.set_menu_product main article .article_bottom ul li:not(:first-child) div:nth-child(4){
+
+.set_menu_product main article .article_bottom ul li:not(:first-child) div:nth-child(4) {
   display: flex;
   align-items: center;
   gap: 5px;
   text-align: start;
 }
-.set_menu_product main article .article_bottom ul li:not(:first-child) div:nth-child(4) .is_soldout{
+
+.set_menu_product main article .article_bottom ul li:not(:first-child) div:nth-child(4) .is_soldout {
   width: 8px;
   height: 8px;
   padding: 0;
   border-radius: 50%;
   background: #07E044;
 }
-.set_menu_product main article .article_bottom ul li:not(:first-child) div:nth-child(4) .is_soldout.true{
+
+.set_menu_product main article .article_bottom ul li:not(:first-child) div:nth-child(4) .is_soldout.true {
   background: #F43E25;
 }
-.set_menu_product main article .article_bottom ul li div:nth-child(5){
+
+.set_menu_product main article .article_bottom ul li div:nth-child(5) {
   text-align: start;
   flex: 1;
 }
-.set_menu_product main article .article_bottom ul li div:nth-child(6){
+
+.set_menu_product main article .article_bottom ul li.table_loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  height: 100%;
+  color: #999;
+}
+
+.set_menu_product main article .article_bottom ul li.table_loading i {
+  font-size: 40px;
+  animation: rotate_loading 1s linear infinite;
+}
+
+@keyframes rotate_loading {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.set_menu_product main article .article_bottom ul li div:nth-child(6) {
   flex: .3;
 }
-.set_menu_product main article .article_bottom ul li:not(:first-child) div:nth-child(6){
+
+.set_menu_product main article .article_bottom ul li:not(:first-child) div:nth-child(6) {
   justify-content: right;
 }
 
@@ -370,9 +443,10 @@ section ul li .submit_btn {
   gap: 20px;
 
   width: 300px;
-  
+
 }
-.set_menu_product main aside .responsive_btn{
+
+.set_menu_product main aside .responsive_btn {
   position: absolute;
   top: 50%;
   left: 0;
@@ -395,7 +469,8 @@ section ul li .submit_btn {
   color: #ccc;
   transition: all .4s;
 }
-.set_menu_product main aside .top .main_img{
+
+.set_menu_product main aside .top .main_img {
   position: relative;
   width: 200px;
   height: 200px;
@@ -407,7 +482,7 @@ section ul li .submit_btn {
   transition: all .4s;
 }
 
-.set_menu_product main aside .top .main_img label{
+.set_menu_product main aside .top .main_img label {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -415,7 +490,8 @@ section ul li .submit_btn {
   height: 100%;
   font-size: 30px;
 }
-.set_menu_product main aside .top .main_img img{
+
+.set_menu_product main aside .top .main_img img {
   position: absolute;
   top: 0;
   left: 0;
@@ -424,6 +500,7 @@ section ul li .submit_btn {
   height: 100%;
   object-fit: cover;
 }
+
 .set_menu_product main aside .top .main_img .delete_btn {
   position: absolute;
   top: 10px;
@@ -435,37 +512,63 @@ section ul li .submit_btn {
   background: #fff;
   color: red;
 }
-.set_menu_product main aside .top .main_img.active img{
+
+.set_menu_product main aside .top .main_img.active img {
   display: block;
 }
-.set_menu_product main aside .top .main_img.active .delete_btn{
-  display: flex;  
+
+.set_menu_product main aside .top .main_img.active label {
+  display: none;
 }
+
+.set_menu_product main aside .top .main_img.active .delete_btn {
+  display: flex;
+}
+
+.set_menu_product main aside .top .main_img.drag_over,
+.set_menu_product main aside .top .imgs>.img_box.drag_over {
+  border-color: #1FAA9C;
+  border-style: solid;
+  background-color: rgba(31, 170, 156, 0.05);
+}
+
+.set_menu_product main aside .top .imgs>.img_box.active img {
+  display: block;
+}
+
+.set_menu_product main aside .top .imgs>.img_box.active label {
+  display: none;
+}
+
 .set_menu_product main aside .top .imgs {
   display: flex;
   flex-flow: column;
-  justify-content:space-between;
+  justify-content: space-between;
   gap: 10px;
   max-height: 200px;
   overflow: hidden;
   transition: all .4s;
 }
-.set_menu_product main aside .top .imgs > .img_box {
+
+.set_menu_product main aside .top .imgs>.img_box {
   position: relative;
+  width: 42px;
+  height: 42px;
   border-radius: 5px;
   border: 1px dashed #CCC;
   overflow: hidden;
 }
-.set_menu_product main aside .top .imgs > .img_box label {
+
+.set_menu_product main aside .top .imgs>.img_box label {
   display: flex;
   align-items: center;
-  justify-content:center;
-  width: 40px;
-  height: 40px;
-  padding: 12px;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
   transition: all .4s;
 }
-.set_menu_product main aside .top .imgs > .img_box img {
+
+.set_menu_product main aside .top .imgs>.img_box img {
   position: absolute;
   top: 0;
   left: 0;
@@ -474,29 +577,92 @@ section ul li .submit_btn {
   height: 100%;
   object-fit: cover;
 }
-.set_menu_product main aside .top .imgs > .img_box.active img {
-  display: block;
+
+.set_menu_product main aside .top .imgs>.img_box .delete_btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: none;
+  padding: 2px;
+  border: 1px solid #ccc;
+  border-radius: 50%;
+  background: #fff;
+  color: red;
+  font-size: 10px;
 }
+
+.set_menu_product main aside .top .imgs>.img_box.active .delete_btn {
+  display: flex;
+}
+
 .set_menu_product main aside .middle {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  overflow-y: auto;
+}
+
+.set_menu_product main aside .middle .row {
   display: flex;
   flex-flow: column;
-  gap: 15px;
-  height: calc(100% - 200px - 40px - 46px);
-  overflow: scroll;
-  transition: all .4s;
+  gap: 20px;
 }
-.set_menu_product main aside .middle > div {
-  display: flex;
-  flex-flow: column;
-  gap: 15px;
+
+.set_menu_product main aside .middle .row label {
+  width: 100%;
 }
-.set_menu_product main aside .middle label {
+
+.set_menu_product main aside .middle .info_row .name_label {
   position: relative;
-  display: flex;
-  flex-flow: column;
-  gap: 10px;
-  transition: all .4s;
+  flex: 1;
 }
+
+.set_menu_product main aside .middle .info_row .price_label {
+  flex: 1;
+}
+
+.set_menu_product main aside .middle .detail_row .category_side {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.set_menu_product main aside .middle .detail_row .category_side select {
+  width: 100%;
+  height: 42px;
+  /* input 높이와 통일 */
+  padding: 0 10px;
+  border: 1px solid #CCC;
+  border-radius: 5px;
+}
+
+.set_menu_product main aside .middle .detail_row .description_side {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.set_menu_product main aside .middle .detail_row .description_side label {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.set_menu_product main aside .middle .detail_row .description_side label textarea {
+  flex: 1;
+  /* 부모 높이에 따라 채워짐 */
+  height: auto;
+  min-height: 98px;
+  /* 최소 높이 보장 */
+  resize: none;
+}
+
+.set_menu_product main aside .middle .option_row {
+  flex-direction: column;
+}
+
 .set_menu_product main aside .middle label .is_soldout {
   position: absolute;
   top: 0;
@@ -507,7 +673,8 @@ section ul li .submit_btn {
   font-size: 12px;
   color: #666;
 }
-.set_menu_product main aside .middle label .is_soldout button{
+
+.set_menu_product main aside .middle label .is_soldout button {
   width: 40px;
   height: 20px;
   padding: 2px;
@@ -515,58 +682,49 @@ section ul li .submit_btn {
   background: #07E044;
   transition: all .25s;
 }
-.set_menu_product main aside .middle label .is_soldout button[data-soldout="true"]{
+
+.set_menu_product main aside .middle label .is_soldout button[data-soldout="true"] {
   background: #F43E25;
 }
-.set_menu_product main aside .middle label .is_soldout button .ball{
+
+.set_menu_product main aside .middle label .is_soldout button .ball {
   width: 16px;
   height: 16px;
   border-radius: 50%;
   background: #fff;
   transition: all .25s;
 }
+
 .set_menu_product main aside .middle label .is_soldout button[data-soldout="true"] .ball {
   transform: translateX(20px);
 }
+
 .set_menu_product main aside .middle label .is_soldout input[type="checkbox"] {
   display: none;
 }
-.set_menu_product main aside .middle label .flex_box{
+
+.set_menu_product main aside .middle label .flex_box {
   display: flex;
-  /* flex-flow: column; */
+  flex-flow: column;
   gap: 10px;
 }
-.set_menu_product main aside .middle label .flex_box .dropdown-box{
-  flex: 1;
-  position: relative;
-}
-.set_menu_product main aside .middle label .flex_box .dropdown-box .btn-dropdown{
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  text-align: start;
-  gap: 10px;
-  width: 100%;
-  border: 1px solid #ccc;
-}
-.set_menu_product main aside .middle label .flex_box .dropdown-box .dropdown-list {
-  top: 110%;
-}
-.set_menu_product main aside .middle label .flex_box .dropdown-box .dropdown-list li{
-  padding: 12px;
-}
-.set_menu_product main aside .middle label .flex_box .delete_btn{
+
+/* Dropdown List 스타일 제거 (Native Select 사용으로 불필요) */
+
+.set_menu_product main aside .middle label .flex_box .delete_btn {
   padding: 5px 10px;
   border-radius: 5px;
   border: 1px solid #F43E25;
-  color:#F43E25;;
+  color: #F43E25;
+  ;
 }
+
 .set_menu_product main aside .middle label .flex_box .drag_btn {
-  height: 100%;
   display: flex;
   align-items: center;
   color: #CCC;
 }
+
 .set_menu_product main aside .middle label .add_option_btn {
   display: flex;
   align-items: center;
@@ -574,16 +732,19 @@ section ul li .submit_btn {
   gap: 10px;
   padding: 10px 12px;
 }
-.set_menu_product main aside .middle label .add_option_btn span{
+
+.set_menu_product main aside .middle label .add_option_btn span {
   color: #000;
   font-size: 14px;
   font-weight: 700;
 }
-.set_menu_product main aside .middle label > span{
+
+.set_menu_product main aside .middle label>span {
   width: 100px;
   font-size: 16px;
   font-weight: 700;
 }
+
 .set_menu_product main aside .middle label input,
 .set_menu_product main aside .middle label textarea,
 .set_menu_product main aside .middle label select {
@@ -593,101 +754,335 @@ section ul li .submit_btn {
   flex: 1;
   transition: all .4s;
 }
-.set_menu_product main aside .middle label input{
+
+.set_menu_product main aside .middle label input {
   flex: 1;
   width: 100%;
-  height:40px;
+  height: 40px;
   transition: all .4s;
 }
-.set_menu_product main aside .middle label .menu_options {
+
+.set_menu_options .option_header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.set_menu_options .option_header span {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.set_menu_options .add_group_btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 5px;
+  border: 1px solid #1FAA9C;
+  color: #1FAA9C;
+  font-size: 13px;
+  background: #FFF;
+  font-weight: 700;
+}
+
+.menu_option_groups {
   display: flex;
   flex-flow: column;
-  gap: 10px;
 }
+
+.option_group {
+  padding: 20px 0;
+  border-bottom: 1px solid #EEE;
+}
+
+.option_group .group_header .is_show_price_toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  color: #666;
+  margin-right: 10px;
+}
+
+.option_group .group_header .is_show_price_toggle button {
+  position: relative;
+  width: 40px;
+  height: 20px;
+  padding: 2px;
+  border-radius: 10px;
+  background: #ccc;
+  transition: all .25s;
+  border: none;
+}
+
+.option_group .group_header .is_show_price_toggle button[data-active="true"] {
+  background: #1FAA9C;
+}
+
+.option_group .group_header .is_show_price_toggle button .ball {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: all .25s;
+  transform: translateX(0);
+}
+
+.option_group .group_header .is_show_price_toggle button[data-active="true"] .ball {
+  transform: translateX(20px);
+}
+
+.option_group .group_header .is_show_price_toggle input[type="checkbox"] {
+  display: none;
+}
+
+.option_group:last-child {
+  border-bottom: none;
+}
+
+.option_group .group_header {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.option_group .group_header input {
+  flex: 2 !important;
+  height: 38px !important;
+  border: 1px solid #CCC !important;
+  border-radius: 5px !important;
+  padding: 0 10px !important;
+}
+
+.option_group .group_header input:focus {
+  border-color: #1FAA9C !important;
+}
+
+.option_group .group_header select {
+  flex: 1.2;
+  height: 38px;
+  border: 1px solid #DDD;
+  border-radius: 5px;
+  font-size: 13px;
+  padding: 0 8px;
+  background: #FDFDFD;
+}
+
+.option_group .delete_group_btn {
+  padding: 0 5px;
+  color: #CCC;
+  font-size: 22px;
+  transition: color .2s;
+}
+
+.option_group .delete_group_btn:hover {
+  color: #F43E25;
+}
+
+.option_group .group_header .group_drag_btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  color: #CCC;
+  font-size: 20px;
+}
+
+.option_group .menu_options {
+  display: flex;
+  gap: 10px;
+  justify-content: start;
+  margin-right: -20px;
+  margin-bottom: 15px;
+  overflow-x: auto;
+  width: 100%;
+  padding-bottom: 10px;
+}
+
+/* 옵션 아이템 카드 스타일 */
+.option_item {
+  min-width: 140px;
+  width: 140px;
+  padding: 0;
+  border: none;
+  background: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.option_item .option_top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.option_item .option_top .drag_btn {
+  display: flex;
+  align-items: center;
+  color: #CCC;
+  cursor: grab;
+}
+
+.option_item .option_top .drag_btn:active {
+  cursor: grabbing;
+}
+
+.option_item .option_top .delete_btn {
+  padding: 4px;
+  border-radius: 4px;
+  border: none;
+  color: #CCC;
+  background: transparent;
+  font-size: 16px;
+  transition: all .2s;
+}
+
+.option_item .option_top .delete_btn:hover {
+  border-color: #F43E25;
+  color: #F43E25;
+}
+
+.option_item .option_inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.option_item .option_inputs input {
+  width: 100%;
+  height: 30px !important;
+  /* 작게 설정 */
+  font-size: 13px !important;
+  padding: 5px 8px !important;
+  background: #FFF;
+}
+
+
+.option_group .add_option_btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 5px;
+  border: 1px solid #1FAA9C;
+  background: #FFF;
+  color: #1FAA9C;
+  font-size: 18px;
+  transition: all .2s;
+}
+
+.option_group .add_option_btn:hover {
+  background: #1FAA9C;
+  color: #FFF;
+}
+
 .set_menu_product main aside .bottom {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 15px;
 }
-.set_menu_product main aside .bottom button{
+
+.set_menu_product main aside .bottom button {
   flex: 1;
   padding: 12px 10px;
   border-radius: 5px;
   font-weight: 700;
 }
-.set_menu_product main aside .bottom button.delete{
+
+.set_menu_product main aside .bottom button.delete {
   border: 1px solid #F43E25;
   color: #F43E25;
 }
-.set_menu_product main aside .bottom button.save{
+
+.set_menu_product main aside .bottom button.save {
   background: #1FAA9C;
   color: #fff;
 }
+
 .set_menu_product main.open_aside article {
   flex: initial;
   width: 320px;
 }
+
 .set_menu_product main.open_aside aside {
-  max-width: initial; 
+  max-width: initial;
   min-width: 300px;
   flex: 1;
 }
-.set_menu_product main aside .ph-caret-left{
+
+.set_menu_product main aside .ph-caret-left {
   display: block;
 }
-.set_menu_product main aside .ph-caret-right{
+
+.set_menu_product main aside .ph-caret-right {
   display: none;
 }
-.set_menu_product main.open_aside aside .ph-caret-left{
+
+.set_menu_product main.open_aside aside .ph-caret-left {
   display: none;
 }
-.set_menu_product main.open_aside aside .ph-caret-right{
+
+.set_menu_product main.open_aside aside .ph-caret-right {
   display: block;
 }
+
 .set_menu_product main.open_aside aside .top {
   justify-content: start;
   gap: 0;
   margin-right: -20px;
   overflow-x: scroll;
 }
+
 .set_menu_product main.open_aside aside .top .main_img {
   width: 0;
   border: none;
   visibility: hidden;
   opacity: 0;
 }
+
 .set_menu_product main.open_aside aside .top .imgs {
-  flex-flow: row;    
+  flex-flow: row;
   padding-right: 20px;
   gap: 15px;
 }
-.set_menu_product main.open_aside aside .top .imgs label{
+
+.set_menu_product main.open_aside aside .top .imgs .img_box {
   width: 200px;
   height: 200px;
+}
+
+.set_menu_product main.open_aside aside .top .imgs label {
+  width: 100%;
+  height: 100%;
   padding: 0;
   font-size: 30px;
 }
+
 .set_menu_product main.open_aside aside .middle {
-  flex-flow: initial;
   gap: 20px;
 }
-.set_menu_product main.open_aside aside .middle > div {
+
+.set_menu_product main.open_aside aside .middle>div {
   display: flex;
-  flex-flow: column;
+  flex-flow: row;
   gap: 15px;
-  flex: 1;
 }
-.set_menu_product main.open_aside aside .middle label{
-}
+
+/* .set_menu_product main.open_aside aside .middle label {} */
+
 .set_menu_product main.open_aside aside .middle label input,
 .set_menu_product main.open_aside aside .middle label textarea,
-.set_menu_product main.open_aside aside .middle label select{
+.set_menu_product main.open_aside aside .middle label select {
   flex: 1;
 }
-.set_menu_product main.open_aside aside .middle label .flex_box {
-  flex-flow: initial;
-}
+
+/* .set_menu_product main.open_aside aside .middle label .flex_box {} */
+
 .set_menu_product main.open_aside aside .middle label .flex_box .dropdown-box .btn-dropdown {
   gap: initial;
 }
@@ -698,18 +1093,139 @@ section ul li .submit_btn {
 
 
 /***************************/
+
+/*************************/
+/* 직원 호출 관리용 그리드 디자인 */
+
+.staff-call-mgmt main article {
+  background: #fff;
+  padding: 30px;
+}
+
+.staff-call-mgmt .article_bottom {
+  height: calc(100% - 60px) !important;
+}
+
+.staff-call-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  padding: 10px;
+}
+
+.staff-call-card {
+  background: #fff;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 2px solid transparent;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s;
+  position: relative;
+}
+
+.staff-call-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.staff-call-card.active {
+  border-color: #FF5A5F;
+  background: #FFF9F9;
+}
+
+.staff-call-card i {
+  font-size: 40px;
+  color: #FF5A5F;
+  margin-bottom: 12px;
+}
+
+.staff-call-card .name {
+  font-weight: 700;
+  font-size: 18px;
+  color: #333;
+}
+
+.staff-call-card .badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  color: #888;
+}
+
+.staff-call-card.empty {
+  background: rgba(0, 0, 0, 0.03);
+  border: 2px dashed #ccc;
+  box-shadow: none;
+}
+
+.staff-call-card.empty:hover {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: #999;
+  transform: none;
+}
+
+.staff-call-card.empty i {
+  color: #ccc;
+  font-size: 30px;
+}
+
+/* 수량 조절 토글 버튼 */
+.use-quantity-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.use-quantity-toggle button {
+  width: 44px;
+  height: 24px;
+  background: #ddd;
+  border-radius: 12px;
+  position: relative;
+  transition: 0.3s;
+  border: none;
+  cursor: pointer;
+}
+
+.use-quantity-toggle button[data-active="true"] {
+  background: #FF5A5F !important;
+}
+
+.use-quantity-toggle button .ball {
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  transition: 0.3s;
+}
+
+.use-quantity-toggle button[data-active="true"] .ball {
+  left: 23px;
+}
+
 /* 매장 테이블 관리 페이지 */
 .set_table_position main {
   display: initial;
   height: auto;
   background: initial;
 }
-.set_table_position main section{
+
+.set_table_position main section {
   position: initial;
   overflow: initial;
 }
 
-.set_table_position section{
+.set_table_position section {
   width: auto;
   height: auto;
   padding: initial;
@@ -717,6 +1233,7 @@ section ul li .submit_btn {
   border-bottom: initial;
 
 }
+
 .set_table_position main section nav {
   display: flex;
   padding: 0px 20px;
@@ -725,12 +1242,14 @@ section ul li .submit_btn {
   border-bottom: 1px solid #CCC;
   background: #FFF;
 }
-.set_table_position main section nav ul{
+
+.set_table_position main section nav ul {
   display: flex;
   align-items: flex-start;
   gap: 15px;
 }
-.set_table_position main section nav ul li button{
+
+.set_table_position main section nav ul li button {
   padding: 16px 2px;
   height: 50px;
   color: #CCC;
@@ -738,23 +1257,27 @@ section ul li .submit_btn {
   font-weight: 700;
   letter-spacing: -0.3px;
 }
-.set_table_position main section nav ul li[data-state="active"] button{
+
+.set_table_position main section nav ul li[data-state="active"] button {
   color: var(--main, #1FAA9C);
   border-bottom: 2px solid var(--main, #1FAA9C);
   margin-bottom: -1px;
 }
+
 .set_table_position main section nav .btn_set {
   color: #CCC;
   font-size: 20px;
 }
 
-.set_table_position main section article{
+.set_table_position main section article {
   background: rgba(0, 0, 0, 0.50);
 }
-.set_table_position main section article .items{
+
+.set_table_position main section article .items {
   height: 100%;
 }
-.set_table_position main section article .item{
+
+.set_table_position main section article .item {
   position: relative;
   display: flex;
   align-items: start;
@@ -765,24 +1288,30 @@ section ul li .submit_btn {
   border: 1px dashed #CCC;
   background: none;
 }
-.set_table_position main section article .item h2{
+
+.set_table_position main section article .item h2 {
   color: #000;
   font-size: 16px;
   font-weight: 700;
 }
+
 .set_table_position main section article .item input {
   display: none;
 }
-.set_table_position main section article .item[data-has="true"]{
+
+.set_table_position main section article .item[data-has="true"] {
   border: 1px solid #CCC;
   background: #FFF;
 }
+
 .set_table_position main section article .item .active {
   display: none;
 }
-.set_table_position main section article .item[data-active="true"]{
+
+.set_table_position main section article .item[data-active="true"] {
   border: 1px dashed #1FAA9C;
 }
+
 .set_table_position main section article .item[data-active="true"] .active {
   position: absolute;
   top: 0;
@@ -792,6 +1321,7 @@ section ul li .submit_btn {
   background: #1FAA9C33;
   display: block;
 }
+
 .set_table_position main section article .item[data-active="true"] .active i {
   position: absolute;
   top: 50%;
@@ -800,26 +1330,96 @@ section ul li .submit_btn {
   font-size: 30px;
   color: #1FAA9C;
 }
+
 .set_table_position main section article .item .icons {
   display: flex;
   gap: 10px;
   align-items: center;
 }
-.set_table_position main section article .item .ph-trash{
+
+.set_table_position main section article .item .ph-trash {
   color: #F43E25;
 }
-.set_table_position main section article .item .ph-pencil{
+
+.set_table_position main section article .item .ph-pencil {
   color: #ccc;
 }
+
 .set_table_position main section article .item .ph-plus {
   position: absolute;
   top: 50%;
   left: 50%;
   font-size: 25px;
   color: #ccc;
-  transform: translate(-50%,-50%);
+  transform: translate(-50%, -50%);
 }
+
 /* 매장 테이블 관리 페이지 */
-/***************************/
+/* Option Price Visibility */
+.option_inputs .price_row {
 
+  /* Option Price Visibility */
+  .option_inputs .price_row {
+    margin-bottom: 5px;
+  }
 
+  /* Generic Show Price Row Styles (applies to both group header and option inputs) */
+  .show_price_row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 5px;
+  }
+
+  .show_price_row span {
+    font-size: 12px;
+    color: #666;
+    font-weight: 700;
+  }
+
+  .show_price_row .toggle_box {
+    display: flex;
+    align-items: center;
+  }
+
+  .show_price_row .toggle_box button {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    border-radius: 10px;
+    background: #CCC;
+    transition: all .25s;
+    border: none;
+    padding: 2px;
+  }
+
+  .show_price_row .toggle_box button[data-active="true"] {
+    background: #1FAA9C;
+  }
+
+  .show_price_row .toggle_box button .ball {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    transition: all .25s;
+    transform: translateX(0);
+  }
+
+  .show_price_row .toggle_box button[data-active="true"] .ball {
+    transform: translateX(16px);
+  }
+
+  /* Specific adjustments for group header */
+  .group_header .show_price_row {
+    margin-left: auto;
+    /* Push to right if needed, though flex parent handles it */
+    margin-right: 10px;
+    gap: 8px;
+  }
+
+  .group_header .show_price_row span {
+    font-size: 13px;
+    /* Slightly larger in header */
+    white-space: nowrap;
+  }

@@ -10,6 +10,8 @@ from flask_login import login_user, logout_user
 
 from app.models.menu_category import create_main_category, create_sub_category
 from app.models.table import create_table_category
+from app import socketio
+from flask_socketio import emit
 
 
 # TablePaymentList 생성
@@ -179,6 +181,13 @@ def create_payment_database(store_id, data):
                       p['payment_history']['curDutch'] = p['payment_history']['curDutch'] + 1
                 check_table_payment_list.payment_history = json.dumps(p['payment_history'])
                 db.session.commit()
+
+        if is_finished:
+            # 결제 완료 소켓 전송 (테이블 오더용)
+            socketio.emit('payment_finished', {'table_id': table_id}, room=f'table_{store_id}_{table_id}')
+
+            # POS 그룹에도 알림 (필요 시)
+            # socketio.emit('payment_finished_pos', {'table_id': table_id}, room='pos_group')
 
         return make_payment_history(store_id, table_id, paid, is_finished)
     except Exception as e:

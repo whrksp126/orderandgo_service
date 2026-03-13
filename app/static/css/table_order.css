@@ -1,160 +1,1460 @@
-.table_order main {
-  display: initial;
-  height: auto;
-  background: initial;
+:root {
+  --main-color: #1FAA9C;
+  --bg-light: #F5F5F5;
+  --sidebar-bg: #FFFFFF;
+  --cart-bg: #FFFFFF;
+  --text-active: #1FAA9C;
+  --text-dim: #999999;
+  --border-color: #EEEEEE;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --sidebar-width: 240px;
+  --cart-width: 320px;
+  --responsive-padding: clamp(16px, 4vw, 40px);
 }
-.table_order main section{
-  position: initial;
-  overflow: initial;
+
+body.table_order {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  background-color: var(--bg-light);
+  overflow: hidden;
+  height: 100vh;
 }
-.table_order section{
-  width: auto;
-  height: auto;
-  padding: initial;
-  background: initial;
-  border-bottom: initial;
-}
-.table_order main section nav {
+
+#container.order {
   display: flex;
-  padding: 0px 20px;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #CCC;
-  background: #FFF;
+  height: 100vh;
+  width: 100vw;
 }
-.table_order main section nav ul{
+
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-width);
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border-color);
   display: flex;
-  align-items: flex-start;
-  gap: 15px;
-}
-.table_order :not(.order) main section nav ul li button{
-  padding: 16px 2px;
-  height: 50px;
-  color: #CCC;
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: -0.3px;
-}
-.table_order main section nav ul li[data-state="active"] button{
-  color: var(--main, #1FAA9C);
-  border-bottom: 2px solid var(--main, #1FAA9C);
-  margin-bottom: -1px;
-}
-.table_order main section nav .btn_set {
-  color: #CCC;
-  font-size: 20px;
-}
-.table_order main section nav .btn_set {
-  color: #CCC;
-  font-size: 20px;
-}
-.table_order main section article .items{
-  height: 100%;
-}
-.table_order main section article .item[data-has="false"] {
-  background: rgba(0, 0, 0, 0);
-  border: 1px solid rgba(0, 0, 0, 0);
+  flex-direction: column;
+  flex-shrink: 0;
+  z-index: 10;
 }
 
-
-
-
-
-
-
-
-
-.table_order main {
-  display: flex;
+.sidebar .logo {
+  padding: 20px 30px;
 }
-.table_order main > section {
+
+.sidebar nav {
   flex: 1;
+  overflow-y: auto;
 }
-.table_order main section nav{
+
+.sidebar nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar nav li {
+  padding: 0;
+}
+
+.sidebar nav li button {
+  width: 100%;
+  padding: 20px 24px;
+  text-align: left;
+  background: none;
+  border: none;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-left: 4px solid transparent;
+}
+
+.sidebar nav li[data-state="active"] button {
+  color: var(--text-active);
+  background-color: #F3FAFA;
+  border-left-color: var(--text-active);
+}
+
+.sidebar .call-staff {
+  padding: 24px;
+  border-top: 1px solid var(--border-color);
+}
+
+.sidebar .call-staff button {
+  width: 100%;
+  padding: 15px;
+  background-color: #FF5A5F;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0px 20px;
-  gap: 15px;
-  border-bottom: 1px solid #ccc;
-}
-.table_order main section nav.main{
-  border-bottom: 0px;
-}
-.table_order main section nav.sub{
-  background: #F3FAFA;
-  border-bottom: 1px solid #CCC;
+  justify-content: center;
+  gap: 8px;
+  transition: background-color 0.2s;
 }
 
+.sidebar .call-staff button:active {
+  background-color: #E04F54;
+}
 
-.table_order main section nav ul{
+.sidebar-buttons {
+  padding: 0 24px 10px;
   display: flex;
-  gap: 15px;
+  flex-direction: column;
+  gap: 10px;
 }
-.table_order main section nav ul li {
-  color: #CCC;
-  font-size: 15px;
+
+.nav-btn {
+  width: 100%;
+  padding: 15px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
   font-weight: 700;
-  letter-spacing: -0.3px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: #FFF;
+  color: #333;
+  position: relative;
+  transition: all 0.2s;
 }
-.table_order main section nav ul li button {
-  padding: 16px 2px;
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: -0.3px;
+
+.nav-btn:active {
+  background-color: #F9F9F9;
+  transform: scale(0.98);
 }
-.table_order main section nav ul li[data-state="active"] button{
-  color: var(--main, #1FAA9C);
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: -0.3px;
+
+.nav-btn.order-history-btn {
+  border-color: #333;
 }
-.table_order main section nav:not(.sub) ul li[data-state="active"] button{
-  /*border-bottom: 2px solid var(--main, #1FAA9C);*/
+
+.nav-btn.cart-toggle-btn {
+  border-color: var(--main-color);
+  color: var(--main-color);
+}
+
+.nav-btn .badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background-color: #FF5A5F;
+  color: white;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: 800;
+}
+
+/* Main Content Area */
+#container.order main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--bg-light);
+}
+
+#container.order main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--bg-light);
+}
+
+#container.order .menu-grid-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 0 80vh;
+  /* 좌우 패딩 제거 */
+  scroll-behavior: smooth;
+}
+
+.category-section {
+  padding-top: 20px;
+  overflow: visible !important;
+  /* common.css의 section overflow: hidden 해결 */
+}
+
+.category-header {
+  position: -webkit-sticky;
+  /* 사파리 지원 */
+  position: sticky;
+  top: -1px;
+  background-color: var(--bg-light);
+  padding: 20px var(--responsive-padding);
+  margin: 0;
+  z-index: 5;
+  border-bottom: 2px solid var(--border-color);
+  margin-bottom: 30px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.category-header .main-cat {
+  font-size: 20px;
+  font-weight: 700;
+  color: #333;
+}
+
+.category-header .sep {
+  font-size: 16px;
+  color: #CCC;
+  font-weight: 300;
+}
+
+.category-header .sub-cat {
+  font-size: 20px;
+  font-weight: 800;
+  color: #333;
+}
+
+#container.order .menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 60px;
+  padding: 0 var(--responsive-padding);
+}
+
+#container.order .menu-card {
+  background: #FFFFFF;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: transform 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-card:hover {
+  transform: translateY(-4px);
+}
+
+.menu-card .image {
+  width: 100%;
+  aspect-ratio: 4/3;
+  background-color: #F0F0F0;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: relative;
 }
-.table_order main section nav:not(.sub) ul li[data-state="active"] button::after {
-  content: "";
+
+.menu-card .image .menu-hint {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: var(--main, #1FAA9C);
-}
-.table_order main section nav.sub li button {
-  padding: 13px 2px;
-}
-#container.order main section article{
-  height: calc(100vh - (40px + 49px + 42px));
+  right: 12px;
+  bottom: 12px;
+  background: rgba(31, 170, 156, 0.85);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  z-index: 2;
 }
 
-.table_order main > aside {
-  max-width: 284px;
-  width: 100%;
-  border-left: 1px solid #CCCCCC;
+.menu-card .image.no-image::after {
+  content: "이미지 없음";
+  color: #999;
+  font-size: 14px;
+  font-weight: 500;
 }
-.table_order main section > aside{
+
+.menu-card .info {
+  padding: 20px;
+  text-align: center;
+}
+
+.menu-card .info h3 {
+  font-size: 18px;
+  margin: 0 0 8px;
+  color: #333;
+}
+
+.menu-card .info .price {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--main-color);
+}
+
+/* Card Slider Styles */
+.menu-card .image {
+  position: relative;
+  overflow: hidden;
+}
+
+.card-slider-wrapper {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.3s ease;
+}
+
+.card-slide {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+}
+
+.card-slider-btn {
   position: absolute;
-  bottom: 0;
-  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.8);
+  border: none;
+  border-radius: 50%;
+  color: #333;
+  font-size: 16px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  width: 100%;
-  padding: 20px;
-  border-radius: 20px 20px 0px 0px;
-  background: #FFFFFF;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-  visibility: hidden;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s;
+  backdrop-filter: blur(2px);
   opacity: 0;
-  transform: translate(0, 100%);
-  transition: .25s;
 }
-.table_order main section > aside.active{
-  visibility: visible;
+
+/* .menu-card:hover .card-slider-btn {
   opacity: 1;
-  transform: translate(0, 0);
-  z-index: 2;
+} */
+
+.card-slider-btn:hover {
+  background: white;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.card-slider-btn.prev {
+  left: 8px;
+}
+
+.card-slider-btn.next {
+  right: 8px;
+}
+
+.card-slider-btn.hidden {
+  display: none !important;
+}
+
+.card-indicators {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+  z-index: 5;
+}
+
+.card-indicator {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transition: all 0.2s;
+}
+
+.card-indicator.active {
+  width: 12px;
+  border-radius: 3px;
+  background: white;
+}
+
+/* Right Cart Panel (Floating) */
+.cart-panel {
+  position: absolute;
+  top: 0;
+  right: -360px;
+  /* var(--cart-width) + some buffer */
+  width: var(--cart-width);
+  height: 100vh;
+  background: var(--cart-bg);
+  border-left: 1px solid var(--border-color);
+  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  transition: right 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+.cart-panel.active {
+  right: 0;
+}
+
+.panel-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.cart-header,
+.order-header {
+  padding: 24px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.close-panel-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #333;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cart-item-list,
+.order-item-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.history-item {
+  padding: 18px 24px;
+  border-bottom: 1px solid #F5F5F5;
+}
+
+.history-item .top-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.history-item .menu-name {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.history-item .order-time {
+  font-size: 12px;
+  color: #999;
+}
+
+.history-item .options-text {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 6px;
+}
+
+.history-item .price-row {
+  text-align: right;
+  font-weight: 700;
+  color: #333;
+}
+
+.order-footer {
+  padding: 24px;
+  border-top: 1px solid var(--border-color);
+  background: #F9F9F9;
+}
+
+.order-footer .total {
+  display: flex;
+  justify-content: space-between;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.cart-item {
+  padding: 20px 24px;
+  border-bottom: 1px solid #F9F9F9;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cart-item .name-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.cart-item .name {
+  font-weight: 600;
+  font-size: 16px;
+  flex: 1;
+}
+
+.cart-item .delete-btn {
+  color: #CCC;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.cart-item .controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.quantity-selector {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: #F5F5F5;
+  padding: 5px 12px;
+  border-radius: 20px;
+}
+
+.quantity-selector button {
+  background: none;
+  border: none;
+  font-size: 18px;
+  font-weight: 700;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.cart-footer {
+  padding: 24px;
+  border-top: 1px solid var(--border-color);
+  background: #FFF;
+}
+
+.cart-footer .total {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.cart-footer .order-btn {
+  width: 100%;
+  padding: 18px;
+  background-color: var(--main-color);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+/* Option Modal */
+.option-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.option-modal-overlay.active {
+  display: flex;
+}
+
+.option-modal {
+  background: white;
+  width: 90%;
+  max-width: 1000px;
+  height: auto;
+  max-height: 90vh;
+  border-radius: 24px;
+  display: flex;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.option-modal .left-side {
+  width: 50%;
+  flex: 0 0 50%;
+  aspect-ratio: 1 / 1;
+  background-color: #F8F8F8;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-right: 1px solid var(--border-color);
+}
+
+.slider-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slider-wrapper {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.slide.no-image {
+  background-color: #EEE;
+}
+
+.slide.no-image::after {
+  content: "이미지 없음";
+  color: #999;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.slider-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.8);
+  border: none;
+  border-radius: 50%;
+  color: #333;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s;
+  backdrop-filter: blur(4px);
+}
+
+.slider-btn:hover {
+  background: white;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.slider-btn.prev {
+  left: 15px;
+}
+
+.slider-btn.next {
+  right: 15px;
+}
+
+.slider-btn.hidden {
+  display: none;
+}
+
+.slider-indicators {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+}
+
+.indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.2);
+  transition: all 0.3s;
+}
+
+.indicator.active {
+  width: 24px;
+  border-radius: 4px;
+  background: var(--main-color);
+}
+
+.option-modal .right-side {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 30px 40px;
+  overflow-y: auto;
+}
+
+.option-modal .details {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.option-modal h2 {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.option-modal .price {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--main-color);
+  margin-bottom: 20px;
+}
+
+.option-modal .menu-description {
+  font-size: 15px;
+  color: #777;
+  line-height: 1.6;
+  margin-bottom: 30px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.option-group {
+  margin-bottom: 30px;
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.group-header h4 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.required-badge {
+  background: #FF5A5F;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 6px;
+  border-radius: 4px;
+  transform: translateY(-1px);
+}
+
+.group-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.option-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #EEE;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+}
+
+.option-item:active {
+  transform: scale(0.99);
+}
+
+.option-item.active {
+  background: #F3FAFA;
+  border-color: var(--main-color);
+  box-shadow: 0 0 0 1px var(--main-color) inset;
+}
+
+.option-item.quantity-type {
+  justify-content: space-between;
+  cursor: default;
+}
+
+.option-item.quantity-type.active {
+  background: #F3FAFA;
+  border-color: var(--main-color);
+}
+
+.option-item.quantity-type .quantity-selector {
+  background: #F0F0F0;
+}
+
+.check-icon {
+  font-size: 22px;
+  color: #DDD;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+.option-item.active .check-icon {
+  color: var(--main-color);
+}
+
+.option-info {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.option-info .name {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+}
+
+.option-info .price {
+  margin-bottom: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #888;
+}
+
+.option-item.active .option-info .price {
+  color: var(--main-color);
+}
+
+.option-modal .actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.option-modal .actions button {
+  flex: 1;
+  padding: 18px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.option-modal .cancel-btn {
+  background: #F5F5F5;
+  border: none;
+  color: #666;
+}
+
+.option-modal .add-to-cart-btn {
+  background: var(--main-color);
+  border: none;
+  color: #FFF;
+}
+
+/* Premium Toast Notification System (3D Stack) */
+.toast-container {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0;
+  z-index: 2000;
+  pointer-events: none;
+  perspective: 1000px;
+}
+
+.toast {
+  background: rgba(40, 40, 40, 0.95);
+  color: white;
+  padding: 14px 28px;
+  border-radius: 16px;
+  font-weight: 600;
+  font-size: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(12px);
+  margin-top: -45px;
+  /* 카드 겹침 효과 */
+  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+  opacity: 0;
+  transform: translateY(40px) translateZ(-100px) scale(0.8);
+  pointer-events: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+}
+
+/* 활성화 상태 */
+.toast.is-visible {
+  opacity: 1;
+  transform: translateY(0) translateZ(0) scale(1);
+}
+
+/* 사라질 때 효과 */
+.toast.is-leaving {
+  opacity: 0 !important;
+  transform: translateY(-60px) translateZ(-100px) scale(0.8) !important;
+}
+
+/* Common Helpers */
+.hidden {
+  display: none !important;
+}
+
+/* Table Name Label */
+/* Table Info Banner (Sidebar) */
+.table-info-banner {
+  background: var(--main-color);
+  padding: 12px;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.table-info-banner .label {
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.8;
+  letter-spacing: 1px;
+}
+
+.table-info-banner .name {
+  font-size: 18px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Staff Call Modal Specific (Redesign with Styling) */
+.staff-call-modal {
+  width: 90%;
+  max-width: 1100px;
+  height: 85vh !important;
+  max-height: 800px;
+  display: flex !important;
+  flex-direction: row !important;
+  overflow: hidden;
+  border-radius: 24px;
+  background: white;
+  padding: 0 !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+/* Left Side: Grid */
+.staff-call-left {
+  flex: 1;
+  background-color: #FAFAFA;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border-color);
+  overflow: hidden;
+  padding-top: 20px;
+  /* 헤더 제거로 인한 상단 여백 추가 */
+}
+
+.staff-call-grid-container {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+  background: #FAFAFA;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  /* align-content: start; removed to allow stretching */
+}
+
+/* Item Card Styling */
+.staff-call-item {
+  /* aspect-ratio: 1.1 / 1; removed to allow stretching */
+  background: white;
+  border: 1px solid transparent;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+  padding: 20px;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.staff-call-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.staff-call-item:active {
+  transform: scale(0.96);
+}
+
+.staff-call-item.active {
+  background: #F3FAFA;
+  border: 2px solid var(--main-color);
+  box-shadow: 0 8px 16px rgba(31, 170, 156, 0.15);
+}
+
+/* 텍스트만 있는 경우 */
+.staff-call-item .item-text-only {
+  font-size: 22px;
+  font-weight: 700;
+  color: #333;
+  text-align: center;
+  word-break: keep-all;
+  line-height: 1.3;
+}
+
+.staff-call-item.active .item-text-only {
+  color: var(--main-color);
+}
+
+/* 이미지 + 텍스트 */
+.staff-call-item img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  margin-bottom: 15px;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.05));
+}
+
+.staff-call-item .item-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #444;
+  text-align: center;
+  word-break: keep-all;
+}
+
+.staff-call-item.active .item-name {
+  color: var(--main-color);
+}
+
+/* Empty Slot */
+.staff-call-item.empty {
+  border: 2px dashed #E0E0E0;
+  background: transparent;
+  opacity: 0.6;
+  box-shadow: none;
+  cursor: default;
+  pointer-events: none;
+}
+
+
+/* Right Side: Sidebar */
+.staff-call-right {
+  width: 360px;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border-color);
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.02);
+  z-index: 20;
+}
+
+.sidebar-header {
+  padding: 24px 30px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  color: #333;
+}
+
+.selected-items-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+}
+
+.selected-items-list .empty-msg {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 16px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* 커스텀 스크롤바 */
+.selected-items-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.selected-items-list::-webkit-scrollbar-thumb {
+  background-color: #DDD;
+  border-radius: 3px;
+}
+
+.selected-item-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: white;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid #EEE;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s;
+}
+
+.selected-item-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
+}
+
+.selected-item-card .item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.selected-item-card .item-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #333;
+  line-height: 1.3;
+}
+
+.selected-item-card .delete-btn {
+  border: none;
+  background: none;
+  font-size: 18px;
+  color: #999;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.selected-item-card .delete-btn:hover {
+  background: #FFF0F0;
+  color: #FF5A5F;
+}
+
+.selected-item-card .qty-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.selected-item-card .qty-control {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: #F5F5F5;
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.selected-item-card .qty-btn {
+  width: 28px;
+  height: 28px;
+  background: white;
+  border: 1px solid #EEE;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #555;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s;
+}
+
+.selected-item-card .qty-btn:hover {
+  background: white;
+  color: var(--main-color);
+  border-color: var(--main-color);
+}
+
+.selected-item-card .qty-btn:active {
+  transform: scale(0.95);
+}
+
+.selected-item-card .qty-value {
+  font-size: 16px;
+  font-weight: 700;
+  width: 36px;
+  text-align: center;
+  color: #333;
+}
+
+
+/* Sidebar Footer Removed - Replaced with .actions in HTML to use global modal styles */
+
+/* Table Selection Page - POS Style Adaptation */
+main section article .table .body {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  height: calc(100% - 19px);
+  width: 100%;
+}
+
+main section article .table .body i.ph-sign-in {
+  display: block;
+  font-size: 30px;
+  color: #ccc;
+  transition: color 0.2s;
+}
+
+main section article .table:hover .body i.ph-sign-in {
+  color: #1FAA9C;
+}
+
+/* Status Badge for Active Tables */
+main section article .table[data-active="true"] .table_state {
+  border-color: #1FAA9C;
+  color: #1FAA9C;
+  display: block;
+}
+
+/* Entering State Styling Override */
+main section article .table[data-active="true"] .body i.ph-sign-in {
+  display: none !important;
+}
+
+main section article .table .title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+/* Hide table state for inactive tables if not handled by JS */
+main section article .table:not([data-active="true"]) .table_state {
+  display: none;
+}
+
+/* -----------------------------------------------------------
+   Table Order Overlays (Welcome, In-Use, Payment, Order Success)
+----------------------------------------------------------- */
+
+.table-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(8px);
+}
+
+.table-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 모든 오버레이 타입을 Welcome 스타일(전체화면 배경 + 텍스트/아이콘 강조)로 통일 */
+.table-overlay {
+  background: rgba(0, 0, 0, 0.85);
+  /* 배경 더 어둡게 */
+  cursor: default;
+}
+
+.table-overlay.type-welcome,
+.table-overlay.type-in-use {
+  cursor: pointer;
+  /* 터치 유도 */
+}
+
+.table-overlay .overlay-content {
+  background: transparent;
+  /* 카드 배경 제거 */
+  box-shadow: none;
+  padding: 0;
+  border-radius: 0;
+  text-align: center;
+  transform: scale(0.9);
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  max-width: 90%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  /* 간격 넓힘 */
+}
+
+.table-overlay.active .overlay-content {
+  transform: scale(1);
+}
+
+.table-overlay .icon-wrapper {
+  width: 160px;
+  /* 아이콘 크기 통일 및 확대 */
+  height: 160px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 80px;
+  margin: 0 auto;
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.table-overlay .message {
+  font-size: 42px;
+  /* 폰트 크기 통일 및 확대 */
+  font-weight: 800;
+  color: white;
+  margin: 0;
+  line-height: 1.4;
+  word-break: keep-all;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.table-overlay .confirm-btn {
+  /* 버튼 스타일도 통일하되, 필요 시에만 표시 */
+  background: white;
+  color: var(--main-color);
+  border: none;
+  padding: 20px 60px;
+  border-radius: 50px;
+  font-size: 24px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: auto;
+  min-width: 200px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.table-overlay .confirm-btn:active {
+  transform: scale(0.96);
+  background: #f0f0f0;
+}
+
+/* Close Button (Top Right) */
+.table-overlay .close-btn {
+  position: absolute;
+  top: 50px;
+  right: 50px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  cursor: pointer;
+  transition: all 0.2s;
+  backdrop-filter: blur(4px);
+  z-index: 10000;
+}
+
+.table-overlay .close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+/* Timer Display */
+.table-overlay .timer-display {
+  position: absolute;
+  top: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 10px 24px;
+  border-radius: 30px;
+  font-size: 18px;
+  font-weight: 600;
+  backdrop-filter: blur(4px);
+  display: none;
+}
+
+/* Animations */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.2);
+  }
+
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 30px rgba(255, 255, 255, 0);
+  }
+
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
+}
+
+/* 모든 아이콘에 펄스 효과 적용 (선택 사항) 또는 Welcome/In-use 만 */
+.table-overlay.type-welcome .icon-wrapper,
+.table-overlay.type-in-use .icon-wrapper,
+.table-overlay.type-order-success .icon-wrapper,
+.table-overlay.type-payment .icon-wrapper {
+  animation: pulse 2s infinite;
 }

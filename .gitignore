@@ -1,5 +1,27 @@
-.venv/
-__pycache__/
+# 환경변수 (절대 커밋 금지)
 .env
+.env.local
+.env.dev
+.env.stg
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# DB 백업
+db/
+
+# Docker volumes
+mysql_data/
+
+# 기타 민감 파일
 config.py
-vocaandgo-be62cab96920.json
+*.json
+
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/

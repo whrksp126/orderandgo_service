@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -20,6 +21,7 @@
   <style>
   </style>
 </head>
+
 <body>
   <header>
     <a onclick="location.reload();">
@@ -39,13 +41,11 @@
       <li>
         <a href="/table_order/login">
           <span>테이블 오더</span>
-          <p>개발 중</p>
         </a>
       </li>
       <li>
         <a href="#">
           <span>주방 주문 관리</span>
-          <p>개발 중</p>
         </a>
       </li>
       <li>
@@ -67,16 +67,17 @@
       fetch(`/logout`, {
         method: 'GET',
       })
-      .then(response => response.json())
-      .then(data => {
-        if(data.code == 200){
-          window.location.href = '/login'
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-      });
+        .then(response => response.json())
+        .then(data => {
+          if (data.code == 200) {
+            window.location.href = '/login'
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
     }
   </script>
 </body>
+
 </html>

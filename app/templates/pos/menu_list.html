@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -19,6 +20,7 @@
   <!-- 전용 css -->
   <link rel="stylesheet" href="/static/css/pos.css">
 </head>
+
 <body>
   <div id="container" class="order">
     <header>
@@ -35,6 +37,9 @@
         <div class="header_info">
           <span class="cur_time">2023-05-01(월) 14:00</span>
           <span class="store_state" data-state="open">영업중</span>
+          <button class="btn_alarm" onclick="toggleNotificationSidebar()">
+            <i class="ph ph-bell"></i>
+          </button>
         </div>
       </div>
     </header>
@@ -95,12 +100,12 @@
             <button class="menu item hidden"></button>
             <button class="menu item hidden"></button>
             <button class="menu item hidden"></button>
-            
+
             <button class="menu item hidden"></button>
             <button class="menu item hidden"></button>
             <button class="menu item hidden"></button>
             <button class="menu item hidden"></button>
-            
+
             <button class="menu item hidden"></button>
             <button class="menu item hidden"></button>
             <button class="menu item hidden"></button>
@@ -113,24 +118,30 @@
             <i class="ph ph-caret-right"></i>
           </button>
         </article>
-        <!-- 메뉴판 페이지에서 메뉴 옵션 선택 영역 -->
-        <aside class="option_container ">
-          <div class="menus items">
-            <button class="menu item">
-              <div class="title">
-                <h2>옵션명</h2>
+        <!-- 옵션 선택 모달 (POS 전용 - 이미지 제외) -->
+        <div class="option-modal-overlay" id="optionModal">
+          <div class="option-modal pos-modal">
+            <!-- POS에서는 이미지 영역(.left-side) 제거 -->
+            <div class="right-side">
+              <div class="details">
+                <h2 id="optionMenuName">메뉴명</h2>
+                <div class="price" id="optionMenuPrice">0원</div>
+                <!-- 필요한 경우 설명 표시, 없으면 숨김 -->
+                <div id="optionMenuDescription" class="menu-description"></div>
+
+                <div id="optionGroups">
+                  <!-- 옵션 그룹들 동적 생성 -->
+                </div>
               </div>
-              <span class="price">16,000원</span>
-            </button>
+              <div class="actions">
+                <button class="cancel-btn" onclick="closeOptionModal()">취소</button>
+                <button class="add-to-cart-btn" onclick="addToCartFromModal()">장바구니 담기</button>
+              </div>
+            </div>
           </div>
-          <button class="change_page_btn prev_page_btn">
-            <i class="ph ph-caret-left"></i>
-          </button>
-          <button class="change_page_btn next_page_btn">
-            <i class="ph ph-caret-right"></i>
-          </button>
-        </aside>
-        <div class="option_background" onclick="closeOptionContainer(event)"></div>
+        </div>
+
+        <!-- 기존 옵션 컨테이너 제거됨 -->
       </section>
       <!-- 메뉴판 페이지에서 장바구니 영역 -->
       <aside class="basket_container" data-type="basket">
@@ -168,6 +179,9 @@
             <h2>총액</h2>
             <span class="price">원</span>
           </div>
+
+          <!-- 토스트 메시지 컨테이너 -->
+          <div id="toastContainer" class="toast-container"></div>
           <ul>
             <li class="order" data-iscancel="false" onclick="clickOrder(event)"><button>주문하기</button></li>
             <li class="pay" onclick="clickPayment(event)"><button>결제하기</button></li>
@@ -176,13 +190,33 @@
       </aside>
     </main>
   </div>
-  
+
+  <!-- 알림 내역 사이드바 -->
+  <div id="notificationOverlay" class="notification-overlay" onclick="toggleNotificationSidebar()"></div>
+  <aside id="notificationSidebar" class="notification-sidebar">
+    <div class="sidebar-header">
+      <h2>알림 <span class="dot"></span></h2>
+      <button class="close-btn" onclick="toggleNotificationSidebar()">
+        <i class="ph ph-x"></i>
+      </button>
+    </div>
+    <div class="sidebar-body">
+      <ul id="notificationList">
+        <!-- 알림 아이템이 여기에 동적으로 추가됩니다 -->
+      </ul>
+    </div>
+  </aside>
+
   <!-- 직원 요청 및 호출에 대한 처리 영역 -->
   <div id="alarm"></div>
 
   <!-- 공통 스크립트 -->
-  <script src="/static/js/common.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"
+    integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA=="
+    crossorigin="anonymous"></script>
+  <script src="/static/js/common.js?v=2"></script>
   <!-- 전용 스크립트 -->
-  <script src="/static/js/menuList.js"></script>
+  <script src="/static/js/menuList.js?v=2"></script>
 </body>
+
 </html>

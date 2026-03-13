@@ -15,7 +15,7 @@ function randomizeInputs(formname) {
   });
 }
 
-const url = 'http://127.0.0.1:5000'; // API 엔드포인트 URL
+const url = ''; // API 엔드포인트 URL (상대 경로 사용)
 
 // form데이터를 이용해 네임과 같은 키 값을 만들고 리턴 함
 function createObjectFromFormData(form) {
@@ -31,19 +31,19 @@ function createObjectFromFormData(form) {
 // submit 이벤트를 감지해서 데이터를 추출함
 function handleFormSubmit(formId, processData) {
   const form = document.getElementById(formId);
-  form.addEventListener('submit', function(event) {
-    
+  form.addEventListener('submit', function (event) {
+
     event.preventDefault();
     const formData = createObjectFromFormData(form);
     processData(formData);
   });
 }
 
-handleFormSubmit('userForm', function(userData) {
+handleFormSubmit('userForm', function (userData) {
   console.log(userData);
   async function main() {
     try {
-      const response = await submitFun( url+'/adm/user', 'POST', userData);
+      const response = await submitFun(url + '/adm/user', 'POST', userData);
       console.log('Received data:', response);
     } catch (error) {
       console.error('Error:', error);
@@ -53,24 +53,27 @@ handleFormSubmit('userForm', function(userData) {
 });
 
 
-handleFormSubmit('storeForm', function(storeData) {
+handleFormSubmit('storeForm', function (storeData) {
   console.log(storeData);
   async function main() {
     try {
-      const response = await submitFun( url+'/adm/store', 'POST', storeData);
+      // 스토어 정보 업데이트를 위해 PATCH 호출
+      const response = await submitFun(url + '/adm/store/current', 'PATCH', storeData);
+      alert('스토어 정보가 성공적으로 업데이트되었습니다.');
       console.log('Received data:', response);
     } catch (error) {
       console.error('Error:', error);
+      alert('업데이트 과정에서 오류가 발생했습니다.');
     }
   }
   main();
 });
 
-handleFormSubmit('menuForm', function(menuData) {
+handleFormSubmit('menuForm', function (menuData) {
   console.log(menuData);
   async function main() {
     try {
-      const response = await submitFun( url+'/adm/menu', 'POST', menuData);
+      const response = await submitFun(url + '/adm/menu', 'POST', menuData);
       console.log('Received data:', response);
     } catch (error) {
       console.error('Error:', error);
@@ -79,11 +82,11 @@ handleFormSubmit('menuForm', function(menuData) {
   main();
 });
 
-handleFormSubmit('menuOptionForm', function(menuOptionData) {
+handleFormSubmit('menuOptionForm', function (menuOptionData) {
   console.log(menuOptionData);
   async function main() {
     try {
-      const response = await submitFun( url+'/adm/menu_option', 'POST', menuOptionData);
+      const response = await submitFun(url + '/adm/menu_option', 'POST', menuOptionData);
       console.log('Received data:', response);
     } catch (error) {
       console.error('Error:', error);
@@ -92,11 +95,11 @@ handleFormSubmit('menuOptionForm', function(menuOptionData) {
   main();
 });
 
-handleFormSubmit('mainCategoryForm', function(mainCategoryData) {
+handleFormSubmit('mainCategoryForm', function (mainCategoryData) {
   console.log(mainCategoryData);
   async function main() {
     try {
-      const response = await submitFun( url+'/adm/menu_main_category', 'POST', mainCategoryData);
+      const response = await submitFun(url + '/adm/menu_main_category', 'POST', mainCategoryData);
       console.log('Received data:', response);
     } catch (error) {
       console.error('Error:', error);
@@ -105,11 +108,11 @@ handleFormSubmit('mainCategoryForm', function(mainCategoryData) {
   main();
 });
 
-handleFormSubmit('subCategoryForm', function(subCategoryData) {
+handleFormSubmit('subCategoryForm', function (subCategoryData) {
   console.log(subCategoryData);
   async function main() {
     try {
-      const response = await submitFun( url+'/adm/menu_sub_category', 'POST', subCategoryData);
+      const response = await submitFun(url + '/adm/menu_sub_category', 'POST', subCategoryData);
       console.log('Received data:', response);
     } catch (error) {
       console.error('Error:', error);
@@ -118,11 +121,11 @@ handleFormSubmit('subCategoryForm', function(subCategoryData) {
   main();
 });
 
-handleFormSubmit('tableCategoryForm', function(subCategoryData) {
+handleFormSubmit('tableCategoryForm', function (subCategoryData) {
   console.log(subCategoryData);
   async function main() {
     try {
-      const response = await submitFun( url+'/adm/table_category', 'POST', subCategoryData);
+      const response = await submitFun(url + '/adm/table_category', 'POST', subCategoryData);
       console.log('Received data:', response);
     } catch (error) {
       console.error('Error:', error);
@@ -131,11 +134,11 @@ handleFormSubmit('tableCategoryForm', function(subCategoryData) {
   main();
 });
 
-handleFormSubmit('tableForm', function(subCategoryData) {
+handleFormSubmit('tableForm', function (subCategoryData) {
   console.log(subCategoryData);
   async function main() {
     try {
-      const response = await submitFun( url+'/adm/table', 'POST', subCategoryData);
+      const response = await submitFun(url + '/adm/table', 'POST', subCategoryData);
       console.log('Received data:', response);
     } catch (error) {
       console.error('Error:', error);

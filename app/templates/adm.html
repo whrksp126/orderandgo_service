@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,18 +17,22 @@
   <!-- 전용 css -->
   <!-- <link rel="stylesheet" href="static/css/main.css"> -->
   <style>
-    body{
+    body {
       display: grid;
-      grid-template-columns: repeat(3, 1fr); /* 한 줄에 2개의 아이템을 반복 */
-      gap: 10px; /* 내부 간격을 20px로 설정 */
+      grid-template-columns: repeat(3, 1fr);
+      /* 한 줄에 2개의 아이템을 반복 */
+      gap: 10px;
+      /* 내부 간격을 20px로 설정 */
       padding: 20px
     }
-    fieldset{
+
+    fieldset {
       display: flex;
       flex-flow: column;
-      padding: 20px;  
+      padding: 20px;
     }
-    button{
+
+    button {
       margin-top: 20px;
       padding: 10px 20px;
       border: 1px solid var(--border-color-1fa);
@@ -35,6 +40,7 @@
     }
   </style>
 </head>
+
 <body>
   <div>
     <form id="userForm">
@@ -42,25 +48,25 @@
         <legend>유저 정보</legend>
         <label for="user_id">사용자 아이디:</label>
         <input type="text" id="user_id" name="user_id" value="john123" required>
-      
+
         <label for="password">비밀번호:</label>
         <input type="password" id="password" name="password" value="password123" required>
-      
+
         <label for="name">이름:</label>
         <input type="text" id="name" name="name" value="John Doe" required>
-      
+
         <label for="birthday">생년월일:</label>
         <input type="date" id="birthday" name="birthday" value="1990-01-01" required>
-      
+
         <label for="tel">전화번호:</label>
         <input type="tel" id="tel" name="tel" value="123-456-7890" required>
-      
+
         <label for="email">이메일:</label>
         <input type="email" id="email" name="email" value="john@example.com" required>
-      
+
         <label for="address">주소:</label>
         <input type="text" id="address" name="address" value="123 Main St, City, Country" required>
-  
+
         <button type="submit">제출</button>
       </fieldset>
     </form>
@@ -71,35 +77,41 @@
     <form id="storeForm">
       <fieldset>
         <legend>가게 생성</legend>
-    
+
         <label for="name">가게 이름:</label>
         <input type="text" id="name" name="name" value="맛있는 레스토랑" required>
-      
+
         <label for="address">가게 주소:</label>
         <input type="text" id="address" name="address" value="서울시 강남구" required>
-      
+
         <label for="tel">가게 전화번호:</label>
         <input type="text" id="tel" name="tel" value="02-123-4567" required>
-      
+
         <label for="manager_name">매니저 이름:</label>
         <input type="text" id="manager_name" name="manager_name" value="홍길동" required>
-      
+
         <label for="manager_tel">매니저 전화번호:</label>
         <input type="text" id="manager_tel" name="manager_tel" value="010-1234-5678" required>
-      
+
         <label for="logo_img">로고 이미지:</label>
         <input type="text" id="logo_img" name="logo_img" value="https://example.com/logo.png" required>
-      
+
         <label for="store_image">가게 이미지:</label>
         <input type="text" id="store_image" name="store_image" value="https://example.com/store.png" required>
-      
+
         <label for="main_description">메인 설명:</label>
         <textarea id="main_description" name="main_description" required>우리 가게는 최고의 음식을 제공합니다.</textarea>
-      
+
         <label for="sub_description">서브 설명:</label>
         <textarea id="sub_description" name="sub_description" required>다양한 메뉴와 훌륭한 서비스로 여러분을 맞이합니다.</textarea>
-      
-        <button type="submit">제출</button>
+
+        <label for="business_number">사업자등록번호:</label>
+        <input type="text" id="business_number" name="business_number" value="000-00-00000" required>
+
+        <label for="representative_name">대표자명:</label>
+        <input type="text" id="representative_name" name="representative_name" value="홍길동" required>
+
+        <button type="submit">수정</button>
       </fieldset>
     </form>
     <button id="randomizeButton" onclick="randomizeInputs('#storeForm')">랜덤 값 적용</button>
@@ -111,22 +123,22 @@
         <legend>메뉴 정보</legend>
         <label for="name">메뉴 이름:</label>
         <input type="text" id="name" name="name" value="햄버거" required>
-    
+
         <label for="price">가격:</label>
         <input type="number" id="price" name="price" value="10000" required>
-    
+
         <label for="image">이미지 URL:</label>
         <input type="text" id="image" name="image" value="https://example.com/menu.png" required>
-    
+
         <label for="main_description">메인 설명:</label>
         <textarea id="main_description" name="main_description">신선한 재료로 만든 맛있는 햄버거입니다.</textarea>
-    
+
         <label for="sub_description">서브 설명:</label>
         <textarea id="sub_description" name="sub_description">간편하게 즐길 수 있는 맛입니다.</textarea>
-    
+
         <label for="is_soldout">품절 여부:</label>
         <input type="checkbox" id="is_soldout" name="is_soldout">
-    
+
         <label for="menu_has_category">메뉴 카테고리:</label>
         <select id="menu_has_category" name="menu_has_category">
           <option value="">선택하세요</option>
@@ -134,7 +146,7 @@
           <option value="2">음료 카테고리</option>
           <!-- 추가적인 카테고리 옵션들 -->
         </select>
-    
+
         <label for="menu_option">메뉴 옵션:</label>
         <select id="menu_option" name="menu_option">
           <option value="">선택하세요</option>
@@ -142,7 +154,7 @@
           <option value="2">사이즈 업그레이드</option>
           <!-- 추가적인 옵션 값들 -->
         </select>
-    
+
         <button type="submit">제출</button>
       </fieldset>
     </form>
@@ -155,17 +167,17 @@
         <legend>메뉴 옵션 추가</legend>
         <label for="optionName">옵션 이름:</label>
         <input type="text" id="optionName" name="optionName" value="추가 토핑" required>
-    
+
         <label for="optionPrice">가격:</label>
         <input type="number" id="optionPrice" name="optionPrice" value="2000" required>
-    
+
         <label for="optionDescription">설명:</label>
         <textarea id="optionDescription" name="optionDescription">고기 추가 토핑</textarea>
-    
+
         <button type="submit">추가</button>
       </fieldset>
     </form>
-    
+
   </div>
   <div>
     <form id="mainCategoryForm">
@@ -173,11 +185,11 @@
         <legend>메인 카테고리 생성</legend>
         <label for="mainCategoryName">카테고리 이름:</label>
         <input type="text" id="mainCategoryName" name="mainCategoryName" value="음식" required>
-    
+
         <button type="submit">제출</button>
       </fieldset>
     </form>
-    
+
   </div>
   <div>
     <form id="subCategoryForm">
@@ -190,47 +202,47 @@
           <option value="2">음료</option>
           <!-- 추가적인 옵션 값들 -->
         </select>
-    
+
         <label for="subCategoryName">카테고리 이름:</label>
         <input type="text" id="subCategoryName" name="subCategoryName" value="한식" required>
-    
+
         <button type="submit">제출</button>
       </fieldset>
     </form>
-    
+
   </div>
 
   <div>
     <form id="tableCategoryForm">
       <fieldset>
         <legend>테이블 카테고리 생성</legend>
-        
+
         <label for="categoryName">카테고리 이름:</label>
         <input type="text" id="categoryName" name="categoryName" required value="음식"><br><br>
-        
+
         <label for="storeId">상점 ID:</label>
         <input type="number" id="storeId" name="storeId" required value="123"><br><br>
-        
+
         <button type="submit">생성</button>
       </fieldset>
     </form>
   </div>
-  
-  
+
+
   <div>
     <form id="tableForm">
       <fieldset>
         <legend>테이블 추가</legend>
-        
+
         <label for="tableName">테이블 이름:</label>
         <input type="text" id="tableName" name="tableName" required value="테이블1"><br><br>
-        
+
         <label for="tableNumber">테이블 번호:</label>
         <input type="number" id="tableNumber" name="tableNumber" required value="1"><br><br>
-        
+
         <label for="seatCount">좌석 수:</label>
         <input type="number" id="seatCount" name="seatCount" required value="4"><br><br>
-        
+
         <label for="tableCategory">테이블 카테고리:</label>
         <select id="tableCategory" name="tableCategory" required>
           <option value="" disabled selected>카테고리 선택</option>
@@ -238,12 +250,12 @@
           <option value="카테고리2">카테고리2</option>
           <option value="카테고리3">카테고리3</option>
         </select><br><br>
-        
+
         <button type="submit">추가</button>
       </fieldset>
     </form>
   </div>
-  
+
 
 
 
@@ -260,4 +272,5 @@
   <!-- 전용 스크립트 -->
   <script src="/static/js/adm.js"></script>
 </body>
+
 </html>

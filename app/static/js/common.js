@@ -14,29 +14,36 @@ function getTableIdFromCurrentUrl(key) {
 }
 
 // 비동기 fetch api
-async function fetchDataAsync(url, method, data, form=false){
+async function fetchDataAsync(url, method, data, form = false) {
   let newUrl = url;
-  let fetchOptions = { 
+  let fetchOptions = {
     method,
     headers: {},
   };
-  if(method !== 'GET' && form) {
-    const formData = new FormData();
-    formData.append('json_data', JSON.stringify(data.json_data)) 
-    data.form_data.forEach(({key, value})=>{
-      formData.append(key, value);
-    })
-    fetchOptions.body = formData
+  if (method !== 'GET' && form) {
+    if (data instanceof FormData) {
+      fetchOptions.body = data;
+    } else {
+      const formData = new FormData();
+      formData.append('json_data', JSON.stringify(data.json_data))
+      data.form_data.forEach(({ key, value }) => {
+        formData.append(key, value);
+      })
+      fetchOptions.body = formData
+    }
   }
-  if(method !== 'GET' && !form){
+  if (method !== 'GET' && !form) {
     fetchOptions.headers['Content-Type'] = 'application/json';
     fetchOptions.body = JSON.stringify(data);
   }
-  if(method == 'GET' || method == 'DELETE'){
-    newUrl += `?`
-    for (const key in data) {
-      const value = data[key];
-      newUrl += `${key}=${value}&`;
+  if (method == 'GET' || method == 'DELETE') {
+    if (data && typeof data === 'object' && Object.keys(data).length > 0) {
+      newUrl += newUrl.includes('?') ? '&' : '?';
+      for (const key in data) {
+        const value = data[key];
+        newUrl += `${encodeURIComponent(key)}=${encodeURIComponent(value)}&`;
+      }
+      newUrl = newUrl.slice(0, -1); // 마지막 & 제거
     }
     console.log(newUrl);
   }
@@ -56,7 +63,7 @@ async function fetchDataAsync(url, method, data, form=false){
 
 
 // fetch api
-function fetchData(url, method, data, onSuccess, form=false) {
+function fetchData(url, method, data, onSuccess, form = false) {
   let newUrl = url;
   const headers = form ? {
     // 'Authorization': `Bearer ${accessToken}`,
@@ -73,20 +80,24 @@ function fetchData(url, method, data, onSuccess, form=false) {
     // 필요한 경우, 요청에 필요한 다른 옵션들을 설정할 수 있습니다.
   };
 
-  if(method !== 'GET') {
-    if(form) {
-      const formData = new FormData();
-      formData.append('json_data', JSON.stringify(data.json_data)) 
-      data.form_data.forEach(({key, value})=>{
-        formData.append(key, value);
-      })
+  if (method !== 'GET') {
+    if (form) {
+      if (data instanceof FormData) {
+        fetchOptions.body = data;
+      } else {
+        const formData = new FormData();
+        formData.append('json_data', JSON.stringify(data.json_data))
+        data.form_data.forEach(({ key, value }) => {
+          formData.append(key, value);
+        })
 
-      fetchOptions.body = formData
-    }else{
+        fetchOptions.body = formData
+      }
+    } else {
       fetchOptions.body = JSON.stringify(data);
     }
   }
-  if(method == 'GET' || method == 'DELETE'){
+  if (method == 'GET' || method == 'DELETE') {
     newUrl += `?`
     for (const key in data) {
       const value = data[key];
@@ -126,14 +137,14 @@ const stringToBooleanMap = {
 
 
 // form tag 내부 데이터 Object 만들기
-const getData = (elements) =>{
+const getData = (elements) => {
   const data = {};
-  elements.forEach((element, index)=>{
-  
+  elements.forEach((element, index) => {
+
     const key = element.dataset.title;
-    let value = element.value; 
-    if(element.type == 'checkbox'){
-        value = element.checked;
+    let value = element.value;
+    if (element.type == 'checkbox') {
+      value = element.checked;
     }
     data[key] = value;
   })
@@ -177,7 +188,7 @@ function displayCurrentDateTime() {
   const formattedTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
   const formattedDateTime = `${formattedDate} ${formattedTime}`;
   const _curTime = document.querySelector('header .center .header_info .cur_time');
-  if(_curTime){
+  if (_curTime) {
     _curTime.textContent = formattedDateTime;
     // 다음 업데이트를 위해 남은 시간을 계산
     const secondsUntilNextUpdate = 60 - now.getSeconds();
@@ -186,28 +197,28 @@ function displayCurrentDateTime() {
 }
 displayCurrentDateTime();
 
-function historyBack(event){
-  location.href=`${event.currentTarget.dataset.href}${lastPath}`
+function historyBack(event) {
+  location.href = `${event.currentTarget.dataset.href}${lastPath}`
 }
 
 
 // 모달 기본 엘리먼트 추가
-const openDefaultModal = (isBackClose=true) => {
+const openDefaultModal = (isBackClose = true) => {
   removeModal();
   document.querySelector('body').insertAdjacentHTML('beforeend', defaultModalHtml());
   const _modal = document.querySelector('.modal');
   const _modal_content = document.querySelector('.modal_content');
   const _modal_top = document.querySelector('.modal_top');
   const _modal_middle = document.querySelector('.modal_middle');
-  const _modal_bottom = document.querySelector('.modal_bottom');  
-  if(isBackClose)_modal.addEventListener('click', clickHandler);
+  const _modal_bottom = document.querySelector('.modal_bottom');
+  if (isBackClose) _modal.addEventListener('click', clickHandler);
 
-  return { 
-    container : _modal, 
-    content: _modal_content, 
-    top : _modal_top, 
-    middle : _modal_middle, 
-    bottom : _modal_bottom 
+  return {
+    container: _modal,
+    content: _modal_content,
+    top: _modal_top,
+    middle: _modal_middle,
+    bottom: _modal_bottom
   }
 }
 
@@ -216,20 +227,20 @@ const getDefaultModal = () => {
   const _modal_content = document.querySelector('.modal_content');
   const _modal_top = document.querySelector('.modal_top');
   const _modal_middle = document.querySelector('.modal_middle');
-  const _modal_bottom = document.querySelector('.modal_bottom');  
-  return { 
-    container : _modal, 
-    content: _modal_content, 
-    top : _modal_top, 
-    middle : _modal_middle, 
-    bottom : _modal_bottom 
+  const _modal_bottom = document.querySelector('.modal_bottom');
+  return {
+    container: _modal,
+    content: _modal_content,
+    top: _modal_top,
+    middle: _modal_middle,
+    bottom: _modal_bottom
   }
 }
 
 // 모달 삭제
 const removeModal = () => {
   const _modal = document.querySelector('.modal');
-  if(_modal){
+  if (_modal) {
     _modal.removeEventListener('click', clickHandler);
     document.querySelector('.modal').remove();
   }
@@ -237,7 +248,7 @@ const removeModal = () => {
 
 // 모달 배경 클릭 시 닫기(이벤트 제거)
 const clickHandler = (event) => {
-  const target = event.target; 
+  const target = event.target;
   const isClose = findParentTarget(target, '.close');
   const isBackground = target.classList.contains('modal');
   if (isBackground || isClose) removeModal(clickHandler);
@@ -255,26 +266,26 @@ const defaultModalHtml = () => `
 `
 
 // 모달 TOP
-const modalTopHtml = (title, hasX=false) => {
+const modalTopHtml = (title, hasX = false) => {
   return `
     <h1>${title}</h1>
     <i class="ph ph-x close"></i>
   `
 }
 // 모달 BOTTOM AND
-const modalBottomHtml = (btns=null) => {
+const modalBottomHtml = (btns = null) => {
   // const btns = [
   //   {class: '',text: '', fun: ''},
   //   {class: '',text: '', fun: ''}
   // ]
   return `
-    ${btns != null ?`
+    ${btns != null ? `
     <div class="buttons">
-      ${btns.map((btn)=>`
+      ${btns.map((btn) => `
       <button class="${btn.class}" ${btn.fun}>${btn.text}</button>
       `).join('')}
     </div>
-    `:``}
+    `: ``}
   `
 }
 
@@ -291,7 +302,7 @@ window.onclick = function (event) {
 // 버튼을 클릭하면 모달 열기
 const openModalFun = (event) => {
   event.preventDefault();
-  document.querySelector('body').insertAdjacentHTML('beforeend','<div id="modal" class="modal"></div>')
+  document.querySelector('body').insertAdjacentHTML('beforeend', '<div id="modal" class="modal"></div>')
 
   const _modal = document.getElementById('modal')
   _modal.innerHTML = common_modal_html
@@ -324,7 +335,7 @@ const createPageNationBtnHtml = (event) => {
     <i class="ph ph-caret-right"></i>
   </button>
   `
-  _article.insertAdjacentHTML('beforeend',html)
+  _article.insertAdjacentHTML('beforeend', html)
 }
 
 // 페이지 변경 버튼 클릭 시
@@ -335,52 +346,67 @@ const clickChagePageBtn = (event, type) => {
   const curPageIndex = Number(_table.dataset.page);
   const curCategoryId = document.querySelector('main section nav ul li[data-state="active"]').dataset.id;
   let pageLen;
-  if(cachingData != null) {
-    pageLen = cachingData.find((category)=>category.categoryId == Number(curCategoryId)).pageList.length;
-  }else {
-    pageLen = mainData.find((category)=>category.categoryId == Number(curCategoryId)).pageList.length;
+  if (cachingData != null) {
+    pageLen = cachingData.find((category) => category.categoryId == Number(curCategoryId)).pageList.length;
+  } else {
+    pageLen = mainData.find((category) => category.categoryId == Number(curCategoryId)).pageList.length;
   }
 
-  
+
   let newPageIndex
   console.log(type, curPageIndex)
-  if(type == 'prev' && curPageIndex > 0){
+  if (type == 'prev' && curPageIndex > 0) {
     newPageIndex = curPageIndex - 1;
   }
-  if(type == 'next' && curPageIndex < pageLen-1){
+  if (type == 'next' && curPageIndex < pageLen - 1) {
     newPageIndex = curPageIndex + 1;
   }
-  if(newPageIndex == undefined) return;
+  if (newPageIndex == undefined) return;
   let targetData;
-  if(cachingData != null) {
-    if(lastPath == 'tableList'){
+  if (cachingData != null) {
+    if (lastPath == 'tableList') {
       targetData = cachingData.find((category) =>
         category.categoryId == Number(curCategoryId)).pageList[newPageIndex].tableList
-    }else {
+    } else {
       targetData = cachingData.find((category) =>
         category.categoryId == Number(curCategoryId)).pageList[newPageIndex].menuList
     }
-  }else {
-    if(lastPath == 'tableList'){
+  } else {
+    if (lastPath == 'tableList') {
       targetData = mainData.find((category) =>
         category.categoryId == Number(curCategoryId)).pageList[newPageIndex].tableList
-    }else{
+    } else {
       targetData = mainData.find((category) =>
         category.categoryId == Number(curCategoryId)).pageList[newPageIndex].menuList
     }
   }
-  
+
   // const tables_html = changeTableHtml(targetData);
   const tables_html = lastPath === 'tableList' ? changeTableHtml(targetData) : changeMenuHtml(targetData);
-  _table.innerHTML = tables_html; 
+  _table.innerHTML = tables_html;
   _table.setAttribute('data-page', newPageIndex);
-  
+
   _article.classList.remove('hasNextPage');
   _article.classList.remove('hasPrevPage');
 
-  if(0 < newPageIndex){_article.classList.add('hasPrevPage')};
-  if(newPageIndex < pageLen-1){_article.classList.add('hasNextPage')};
+  if (0 < newPageIndex) { _article.classList.add('hasPrevPage') };
+  if (newPageIndex < pageLen - 1) { _article.classList.add('hasNextPage') };
   closeOptionContainer();
+}
+
+/**
+ * 페이지 내 옵션 컨테이너 또는 모달을 닫습니다.
+ */
+const closeOptionContainer = () => {
+  const _optionContainer = document.querySelector('.option_container');
+  const _optionBackground = document.querySelector('.option_background');
+  if (_optionContainer) _optionContainer.classList.remove('active');
+  if (_optionBackground) _optionBackground.classList.remove('active');
+
+  // 개별 페이지에 정의된 closeOptionModal 함수가 있으면 호출
+  if (typeof closeOptionModal === 'function') {
+    closeOptionModal();
+  }
 }
 
 const groupColors = [
@@ -442,8 +468,8 @@ const setBasketData = (menus) => {
 const setMasterName = (menu) => {
   let masterName = '';
   masterName = `${menu.id}_${menu.count}`;
-  menu?.options.sort((a, b)=>{return b - a});
-  menu?.options.forEach((option)=>{
+  menu?.options.sort((a, b) => { return b - a });
+  menu?.options.forEach((option) => {
     masterName += `_${option.id}_${option.count}`
   })
   return masterName
@@ -454,7 +480,7 @@ const changeBasketHtml = (datas) => {
   const _basket = document.querySelector('main aside .basket');
   html = ``;
   let totalPrice = 0;
-  datas.forEach(({data, length, masterName})=>{
+  datas.forEach(({ data, length, masterName }) => {
     totalPrice += data.price * length
     html += `
       <li>
@@ -464,9 +490,9 @@ const changeBasketHtml = (datas) => {
           <span class="price">${(data.price * length).toLocaleString()}원</span>
         </div>
         `
-        data?.options?.forEach((option)=>{
-          totalPrice += option.price * option.count * length
-          html +=`
+    data?.options?.forEach((option) => {
+      totalPrice += option.price * option.count * length
+      html += `
           <div data-id="${option.id}" data-type="menu_option" class="menu_option" onclick="clickBasketMenu(event)">
             <div class="option_name_count">
               <h2>${option.name}</h2>
@@ -476,20 +502,20 @@ const changeBasketHtml = (datas) => {
             <span class="price">${(option.price * option.count * length).toLocaleString()}원</span>
           </div>
           `
-        })
-      html +=
-        `
+    })
+    html +=
+      `
       </li>
     `
   })
   _basket.innerHTML = html
 
   const currentPage = window.location.pathname.split("/")[2];
-  if(currentPage == 'menuList'){
+  if (currentPage == 'menuList') {
     const _totalPrice = document.querySelector('main aside .total_price .price');
     _totalPrice.innerHTML = `${totalPrice.toLocaleString()} 원`;
   }
-  if(currentPage == 'payment'){
+  if (currentPage == 'payment') {
     const _supplyPrice = document.querySelector('main aside .order_btns .supply_price');
     const _vat = document.querySelector('main aside .order_btns .vat');
     const _totalPrice = document.querySelector('main aside .order_btns .price');
@@ -512,7 +538,7 @@ const changeOrderHtml = (datas) => {
   const _basket = document.querySelector('main aside .basket');
   html = ``;
   let totalPrice = 0;
-  datas.forEach(({data, length, masterName})=>{
+  datas.forEach(({ data, length, masterName }) => {
     totalPrice += data.price * length
     html += `
       <li data-id="${data.id}" data-type="menu" data-count="${length}" data-master="${masterName}" class="menu" onclick="clickOrderMenu(event)">
@@ -522,9 +548,9 @@ const changeOrderHtml = (datas) => {
           <span class="price">${(data.price * length).toLocaleString()}원</span>
         </div>
         `
-        data?.options?.forEach((option)=>{
-          totalPrice += option.price * option.count * length
-          html +=`
+    data?.options?.forEach((option) => {
+      totalPrice += option.price * option.count * length
+      html += `
           <div data-id="${option.id}" data-type="menu_option" class="menu_option">
             <div class="option_name_count">
               <h2>${option.name}</h2>
@@ -534,20 +560,20 @@ const changeOrderHtml = (datas) => {
             <span class="price">${(option.price * option.count * length).toLocaleString()}원</span>
           </div>
           `
-        })
-      html +=
-        `
+    })
+    html +=
+      `
       </li>
     `
   })
   _basket.innerHTML = html
 
   const currentPage = window.location.pathname.split("/")[2];
-  if(currentPage == 'menuList'){
+  if (currentPage == 'menuList') {
     const _totalPrice = document.querySelector('main aside .total_price .price');
     _totalPrice.innerHTML = `${totalPrice.toLocaleString()} 원`;
   }
-  if(currentPage == 'payment'){
+  if (currentPage == 'payment') {
     const _supplyPrice = document.querySelector('main aside .order_btns .supply_price');
     const _vat = document.querySelector('main aside .order_btns .vat');
     const _totalPrice = document.querySelector('main aside .order_btns .price');
@@ -563,3 +589,493 @@ const changeOrderHtml = (datas) => {
   }
   return totalPrice;
 }
+
+// Toast Notification (Premium 3D Stack)
+const showToast = (message, type = 'info') => {
+  let container = document.getElementById('toastContainer');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toastContainer';
+    container.classList.add('toast-container');
+    document.body.appendChild(container);
+  }
+
+  // 1. 기존 토스트들의 위치 및 깊이 업데이트
+  const activeToasts = Array.from(container.children).filter(t => !t.classList.contains('is-leaving'));
+  activeToasts.forEach((t, i) => {
+    const depth = activeToasts.length - i; // 위로 갈수록 깊어짐
+    const opacity = Math.max(0, 1 - (depth * 0.2));
+    const scale = Math.max(0.7, 1 - (depth * 0.08));
+    const translateY = depth * -55; // 위로 더 많이 밀어내어 가시성 확보
+    const translateZ = depth * -40; // 뒤로 밀어내는 정도는 유지/소폭 조정
+
+    t.style.opacity = opacity;
+    t.style.transform = `translateY(${translateY}px) translateZ(${translateZ}px) scale(${scale})`;
+    t.style.zIndex = activeToasts.length - depth;
+  });
+
+  // 2. 신규 토스트 생성
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+
+  // 타입별 아이콘 설정
+  let iconClass = 'ph-info';
+  if (type === 'success') iconClass = 'ph-check-circle';
+  if (type === 'error') iconClass = 'ph-x-circle';
+  if (type === 'warning') iconClass = 'ph-warning-circle';
+
+  toast.innerHTML = `
+    <i class="ph ${iconClass}"></i>
+    <span>${message}</span>
+  `;
+
+  container.appendChild(toast);
+
+  // 3. 애니메이션 트리거
+  requestAnimationFrame(() => {
+    toast.classList.add('is-visible');
+  });
+
+  // 4. 자동 제거 로직 (2.5초 유지)
+  setTimeout(() => {
+    toast.classList.add('is-leaving');
+    // 퇴장 애니메이션(0.5s) 후 요소 제거
+    setTimeout(() => {
+      toast.remove();
+    }, 500);
+  }, 2500);
+}
+// Socket.io 초기화 및 전역 socket 객체 설정 (socket.io.js가 로드된 경우에만)
+var socket;
+if (typeof io !== 'undefined') {
+  socket = io.connect('http://' + document.domain + ':' + location.port);
+
+  // POS 로그인 (메인 또는 메뉴 목록 페이지일 때만 실행)
+  const isPosPage = window.location.pathname.includes('/pos/');
+  if (isPosPage) {
+    socket.emit('pos_login', { user_type: 'pos' }, (response) => {
+      // console.log('POS Login Response:', response.msg);
+    });
+
+    // 공통 주문 알림 수신
+    socket.on('update_pos', function (data) {
+      console.log('새로운 주문 업데이트:', data);
+
+      const orderList = data.order_list || [];
+      const tableName = `테이블 ${data.table_id}`;
+
+      let itemsText = "";
+      let itemsHtml = "";
+
+      if (orderList.length > 0) {
+        itemsText = orderList.map(o => {
+          let optStr = "";
+          if (o.options && o.options.length > 0) {
+            optStr = ` (${o.options.map(opt => opt.name).join(', ')})`;
+          }
+          return `${o.name}${optStr}`;
+        }).join(', ');
+
+        itemsHtml = orderList.map(o => {
+          let optStr = "";
+          if (o.options && o.options.length > 0) {
+            optStr = ` (${o.options.map(opt => opt.name).join(', ')})`;
+          }
+          return `- ${o.name} 1개${optStr}`;
+        }).join('<br>');
+      }
+
+      const text = `<b>${tableName}</b> 주문<br>${itemsHtml}`;
+      const timestamp = getCurTimeFormatted();
+
+      // 포스기 본인 주문인 경우 알림 내역 추가 및 토스트 제외
+      if (data.is_pos) {
+        console.log('포스기 자가 주문: 알림 생성 생략');
+      } else {
+        // 알림 내역에 추가
+        notifications.unshift({
+          id: `order_${data.table_id}_${Date.now()}`,
+          text: text,
+          items_text: itemsText,
+          table_name: tableName,
+          requestTime: timestamp,
+          confirmTime: null,
+          is_order: true
+        });
+
+        showToast(`${tableName}에서 새로운 주문이 들어왔습니다.`);
+        renderNotifications();
+      }
+
+      // 개별 페이지의 업데이트 콜백 (정의되어 있다면)
+      if (typeof onOrderUpdate === 'function') {
+        onOrderUpdate(data);
+      }
+    });
+
+    // 공통 직원 호출 알림 수신
+    socket.on('staff_call_notification', function (data) {
+      console.log('직원 호출 알림:', data);
+
+      const calls = data.calls;
+      let text = '';
+      let toastText = '';
+
+      if (calls.length === 1 && calls[0].is_staff_call_only) {
+        text = `<b>${data.table_name}</b>에서 직원을 호출했습니다.`;
+        toastText = `${data.table_name} 직원 호출`;
+      } else {
+        const itemsHtml = calls.map(c => {
+          if (c.use_quantity) return `- ${c.name} ${c.quantity}개`;
+          return `- ${c.name}`;
+        }).join('<br>');
+        text = `<b>${data.table_name}</b><br>${itemsHtml}`;
+
+        const callTexts = calls.map(c => {
+          if (c.use_quantity) return `${c.name} ${c.quantity}개`;
+          return `${c.name}`;
+        }).join(', ');
+        toastText = `${data.table_name} 직원 호출: ${callTexts}`;
+      }
+
+      if (calls.length > 0) {
+        const items_text = calls.map(c => {
+          if (c.use_quantity) return `${c.name} ${c.quantity}개`;
+          return `${c.name}`;
+        }).join(', ');
+        notifications.unshift({
+          id: calls[0].id,
+          text: text,
+          items_text: items_text,
+          table_name: data.table_name,
+          requestTime: data.timestamp,
+          confirmTime: null
+        });
+      }
+
+      showToast(toastText);
+      renderNotifications();
+    });
+  }
+}
+
+// 알림 데이터 (서버 연동 시 초기화)
+let notifications = [];
+
+// 알림 사이드바 토글
+const toggleNotificationSidebar = () => {
+  const sidebar = document.getElementById('notificationSidebar');
+  const overlay = document.getElementById('notificationOverlay');
+  if (!sidebar || !overlay) return;
+
+  if (sidebar.classList.contains('active')) {
+    sidebar.classList.remove('active');
+    overlay.classList.remove('active');
+  } else {
+    sidebar.classList.add('active');
+    overlay.classList.add('active');
+    renderNotifications();
+  }
+}
+
+// 현재 시간 포맷 (HH:mm:ss)
+const getCurTimeFormatted = () => {
+  const now = new Date();
+  return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+}
+
+// 기존 알림 내역 로드
+async function loadStaffCallLogs() {
+  try {
+    const res = await fetch('/pos/get_staff_call_logs');
+    if (res.ok) {
+      const data = await res.json();
+      notifications = data;
+      renderNotifications();
+    }
+  } catch (error) {
+    console.error('Load Staff Call Logs Error:', error);
+  }
+}
+
+// 알림 아이템 HTML 생성
+const renderNotiItem = (noti) => {
+  let message = noti.text;
+
+  // 확인 완료된 항목은 콤마 리스트로 표현 (단, 일반 직원 호출 제외)
+  if (noti.confirmTime && noti.items_text && !message.includes('직원을 호출했습니다')) {
+    message = `<b>${noti.table_name}</b><br>${noti.items_text}`;
+  }
+
+  return `
+    <li class="notification-item ${noti.confirmTime ? 'confirmed' : ''}" id="noti-${noti.id}">
+      <div class="content">
+        <div class="message">${message}</div>
+        <div class="times">
+          <span class="request-time">요청: ${noti.requestTime}</span>
+          ${noti.confirmTime ? `<span class="confirm-time">확인: ${noti.confirmTime}</span>` : ''}
+        </div>
+      </div>
+      <div class="action">
+        ${noti.confirmTime
+      ? ''
+      : `<button class="confirm-btn" onclick="confirmNotification('${noti.id}')">확인</button>`
+    }
+      </div>
+    </li>
+  `;
+}
+
+// 알림 목록 렌더링
+const renderNotifications = () => {
+  const list = document.getElementById('notificationList');
+  const btnAlarm = document.querySelector('.btn_alarm');
+  if (!list || !btnAlarm) return;
+
+  // 미확인 알림 (최신순)
+  const unconfirmed = notifications
+    .filter(noti => !noti.confirmTime)
+    .sort((a, b) => b.id - a.id);
+
+  // Update alarm button state (헤더 벨 아이콘)
+  const btnIcon = btnAlarm.querySelector('i');
+  if (unconfirmed.length > 0) {
+    btnAlarm.classList.add('active');
+    if (btnIcon) {
+      btnIcon.classList.remove('ph-bell');
+      btnIcon.classList.add('ph-fill', 'ph-bell-ringing');
+    }
+  } else {
+    btnAlarm.classList.remove('active');
+    if (btnIcon) {
+      btnIcon.classList.remove('ph-fill', 'ph-bell-ringing');
+      btnIcon.classList.add('ph-bell');
+    }
+  }
+
+  // 확인 완료 알림 (최신순)
+  const confirmed = notifications
+    .filter(noti => noti.confirmTime)
+    .sort((a, b) => b.id - a.id);
+
+  let html = '';
+
+  // 미확인 영역 항상 표시
+  html += `<li class="section-header">미확인 (${unconfirmed.length})</li>`;
+  if (unconfirmed.length > 0) {
+    html += unconfirmed.map(noti => renderNotiItem(noti)).join('');
+  } else {
+    html += '<li class="no-data">미확인 내역이 없습니다.</li>';
+  }
+
+  // 확인 완료 영역 항상 표시
+  html += `<li class="section-header confirmed">확인 완료</li>`;
+  if (confirmed.length > 0) {
+    html += confirmed.map(noti => renderNotiItem(noti)).join('');
+  } else {
+    html += '<li class="no-data">확인 완료 내역이 없습니다.</li>';
+  }
+
+  list.innerHTML = html;
+}
+
+// 알림 확인 처리
+const confirmNotification = async (id) => {
+  try {
+    const res = await fetch('/store/confirm_staff_call', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ log_id: id })
+    });
+
+    if (res.ok) {
+      const noti = notifications.find(n => n.id === id);
+      if (noti) {
+        noti.confirmTime = getCurTimeFormatted();
+        renderNotifications();
+      }
+    }
+  } catch (error) {
+    console.error('Confirm Notification Error:', error);
+  }
+}
+
+// 초기화 시 실행 (POS 페이지용)
+window.addEventListener('DOMContentLoaded', () => {
+  if (window.location.pathname.includes('/pos/')) {
+    loadStaffCallLogs();
+  }
+});
+
+/**
+ * 주문 성공 오버레이 클래스
+ */
+/**
+ * 테이블 오더 오버레이 클래스 (주문 완료, 환영, 이용 중, 결제 완료 등)
+ */
+class TableOverlay {
+  constructor() {
+    this.overlay = null;
+    this.timerInterval = null;
+    this.defaultDuration = 3;
+    this.onCloseCallback = null;
+    this.type = 'order-success'; // 'order-success', 'welcome', 'in-use', 'payment'
+  }
+
+  createOverlay() {
+    if (document.querySelector('.table-overlay')) return;
+
+    const html = `
+            <div class="table-overlay" id="tableOverlay" onclick="tableOverlay.handleBackgroundClick()">
+                <div class="timer-display" id="overlayTimer"></div>
+                <button class="close-btn" id="overlayCloseBtn">
+                    <i class="ph-bold ph-x"></i>
+                </button>
+                <div class="overlay-content">
+                    <div class="icon-wrapper" id="overlayIcon">
+                        <i class="ph-fill ph-check-circle"></i>
+                    </div>
+                    <p class="message" id="overlayMessage">주문이 완료되었습니다.</p>
+                    <button class="confirm-btn" id="overlayConfirmBtn">
+                        확인
+                    </button>
+                </div>
+            </div>
+        `;
+    document.body.insertAdjacentHTML('beforeend', html);
+
+    this.overlay = document.getElementById('tableOverlay');
+
+    // 이벤트 바인딩
+    document.getElementById('overlayCloseBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.hide();
+    });
+    document.getElementById('overlayConfirmBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.hide();
+    });
+  }
+
+  handleBackgroundClick() {
+    // welcome, in-use 모드일 때는 배경 클릭 시 닫기
+    if (this.type === 'welcome' || this.type === 'in-use') {
+      this.hide();
+    }
+  }
+
+  show(options = {}) {
+    this.createOverlay();
+
+    this.type = options.type || 'order-success';
+    const duration = options.duration || this.defaultDuration;
+    const showTimer = options.showTimer; // undefined면 타입에 따라 결정
+    const showCloseBtn = options.showCloseBtn !== false;
+    const message = options.message || this.getDefaultMessage(this.type);
+
+    this.onCloseCallback = options.onClose || null;
+
+    // 스타일 및 아이콘 설정
+    const overlay = this.overlay;
+    overlay.className = 'table-overlay active'; // reset classes
+    overlay.classList.add(`type-${this.type}`);
+
+    const iconWrapper = document.getElementById('overlayIcon');
+    const icon = iconWrapper.querySelector('i');
+
+    // 아이콘 및 기본 메시지 설정
+    if (this.type === 'welcome') {
+      icon.className = 'ph-fill ph-hand-waving';
+    } else if (this.type === 'in-use') {
+      icon.className = 'ph-fill ph-plus-circle';
+    } else if (this.type === 'payment') {
+      icon.className = 'ph-fill ph-smiley';
+    } else { // order-success
+      icon.className = 'ph-fill ph-check-circle';
+    }
+
+    // 내용 설정
+    document.getElementById('overlayMessage').innerHTML = message.replace(/\n/g, '<br>');
+
+    // 버튼/타이머 가시성 설정
+    document.getElementById('overlayCloseBtn').style.display = showCloseBtn ? 'block' : 'none';
+    const confirmBtn = document.getElementById('overlayConfirmBtn');
+    // confirmBtn은 order-success일 때만 기본 표시, 나머지는 숨김 (디자인에 따라 조정)
+    confirmBtn.style.display = (this.type === 'order-success') ? 'block' : 'none';
+
+    const timerEl = document.getElementById('overlayTimer');
+
+    // 타이머 디폴트 로직
+    let shouldShowTimer = showTimer;
+    if (shouldShowTimer === undefined) {
+      if (this.type === 'order-success') shouldShowTimer = true;
+      else if (this.type === 'payment') shouldShowTimer = true;
+      else shouldShowTimer = false;
+    }
+
+    timerEl.style.display = shouldShowTimer ? 'block' : 'none';
+
+    // 타이머 시작
+    if (shouldShowTimer && duration > 0) {
+      this.startTimer(duration);
+    }
+  }
+
+  getDefaultMessage(type) {
+    switch (type) {
+      case 'welcome': return '환영합니다<br>주문하시려면 화면을 터치해 주세요';
+      case 'in-use': return '추가 주문을 하시려면<br>화면을 터치해 주세요';
+      case 'payment': return '이용해주셔서 감사합니다.<br>다음에 또 이용해주세요';
+      default: return '주문이 완료되었습니다.';
+    }
+  }
+
+  hide() {
+    if (this.overlay) {
+      this.overlay.classList.remove('active');
+      this.stopTimer();
+
+      if (this.onCloseCallback && typeof this.onCloseCallback === 'function') {
+        this.onCloseCallback();
+        this.onCloseCallback = null;
+      }
+    }
+  }
+
+  startTimer(duration) {
+    this.stopTimer();
+    let remaining = duration;
+    const timerEl = document.getElementById('overlayTimer');
+
+    const updateDisplay = () => {
+      timerEl.innerText = `${remaining}초 후 닫힘`;
+    };
+
+    updateDisplay();
+
+    this.timerInterval = setInterval(() => {
+      remaining--;
+      if (remaining <= 0) {
+        this.stopTimer();
+        this.hide();
+      } else {
+        updateDisplay();
+      }
+    }, 1000);
+  }
+
+  stopTimer() {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+      this.timerInterval = null;
+    }
+  }
+}
+
+// 전역 인스턴스 생성 및 헬퍼 함수
+// 전역 인스턴스 생성 및 헬퍼 함수
+const tableOverlay = new TableOverlay();
+
+const showOverlay = (options) => {
+  tableOverlay.show(options);
+};

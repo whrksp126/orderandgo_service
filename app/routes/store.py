@@ -1,17 +1,20 @@
 import json
 import os
+from datetime import datetime
 from flask import render_template, request, jsonify
 from flask_login import login_required, current_user
 from sqlalchemy import or_, func
 from app.models.menu_category import get_main_and_sub_category_by_menu_id, select_main_and_sub_category_by_store_id
 from app.models.table import create_table_category, delete_table, select_table, select_table_category, select_table_id, select_table_yn
 from app.routes import store_bp
-from app.models import MainCategory, SubCategory, db, Menu, MenuOption
+from app.models import MainCategory, SubCategory, db, Menu, MenuOption, MenuOptionGroup, Store
 
 
 from app.models.store import create_store, update_store
-from app.models.menu import check_image_exsit, check_options_exist, create_menu, create_menu_option, delete_menu, find_last_menu_page, move_menu, select_main_category, select_menu, select_menu_all, select_menu_yn, select_pre_menu_id, select_sub_category, select_menu_option_all, find_all_menu, update_menu
+from app.models.menu import check_image_exsit, check_options_exist, create_menu, create_menu_option, create_menu_option_group, delete_menu, find_last_menu_page, move_menu, select_main_category, select_menu, select_menu_all, select_menu_yn, select_pre_menu_id, select_sub_category, select_menu_option_all, find_all_menu, update_menu
 from app.login_manager import update_store_session
+from app.models.staff_call import get_staff_call_items, create_staff_call_item, update_staff_call_item, delete_staff_call_item, get_staff_call_logs, confirm_staff_call
+from app.models import Order
 
 # 매장 생성
 @login_required
@@ -187,7 +190,8 @@ def all_menu_list():
                                      Menu.sub_description, Menu.is_soldout, Menu.created_at, Menu.page,
                                     Menu.position, Menu.menu_category_id, 
                                     func.group_concat(MenuOption.name).label('option_name'))\
-                                .outerjoin(MenuOption, MenuOption.menu_id == Menu.id)\
+                                .outerjoin(MenuOptionGroup, MenuOptionGroup.menu_id == Menu.id)\
+                                .outerjoin(MenuOption, MenuOption.group_id == MenuOptionGroup.id)\
                                 .filter(Menu.menu_category_id == sub_category_id)
             if get_search is not None:
                 if get_is_name == 0:
@@ -204,20 +208,22 @@ def all_menu_list():
 
             for m in menus:
                 option_list = []
-                all_option_list = select_menu_option_all(m.id)
-                if all_option_list:
-                    for o in all_option_list:
-                        option_list.append({
-                            'option_id': o.id,
-                            'option_name': o.name,
-                            'option_price': o.price
-                        })
+                all_option_groups = select_menu_option_all(m.id)
+                if all_option_groups:
+                    for group in all_option_groups:
+                        for o in group['options']:
+                            option_list.append({
+                                'option_id': o['id'],
+                                'option_name': o['name'],
+                                'option_price': o['price']
+                            })
 
                 all_menu_list.append({
                     'id': m.id,
                     'name': m.name,
                     'price': m.price,
-                    #'image': m.image,
+                    'imageUrl': m.image.split(', ')[0] if m.image else '',
+                    'imageList': m.image.split(', ') if m.image else [],
                     'main_description': m.main_description,
                     'sub_description': m.sub_description,
                     #'is_soldout': m.is_soldout,
@@ -263,31 +269,26 @@ def get_menu():
     menu_id = request.args.get('menu_id')
     menu = select_menu(menu_id)[0]
     options = select_menu_option_all(menu_id)
-    option_data = []
-    if options:
-        for option in options:
-            option_data.append({
-                'name' : option.name,
-                'price' : option.price
-            })
     menu_data = {}
     
-    cur_main_category, cur_sub_category = get_main_and_sub_category_by_menu_id(menu);
-    main_category_list = get_main_category()
-    sub_category_list = get_sub_category()
-    for main_category in main_category_list:
-        print(main_category['id'], cur_main_category.id)
-        if main_category['id'] == cur_main_category.id:
-            
-            main_category['checked'] = True
-        else:
-            main_category['checked'] = False
+    cur_main_category, cur_sub_category = get_main_and_sub_category_by_menu_id(menu)
     
-    for sub_category in sub_category_list:
-        if sub_category['id'] == cur_sub_category.id:
-            sub_category['checked'] = True
-        else:
-            sub_category['checked'] = False
+    # 해당 매장의 모든 메인 카테고리 조회
+    main_items = select_main_category(current_user.id)
+    main_category_list = [{
+        'id': i.id,
+        'name': i.name,
+        'checked': i.id == cur_main_category.id
+    } for i in main_items]
+
+    # 메뉴가 속한 실제 메인 카테고리의 서브 카테고리들 조회
+    sub_items = select_sub_category(cur_main_category.id)
+    sub_category_list = [{
+        'id': i.id,
+        'name': i.name,
+        'checked': i.id == cur_sub_category.id
+    } for i in sub_items]
+
     image_list = menu.image.split(', ') if getattr(menu, 'image', None) else []
     menu_data = {
         'id' : menu.id,
@@ -296,7 +297,7 @@ def get_menu():
         'is_soldout' : menu.is_soldout,
         'imgList' : image_list,
         'description': menu.main_description,
-        'options' : option_data,
+        'option_groups' : options if options else [],
         'category': {
             'main' : main_category_list,
             'sub' : sub_category_list,
@@ -322,8 +323,8 @@ def set_menu():
         #sub_description = json_data['sub_description']
         is_soldout = False # null 허용X -> false 기본값으로 넣고 있음
         print(type(json_data['main_category']))
-        menu_category_id = json_data['main_category']
-        options = json_data['options']
+        menu_category_id = json_data['sub_category']
+        option_groups = json_data.get('option_groups', [])
         
         '''
         1. 페이지 마지막 값 가져오기
@@ -331,18 +332,24 @@ def set_menu():
         3. 거기서 +1 한 값 사용 (메뉴 한 페이지당 24개)
         '''
         page_position_num = find_last_menu_page(store_id)
-        page = page_position_num.page
-        position = page_position_num.position
+        
+        if page_position_num:
+            page = page_position_num.page
+            position = page_position_num.position
 
-        if position == 24: # 24이므로 page 넘김
-            page += 1
+            if position == 24: # 24이므로 page 넘김
+                page += 1
+                position = 1
+            elif position < 24: # 24를 넘기지 않으므로 position 더하기
+                position += 1
+            elif position > 24:
+                print('ERROR : position 24를 초과할 수 없습니다.')
+        else:
+            # 메뉴가 하나도 없는 경우
+            page = 1
             position = 1
-        elif position < 24: # 24를 넘기지 않으므로 position 더하기
-            position += 1
-        elif position > 24:
-            print('ERROR : position 24를 초과할 수 없습니다.')
 
-        # page와 position이 null이면 1로 초기화
+        # page와 position이 null이면 1로 초기화 (추가 안전장치)
         page = page if page is not None else 1
         position = position if position is not None else 1
 
@@ -369,10 +376,13 @@ def set_menu():
         # 메뉴 create
         menu = create_menu(name, price, images_as_string, main_description, is_soldout, store_id, menu_category_id, page, position)
 
-        if options: # 메뉴 옵션 create
-            create_menu_option(options, menu.id)
+        if option_groups: # 메뉴 옵션 그룹 및 옵션 create
+            create_menu_option_group(option_groups, menu.id)
 
-        return jsonify({'message': '메뉴가 성공적으로 생성되었습니다.'}), 201
+        return jsonify({
+            'message': '메뉴가 성공적으로 생성되었습니다.',
+            'code': 201
+        }), 201
     
     # 기존 메뉴 수정
     if request.method == 'PATCH':
@@ -385,10 +395,10 @@ def set_menu():
         main_description = json_data['main_description']
         #sub_description = json_data['sub_description']
         is_soldout = False # null 허용X -> false 기본값으로 넣고 있음
-        menu_category_id = json_data['main_category']
+        menu_category_id = json_data['sub_category']
         #page = menu_data['page']
         #position = menu_data['position']
-        options = json_data['options']
+        option_groups = json_data.get('option_groups', [])
         
         # # 이미지 저장
         images = []
@@ -424,9 +434,12 @@ def set_menu():
         menu = update_menu(menu_id, name, price, images_as_string, main_description, is_soldout, store_id, menu_category_id)
         
         # 메뉴 옵션 update
-        if options:
+        if option_groups:
             check_options_exist(menu.id) # DB에 등록된 옵션이 있는지 확인 후 있으면 삭제하고
-            create_menu_option(options, menu.id) # 메뉴 옵션 재등록함
+            create_menu_option_group(option_groups, menu.id) # 메뉴 옵션 그룹 재등록함
+        else:
+            # 옵션이 하나도 없는 경우에도 기존 옵션 삭제 필요
+            check_options_exist(menu.id)
 
         return jsonify({
             'code' : 200,
@@ -537,6 +550,11 @@ def set_menu_position():
                 'code' : 400,
                 'message': '메뉴 이동 실패'
                 }), 400
+
+# POS -> 매장관리 -> 카테고리 관리
+@store_bp.route('/category_mgmt', methods=['GET'])
+def category_mgmt():
+    return render_template('store_category_mgmt.html')
     
 # 테이블 카테고리 생성/수정
 @store_bp.route('/set_table_category', methods=['POST'])
@@ -586,3 +604,151 @@ def get_table_id_yn():
             return jsonify({'status': True}), 200
         else:
             return jsonify({'status': False}), 200
+
+# 직원 호출 항목 관리 페이지
+@store_bp.route('/staff_call_mgmt')
+@login_required
+def staff_call_mgmt():
+    return render_template('staff_call_mgmt.html')
+
+# 직원 호출 항목 리스트 조회 API
+@store_bp.route('/get_staff_call_items', methods=['GET'])
+@login_required
+def api_get_staff_call_items():
+    from app.models import Store
+    store_id = current_user.id
+    store = Store.query.get(store_id)
+    items = get_staff_call_items(store_id)
+    
+    item_list = []
+    for i in items:
+        item_list.append({
+            'id': i.id,
+            'name': i.name,
+            'image': i.image,
+            'position': i.position,
+            'use_quantity': i.use_quantity,
+            'is_active': i.is_active
+        })
+        
+    return jsonify({
+        'items': item_list,
+        'grid': {
+            'rows': store.staff_call_grid_rows or 4,
+            'cols': store.staff_call_grid_cols or 4
+        }
+    })
+
+# 직원 호출 항목 생성/수정/삭제 API
+@store_bp.route('/set_staff_call_item', methods=['POST', 'PATCH', 'DELETE'])
+@login_required
+def api_set_staff_call_item():
+    store_id = current_user.id
+    
+    if request.method in ['POST', 'PATCH']:
+        # JSON 또는 FormData 대응 (이미지 업로드 때문)
+        if request.is_json:
+            data = request.get_json()
+        else:
+            data = request.form
+            
+        name = data.get('name')
+        use_quantity = data.get('use_quantity') == 'true' if not request.is_json else data.get('use_quantity', False)
+        position = int(data.get('position', 0))
+        item_id = data.get('id')
+        
+        image_url = data.get('image') if request.is_json else None
+        
+        # 이미지 파일 처리
+        file = request.files.get('image_file')
+        if file:
+            UPLOAD_FOLDER = 'app/static/images/staff_call'
+            store_folder = f'{UPLOAD_FOLDER}/store_{store_id}'
+            if not os.path.exists(store_folder):
+                os.makedirs(store_folder)
+            
+            # 임시 아이디 또는 실제 아이디 기반 파일명
+            filename = f"item_{item_id or 'new'}_{int(datetime.now().timestamp())}.png"
+            file_path = os.path.join(store_folder, filename)
+            file.save(file_path)
+            image_url = f"/static/images/staff_call/store_{store_id}/{filename}"
+
+        if request.method == 'POST':
+            item = create_staff_call_item(store_id, name, image_url, use_quantity, position)
+            # 신규 생성 후 파일명에 ID 반영하고 싶다면 여기서 재저장 로직이 필요할 수 있으나 생략 가능
+            return jsonify({'message': 'Success', 'id': item.id, 'code': 201}), 201
+            
+        if request.method == 'PATCH':
+            item = update_staff_call_item(item_id, name, image_url, use_quantity, position)
+            if item:
+                return jsonify({'message': 'Success', 'code': 200}), 200
+            return jsonify({'message': 'Not Found'}), 404
+        
+    if request.method == 'DELETE':
+        item_id = request.args.get('id')
+        if delete_staff_call_item(item_id):
+            return jsonify({'message': 'Success', 'code': 200}), 200
+        return jsonify({'message': 'Not Found'}), 404
+
+# 직원 호출 그리드 설정 저장 API
+@store_bp.route('/set_staff_call_grid', methods=['POST'])
+@login_required
+def api_set_staff_call_grid():
+    store_id = current_user.id
+    data = request.get_json()
+    rows = data.get('rows')
+    cols = data.get('cols')
+    
+    from app.models.staff_call import update_staff_call_grid
+    if update_staff_call_grid(store_id, rows, cols):
+        return jsonify({'message': 'Success', 'code': 200}), 200
+    return jsonify({'message': 'Failed', 'code': 400}), 400
+
+# 직원 호출 로그 확인(Confirm) API
+@store_bp.route('/confirm_staff_call', methods=['POST'])
+@login_required
+def api_confirm_staff_call():
+    data = request.get_json()
+    log_id = data.get('log_id')
+    
+    # Check if it's an order
+    if isinstance(log_id, str) and log_id.startswith('order_'):
+        try:
+            order_id = int(log_id.split('_')[1])
+            from app.models import Order
+            # Update specific order status
+            # However, we grouped orders. The ID passed is representative.
+            # We strictly should find the group, but we used a representative ID.
+            # If we confirm the representative order, we should probably confirm the hole group?
+            # Or just that order?
+            # In `get_staff_call_logs`, we grouped by (table, time).
+            # If we just confirm the single order ID, others in same group might remain unconfirmed if they have different IDs.
+            # But we passed `id: "order_{id}"` as representative.
+            
+            # Let's find the order.
+            order = Order.query.get(order_id)
+            if order:
+                # Find other orders in the same "group" (same table, same time)
+                # This matches the grouping logic in `get_staff_call_logs`
+                # Key was: table_name + ordered_at
+                # So we look for orders with same table_id and ordered_at
+                
+                related_orders = Order.query.filter_by(
+                    table_id=order.table_id,
+                    ordered_at=order.ordered_at
+                ).all()
+                
+                for o in related_orders:
+                    if o.order_status_id == 1:
+                        o.order_status_id = 2 # Confirmed/Completed
+                
+                db.session.commit()
+                return jsonify({'message': 'Success'}), 200
+        except Exception as e:
+            print(f"Error confirming order: {e}")
+            return jsonify({'message': 'Error'}), 500
+            
+    # Regular Staff Call
+    if confirm_staff_call(log_id):
+        return jsonify({'message': 'Success'}), 200
+    return jsonify({'message': 'Not Found'}), 404

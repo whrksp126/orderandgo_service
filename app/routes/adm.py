@@ -94,31 +94,42 @@ def get_store_py(store_id):
 
 # 스토어 수정
 @adm_bp.route('/store/<store_id>', methods=['PATCH'])
-def update_store_py(store_id):
+@adm_bp.route('/store/current', methods=['PATCH'])
+def update_store_py(store_id=None):
     # 스토어 업데이트 로직 수행
     if request.method == 'PATCH':
         store_data = request.get_json()
         
-        #user_id = store_data['user_id']
-        user_id = 14 # temp
-        store_id = 2 # temp
-        name = store_data['name']
-        address = store_data['address']
-        tel = store_data['tel']
-        manager_name = store_data['manager_name']
-        manager_tel = store_data['manager_tel']
-        logo_img = store_data['logo_img']
-        store_image = store_data['store_image']
-        main_description = store_data['main_description']
-        sub_description = store_data['sub_description']
+        user_id = current_user.id
+        store_id = store_data.get('store_id') # 프론트에서 전달받거나 쿼리 스트링 등 사용
+        if not store_id:
+            # 현재 사용자의 첫 번째 스토어를 기본값으로 (예시)
+            store = Store.query.filter_by(user_id=user_id).first()
+            if store:
+                store_id = store.id
+            else:
+                return jsonify({'message': '스토어를 찾을 수 없습니다.'}), 404
 
-        store = update_store(user_id, store_id, name, address, tel, manager_name, manager_tel, logo_img, store_image, main_description, sub_description)
-        print("스토어 수정 1차 성공", store)
-
-        response = jsonify({'message': 'Success'})
-        response.status_code = 200
-        print('Received JSON data:', store_data)
-    return jsonify({'message': '스토어가 성공적으로 업데이트되었습니다.'}), 200
+        name = store_data.get('name')
+        address = store_data.get('address')
+        tel = store_data.get('tel')
+        business_number = store_data.get('business_number')
+        representative_name = store_data.get('representative_name')
+        
+        # 기존 모델 함수 호출 (인자 순서 및 구성 확인 필요)
+        # update_store(store_id, user_id, name, business_number, representative_name, address, tel, logo_img, store_image, main_description, sub_description)
+        # adm.py 내에서 정의된 update_store 호출 방식을 모델 정의에 맞게 수정
+        success = update_store(
+            store_id, user_id, name, business_number, representative_name, address, tel,
+            store_data.get('logo_img'), store_data.get('store_image'), 
+            store_data.get('main_description'), store_data.get('sub_description')
+        )
+        
+        if success == True:
+            return jsonify({'message': '스토어가 성공적으로 업데이트되었습니다.'}), 200
+        else:
+            return jsonify({'message': f'업데이트 실패: {success}'}), 400
+    return jsonify({'message': '잘못된 요청입니다.'}), 405
 
 # 스토어 삭제
 @adm_bp.route('/store/<store_id>', methods=['DELETE'])
@@ -408,7 +419,10 @@ def api_update_table_position():
 @adm_bp.route('/update_main_category', methods=['PATCH'])
 def api_update_main_category():
     data = request.get_json()
-    main_category_list = data['main_category_list']
+    main_category_list = data.get('main_category_list', [])
+    
+    if not main_category_list:
+        return jsonify({'code': 400, 'msg': '최소 한 개의 메인 카테고리가 존재해야 합니다.'}), 400
     dummy = [
         {
             'id': 1,
@@ -471,21 +485,12 @@ def api_update_main_category():
 @adm_bp.route('/update_sub_category', methods=['PATCH'])
 def api_update_sub_category():
     data = request.get_json()
-    sub_category_list = data['sub_category_list']
-    sub_category_list = sorted(sub_category_list, key=lambda x: x['id'], reverse=True)  # id 큰 순으로 정렬해서 main_category_id 찾을 수 있도록
-    # dummy = [
-    #     {
-    #         'id': 1,
-    #         'name': '식사',
-    #         'position': 1,
-    #     },
-    #     {
-    #         'id': 12,
-    #         'name': '식사2',
-    #         'position': 2,
-    #     },
-    # ]
+    sub_category_list = data.get('sub_category_list', [])
+    
+    if not sub_category_list:
+        return jsonify({'code': 400, 'msg': '최소 한 개의 서브 카테고리가 존재해야 합니다.'}), 400
 
+    sub_category_list = sorted(sub_category_list, key=lambda x: x['id'], reverse=True)  # id 큰 순으로 정렬해서 main_category_id 찾을 수 있도록
 
     main_category_id = db.session.query(SubCategory.main_category_id)\
                                 .filter(SubCategory.id == sub_category_list[0]['id'])\

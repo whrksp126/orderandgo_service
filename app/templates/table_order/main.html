@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -16,9 +17,8 @@
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
   <!-- 전용 css -->
-  <!-- <link rel="stylesheet" href="/static/css/table_order.css"> -->
-  <!-- 전용 css -->
-  <link rel="stylesheet" href="/static/css/pos.css">
+  <link rel="stylesheet" href="/static/css/table_order.css?v=1.1">
+  <link rel="stylesheet" href="/static/css/receipt.css">
 
   <script src="/static/js/htmls.js"></script>
 
@@ -26,165 +26,202 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 
 </head>
+
 <body class="table_order">
   <div id="container" class="order">
-    <header>
-      <!-- <h1>POS - Header</h1>-->
-      <a class="back_btn" href="/pos/tableList">
-        <i class="ph-bold ph-caret-left"></i>
-      </a>
-      <div class="center">
+    <!-- 왼쪽 사이드바: 로고 및 카테고리 -->
+    <aside class="sidebar">
+      <div class="logo">
         <a onclick="location.reload();">
-          <h1>
-            <img src="/static/images/common/logo-order&go-white.png" alt="">
-          </h1>
+          <img src="/static/images/common/logo-order&go-color.png" alt="order&go">
         </a>
-        <div class="header_info">
-          <span class="cur_time">2023-05-01(월) 14:00</span>
-          <span class="store_state" data-state="open">영업중</span>
+      </div>
+      <nav class="main-nav">
+        <ul id="mainCategoryList">
+          <!-- JS에서 동적 생성 -->
+          <li data-state="active"><button>로딩 중...</button></li>
+        </ul>
+      </nav>
+      <div class="sidebar-buttons">
+        <button class="nav-btn order-history-btn" onclick="toggleOrderHistory()">
+          <i class="ph-bold ph-receipt"></i>
+          주문 내역
+        </button>
+        <button class="nav-btn cart-toggle-btn" onclick="toggleCart()">
+          <i class="ph-bold ph-shopping-cart"></i>
+          장바구니
+        </button>
+      </div>
+      <div class="call-staff">
+        <button onclick="clickCallStaff()">
+          <i class="ph-bold ph-bell"></i>
+          직원 호출
+        </button>
+      </div>
+
+      {% if table_name %}
+      <div class="table-info-banner" id="adminTriggerBtn">
+        <span class="label">TABLE</span>
+        <span class="name">{{ table_name }}</span>
+      </div>
+      {% endif %}
+    </aside>
+
+    <!-- 중앙 메인: 메뉴 그리드 -->
+    <main>
+      <div class="menu-grid-container">
+        <div class="menu-grid" id="menuGrid">
+          <!-- JS에서 동적 생성 -->
         </div>
       </div>
-    </header>
-    <main>
-      <section>
-        <!-- <h1>POS - section</h1> -->
-        <nav class="main">
-          <!-- <h1>POS - Nav</h1> -->
-          <ul>
-            <li data-state="active">
-              <button>카테고리 1</button>
-            </li>
-            <li>
-              <button>카테고리 2</button>
-            </li>
-            <li>
-              <button>카테고리 3</button>
-            </li>
-          </ul>
-        </nav>
-        <nav class="sub">
-          <!-- <h1>POS - Nav</h1> -->
-          <ul>
-            <li data-state="active">
-              <button>카테고리 1</button>
-            </li>
-            <li>
-              <button>카테고리 2</button>
-            </li>
-            <li>
-              <button>카테고리 3</button>
-            </li>
-          </ul>
-        </nav>
-        <article>
-          <div class="menus items">
-            <button class="menu item">
-              <div class="title">
-                <h2>메뉴명</h2>
-              </div>
-              <span class="price">16,000원</span>
-            </button>
-            <button class="menu item hidden"></button>
-            <button class="menu item hidden"></button>
-            <button class="menu item hidden"></button>
-
-            <button class="menu item hidden"></button>
-            <button class="menu item hidden"></button>
-            <button class="menu item hidden"></button>
-            <button class="menu item hidden"></button>
-
-            <button class="menu item hidden"></button>
-            <button class="menu item hidden"></button>
-            <button class="menu item hidden"></button>
-            <button class="menu item hidden"></button>
-
-            <button class="menu item hidden"></button>
-            <button class="menu item hidden"></button>
-            <button class="menu item hidden"></button>
-            <button class="menu item hidden"></button>
-            
-            <button class="menu item hidden"></button>
-            <button class="menu item hidden"></button>
-            <button class="menu item hidden"></button>
-            <button class="menu item hidden"></button>
-            
-            <button class="menu item hidden"></button>
-            <button class="menu item hidden"></button>
-            <button class="menu item hidden"></button>
-            <button class="menu item hidden"></button>
-          </div>
-          <button class="change_page_btn prev_page_btn" onclick="clickChageMenuListPageBtn(event, 'prev')">
-            <i class="ph ph-caret-left"></i>
-          </button>
-          <button class="change_page_btn next_page_btn" onclick="clickChageMenuListPageBtn(event, 'next')">
-            <i class="ph ph-caret-right"></i>
-          </button>
-        </article>
-        <!-- 메뉴판 페이지에서 메뉴 옵션 선택 영역 -->
-        <aside class="option_container ">
-          <div class="menus items">
-            <button class="menu item">
-              <div class="title">
-                <h2>옵션명</h2>
-              </div>
-              <span class="price">16,000원</span>
-            </button>
-          </div>
-          <button class="change_page_btn prev_page_btn">
-            <i class="ph ph-caret-left"></i>
-          </button>
-          <button class="change_page_btn next_page_btn">
-            <i class="ph ph-caret-right"></i>
-          </button>
-        </aside>
-        <div class="option_background" onclick="closeOptionContainer(event)"></div>
-      </section>
-      <!-- 메뉴판 페이지에서 장바구니 영역 -->
-      <aside class="basket_container" data-type="basket">
-        <!-- <h1>POS - aside</h1> -->
-        <div class="count_btns top">
-          <button onclick="minusBasketMenu(event)" data-active="false" class="minus">
-            <i class="ph ph-minus"></i>
-          </button>
-          <button onclick="plusBasketMenu(event)" data-active="false" class="plus">
-            <i class="ph ph-plus"></i>
-          </button>
-          <button onclick="deleteBasketMenu(event)" class="delete">
-            <i class="ph ph-trash"></i>
-          </button>
-          <button onclick="clickOrderHistoryBtn(event)" data-check="false" class="order_history">
-            주문내역
-          </button>
-        </div>
-        <ul class="basket middle">
-          <!-- <li>
-            <div class="menu">
-              <h2>메뉴명</h2>
-              <span>1</span>
-              <span class="price">18,000원</span>
-            </div>
-            <div class="menu_option">
-              <h2>옵션명</h2>
-              <span>1</span>
-              <span class="price">2,000원</span>
-            </div>
-          </li> -->
-        </ul>
-        <div class="order_btns bottom">
-          <div class="total_price">
-            <h2>총액</h2>
-            <span class="price">원</span>
-          </div>
-          <ul>
-            <li class="order" data-iscancel="false" onclick="clickOrder(event)"><button>주문하기</button></li>
-            <li class="pay" onclick="clickPayment(event)"><button>결제하기</button></li>
-          </ul>
-        </div>
-      </aside>
     </main>
+
+    <!-- 오른쪽 사이드바: 장바구니/주문내역 (Absolute Floating) -->
+    <aside class="cart-panel" id="rightPanel">
+      <div class="panel-container" id="cartView">
+        <div class="cart-header">
+          <span>장바구니 <span class="item-count" id="cartItemCount">(0)</span></span>
+          <button class="close-panel-btn" onclick="closeRightPanel()">
+            <i class="ph-bold ph-x"></i>
+          </button>
+        </div>
+        <div class="cart-item-list" id="cartList">
+          <!-- JS에서 동적 생성 -->
+          <div style="padding: 40px; text-align: center; color: #999;">장바구니가 비어 있습니다.</div>
+        </div>
+        <div class="cart-footer">
+          <div class="total">
+            <span>합계</span>
+            <span class="price" id="totalPrice">0원</span>
+          </div>
+          <button class="order-btn" onclick="clickOrder(event)">주문하기</button>
+        </div>
+      </div>
+
+      <div class="panel-container hidden" id="historyView">
+        <div class="order-header">
+          <span>주문 내역</span>
+          <button class="close-panel-btn" onclick="closeRightPanel()">
+            <i class="ph-bold ph-x"></i>
+          </button>
+        </div>
+        <div class="order-item-list" id="orderHistoryList">
+          <!-- JS에서 동적 생성 -->
+          <div style="padding: 40px; text-align: center; color: #999;">주문 내역이 없습니다.</div>
+        </div>
+        <div class="order-footer">
+          <div class="total">
+            <span>총 주문 금액</span>
+            <span class="price" id="totalOrderPrice">0원</span>
+          </div>
+        </div>
+      </div>
+    </aside>
   </div>
-  
-  <script src="/static/js/common.js"></script>
-  <script src="/static/js/tableOrder.js"></script>
+
+  <!-- 옵션 선택 모달 -->
+  <div class="option-modal-overlay" id="optionModal">
+    <div class="option-modal">
+      <div class="left-side" id="optionMenuImage">
+        <div class="slider-container" id="menuSlider">
+          <div class="slider-wrapper" id="sliderWrapper">
+            <!-- JS에서 동적 생성 -->
+          </div>
+          <button class="slider-btn prev" onclick="moveSlider(-1)">
+            <i class="ph-bold ph-caret-left"></i>
+          </button>
+          <button class="slider-btn next" onclick="moveSlider(1)">
+            <i class="ph-bold ph-caret-right"></i>
+          </button>
+          <div class="slider-indicators" id="sliderIndicators">
+            <!-- JS에서 동적 생성 -->
+          </div>
+        </div>
+      </div>
+      <div class="right-side">
+        <div class="details">
+          <h2 id="optionMenuName">메뉴명</h2>
+          <div class="price" id="optionMenuPrice">0원</div>
+          <div id="optionMenuDescription" class="menu-description"></div>
+
+          <div id="optionGroups">
+            <!-- 옵션 그룹들 동적 생성 -->
+          </div>
+        </div>
+        <div class="actions">
+          <button class="cancel-btn" onclick="closeOptionModal()">취소</button>
+          <button class="add-to-cart-btn" onclick="addToCartFromModal()">장바구니 담기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- 직원 호출 모달 (Redesign) -->
+  <div class="option-modal-overlay" id="staffCallModal">
+    <div class="option-modal staff-call-modal">
+
+      <!-- 왼쪽: 그리드 영역 -->
+      <div class="staff-call-left">
+        <div class="staff-call-grid-container scrollbar_hidden" id="staffCallItemList">
+          <div class="loading-msg">항목을 불러오는 중...</div>
+        </div>
+      </div>
+
+      <!-- 오른쪽: 사이드바 영역 -->
+      <div class="staff-call-right" id="staffCallSidebar">
+        <div class="sidebar-header">
+          <h2>직원 호출</h2>
+        </div>
+
+        <div class="selected-items-list scrollbar_hidden" id="selectedStaffCallList">
+          <!-- JS 동적 생성 -->
+          <div class="empty-msg">
+            <p>필요한 항목을 선택해주세요.</p>
+          </div>
+        </div>
+
+        <div class="actions"
+          style="padding: 20px; border-top: 1px solid var(--border-color); background: white; margin-top: auto;">
+          <button class="cancel-btn" onclick="closeStaffCallModal()">닫기</button>
+          <button class="add-to-cart-btn" onclick="requestStaffCall()">호출하기</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 관리자 모달 -->
+
+  <div class="option-modal-overlay" id="adminModal">
+    <div class="option-modal" style="height: auto; max-height: 80vh; max-width: 500px; flex-direction: column;">
+      <div style="padding: 30px; text-align: center; position: relative;">
+        <button onclick="closeAdminModal()"
+          style="position: absolute; top: 0; right: 0; padding: 20px; background: none; border: none; cursor: pointer;">
+          <i class="ph-bold ph-x" style="font-size: 24px;"></i>
+        </button>
+
+        <h2 style="font-size: 24px; margin-bottom: 30px;">관리자 설정</h2>
+
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 30px;">
+          <button onclick="exitTableOrder()"
+            style="width: 100%; height: 100px; padding: 0; border-radius: 12px; border: 1px solid #ddd; background: #fff; color: #333; font-weight: bold; font-size: 16px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;">
+            <i class="ph-bold ph-sign-out" style="font-size: 24px;"></i>
+            나가기
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 토스트 메시지 컨테이너 -->
+  <div id="toastContainer" class="toast-container"></div>
+  </div>
+
+  <script src="/static/js/common.js?v=2"></script>
+  <script src="/static/js/tableOrder.js?v=2"></script>
+  <script src="/static/js/receipt.js"></script>
 </body>
+
 </html>

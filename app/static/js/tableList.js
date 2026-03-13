@@ -1,37 +1,44 @@
-// const socket = io.connect('http://' + document.domain + ':' + location.port); 
-// socket.emit('pos_login', {user_type: 'pos'}, (response) => {
-//   // alert(response.msg)
-// });
+// Socket initialization, pos_login, and staff_call_notification are now handled in common.js
 
-// socket.on('update_pos', function(data) {
-//   // 받은 주문 정보로 포스기 UI 업데이트
-//   console.log('새로운 주문 업데이트:', data);
-//   // 필요한 UI 업데이트 로직
-// });
+// common.js에서 주문 알림 시 호출되는 콜백
+function onOrderUpdate(data) {
+  // 테이블 리스트 새로고침
+  loadTableData();
+}
 
 let tableData;
 let cachingData = null;
-fetch('/pos/get_table_page', {
-  method: 'GET',
-})
-.then(response => response.json())
-.then(data => {
-  // 받은 데이터 처리
-  console.log(data);
-  
-  tableData = setInitFetchData(data);
-  createHtml(tableData);
-})
-.catch(error => {
-  console.error('Error:', error);
-});
+
+// 테이블 데이터 로드 함수
+// ... (omitted lines) ...
+
+// renderNotiItem removed - now in common.js
+const loadTableData = () => {
+  fetch('/pos/get_table_page', {
+    method: 'GET',
+  })
+    .then(response => response.json())
+    .then(data => {
+      // 받은 데이터 처리
+      console.log(data);
+
+      tableData = setInitFetchData(data);
+      createHtml(tableData);
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    });
+}
+
+// 초기 로드
+loadTableData();
 
 // 초기 오더 리스트 재 정렬
 const setInitFetchData = (categorys) => {
   let data = JSON.parse(JSON.stringify(categorys));
-  data.forEach((category)=>{
-    category.pageList.forEach((page)=>{
-      page.tableList.forEach((table)=>{
+  data.forEach((category) => {
+    category.pageList.forEach((page) => {
+      page.tableList.forEach((table) => {
         const mergedOrders = mergeOrders(table.orderList);
         table.orderList = mergedOrders;
       })
@@ -64,13 +71,13 @@ const createHtml = (tablePageData) => {
   const _table = document.querySelector('main section article .items');
   console.log('실행됨')
   let nav_html = '';
-  tablePageData.forEach((data, index)=>{
+  tablePageData.forEach((data, index) => {
     nav_html += `
-      <li data-id="${data.categoryId}" data-state="${index == 0 ? 'active': ''}">
+      <li data-id="${data.categoryId}" data-state="${index == 0 ? 'active' : ''}">
         <button onclick="changeTableCategory(event,${index})">${data.category}</button>
       </li>`;
-    _tableCategory.innerHTML =  nav_html;
-    if(index != 0) return;
+    _tableCategory.innerHTML = nav_html;
+    if (index != 0) return;
 
     const PAGE_INDEX = 0;
     const tables = data.pageList[PAGE_INDEX].tableList;
@@ -81,9 +88,9 @@ const createHtml = (tablePageData) => {
     createPageNationBtnHtml();
     const _article = document.querySelector('main section article');
     const curCategoryId = document.querySelector('main section nav ul li[data-state="active"]').dataset.id;
-    const pageLen = tableData.find((category)=>category.categoryId == Number(curCategoryId)).pageList.length;
-    if(0 < PAGE_INDEX){_article.classList.add('hasPrevPage')};
-    if(PAGE_INDEX < pageLen-1){_article.classList.add('hasNextPage')};
+    const pageLen = tableData.find((category) => category.categoryId == Number(curCategoryId)).pageList.length;
+    if (0 < PAGE_INDEX) { _article.classList.add('hasPrevPage') };
+    if (PAGE_INDEX < pageLen - 1) { _article.classList.add('hasNextPage') };
   })
 }
 
@@ -98,10 +105,10 @@ const changeTableCategory = (event, index) => {
   _li.dataset.state = 'active'
   const PAGE_INDEX = 0;
   let tables_html
-  if(cachingData != null) {
+  if (cachingData != null) {
     tables_html = changeTableHtml(cachingData[index].pageList[PAGE_INDEX].tableList);
-  }else {
-    tables_html = changeTableHtml(tableData[index].pageList[PAGE_INDEX].tableList);  
+  } else {
+    tables_html = changeTableHtml(tableData[index].pageList[PAGE_INDEX].tableList);
   }
   _table.innerHTML = tables_html;
   _table.setAttribute('data-page', PAGE_INDEX);
@@ -112,17 +119,17 @@ const changeTableCategory = (event, index) => {
 
 
   const curCategoryId = document.querySelector('main section nav ul li[data-state="active"]').dataset.id;
-  const pageLen = tableData.find((category)=>category.categoryId == Number(curCategoryId)).pageList.length;
-  if(PAGE_INDEX < pageLen-1){_article.classList.add('hasNextPage')};
+  const pageLen = tableData.find((category) => category.categoryId == Number(curCategoryId)).pageList.length;
+  if (PAGE_INDEX < pageLen - 1) { _article.classList.add('hasNextPage') };
 
 }
 
 const changeTableHtml = (tables) => {
-  tables.sort((a,b)=> a.position-b.position);
+  tables.sort((a, b) => a.position - b.position);
   const forArray = new Array(20).fill(false)
-  tables.forEach((table, index)=> forArray[table.position-1] = table);
+  tables.forEach((table, index) => forArray[table.position - 1] = table);
   let html = '';
-  html = forArray.map((table, index)=>`
+  html = forArray.map((table, index) => `
   ${table == false ? `<button></button>` : `
     <button class="table item ${table.select ? 'select' : ''}" data-id="${table.tableId}" data-state="${table.statusId}" style="${table.groupId != 0 ? "border: 1px solid " + table.groupColor : ""}"onclick="clickTable(${table.tableId})">
       ${table.isGroup != 0 ? `
@@ -141,34 +148,34 @@ const changeTableHtml = (tables) => {
       <div class="body">
         <i class="ph ph-plus"></i>
         <ul>
-          ${table.orderList.length != 0 ? `${table.orderList.map((order, orderIndex)=>`${orderIndex <= 2 ? `
+          ${table.orderList.length != 0 ? `${table.orderList.map((order, orderIndex) => `${orderIndex <= 2 ? `
           <li data-id="${order.menuId}">
             <span>${order.menu}</span>
             <span>${order.count}</span>
           </li>
           ` : ``}
           ${orderIndex == 2 ? `
-          <li class="order_more">${table.orderList.length - 3 > 0 ? `<span>외 ${table.orderList.length - 3}</span>`  : ''}</li>
+          <li class="order_more">${table.orderList.length - 3 > 0 ? `<span>외 ${table.orderList.length - 3}</span>` : ''}</li>
           ` : ``}
           `).join('')}` : ``}
         </ul>
       </div>
     </button>
   ` }`).join('');
-  
+
   return html;
 }
 
-function clickTable(table_id){
+function clickTable(table_id) {
   console.log('클릭함')
-  window.location.href=`/pos/menuList/${table_id}`
+  window.location.href = `/pos/menuList/${table_id}`
 }
 
 
 
 // 테이블 그룹지정 버튼 클릭 시
 const clickGroupBtn = (event) => {
-  const asideHtml = 
+  const asideHtml =
     `
     <div class="left selete_box_group">
       <button data-value="1" data-text="그룹 1" class="btn-dropdown" onclick="clickDropDownBtn(event)">
@@ -177,7 +184,7 @@ const clickGroupBtn = (event) => {
         <i class="ph ph-caret-up"></i>
       </button>
       <ul class="dropdown-list">
-      ${ groupColors.map(({num, color})=>`
+      ${groupColors.map(({ num, color }) => `
         <li data-value="${num}" data-text="그룹 ${num}" class="" data-color="${color}" onclick="clickCurGroupNum(event)">
           <div style="background: ${color}">${num}</div>
           <span>그룹 ${num}</span>
@@ -214,8 +221,8 @@ const clickGroupBtn = (event) => {
 
 // 테이블 합석/이동 버튼 클릭 시
 const clickMoveAndjoinBtn = (event) => {
-  const asideHtml = 
-  `
+  const asideHtml =
+    `
     <div class="left">
     </div>
     <div class="right custom_btns">
@@ -255,6 +262,10 @@ const clickSetBtn = (event) => {
           <i class="ph ph-users-three"></i>
           <span>그룹</span>
         </button>
+        <button class="" onclick="window.location.href='/store/product'">
+          <i class="ph ph-storefront"></i>
+          <span>매장 관리</span>
+        </button>
       </div>
     </div>
     <div class="bottom"></div>
@@ -286,7 +297,7 @@ const clickAddGroupList = (event) => {
 }
 
 //그룹 셀렉트 박스에서 특정 그룹 삭제 버튼 클릭 시
-const clickGroupDeleteBtn = (event) =>{
+const clickGroupDeleteBtn = (event) => {
   console.log('삭제 클릭함')
   event.stopPropagation();
   const _target = event.currentTarget;
@@ -295,10 +306,10 @@ const clickGroupDeleteBtn = (event) =>{
   const __groupEls = document.querySelectorAll('.item_grop_num');
 
   // 캐싱 데이터에서 선택 그룹 데이터 삭제
-  cachingData.forEach((categoryData)=>{
-    categoryData.pageList.forEach((pageData)=>{
-      pageData.tableList.forEach((table)=>{
-        if(Number(table.groupId) == Number(value)){
+  cachingData.forEach((categoryData) => {
+    categoryData.pageList.forEach((pageData) => {
+      pageData.tableList.forEach((table) => {
+        if (Number(table.groupId) == Number(value)) {
           table.groupColor = undefined;
           table.groupId = undefined;
         }
@@ -307,8 +318,8 @@ const clickGroupDeleteBtn = (event) =>{
   })
 
   // 현재 화면에서 해당 그룹 스타일 변경
-  __groupEls.forEach((item)=>{
-    if(Number(item.dataset.id) == Number(value)){
+  __groupEls.forEach((item) => {
+    if (Number(item.dataset.id) == Number(value)) {
       item.closest('.item').style.border = '';
       item.remove();
     }
@@ -341,19 +352,19 @@ const clickTransparentGroupTable = (event) => {
   const curNumEl = curGroup.querySelector('div');
   const computedStyle = window.getComputedStyle(curNumEl);
   const backgroundColor = computedStyle.backgroundColor;
-  
+
   const curCategoryId = document.querySelector('main section nav ul li[data-state="active"]').dataset.id;
   const _table = document.querySelector('main section article .items');
 
   const curPage = Number(_table.dataset.page);
   const itemId = _target.dataset.id;
 
-  const targetData = 
+  const targetData =
     cachingData
-      .find((category)=>category.categoryId == Number(curCategoryId))
+      .find((category) => category.categoryId == Number(curCategoryId))
       .pageList[curPage]
       .tableList
-      .find((table)=>table.tableId == Number(itemId))
+      .find((table) => table.tableId == Number(itemId))
 
   if (targetData.isGroup == 1 && targetData.groupId == Number(value)) {
     targetData.groupColor = undefined;
@@ -367,10 +378,10 @@ const clickTransparentGroupTable = (event) => {
     targetData.isGroup = 1;
   }
   const changeTableData = cachingData
-    .find((category)=>category.categoryId == Number(curCategoryId))
+    .find((category) => category.categoryId == Number(curCategoryId))
     .pageList[curPage]
     .tableList
-  
+
   const tables_html = changeTableHtml(changeTableData)
   _table.innerHTML = tables_html;
 
@@ -383,11 +394,11 @@ const clickSetGroupCancelBtn = (event) => {
   const curCategoryId = document.querySelector('main section nav ul li[data-state="active"]').dataset.id;
   const _table = document.querySelector('main section article .items');
   const curPage = Number(_table.dataset.page);
-  const targetData = 
+  const targetData =
     tableData
-    .find((category)=>category.categoryId == Number(curCategoryId))
-    .pageList[curPage]
-    .tableList
+      .find((category) => category.categoryId == Number(curCategoryId))
+      .pageList[curPage]
+      .tableList
 
   const tables_html = changeTableHtml(targetData)
   _table.innerHTML = tables_html;
@@ -402,12 +413,12 @@ const clickSetGroupSaveBtn = (event) => {
   const group_data = [];
   tableData = JSON.parse(JSON.stringify(cachingData));
   tableData.forEach((categoryData, index) => {
-    categoryData.pageList.forEach((pageData, index)=>{
-      pageData.tableList.forEach((table)=>{
+    categoryData.pageList.forEach((pageData, index) => {
+      pageData.tableList.forEach((table) => {
         group_data.push({
           'table_id': table.tableId,
           'group_id': table.groupId == undefined ? null : table.groupId,
-          'group_color':table.groupColor == undefined ? null : table.groupColor
+          'group_color': table.groupColor == undefined ? null : table.groupColor
         })
       })
     })
@@ -419,14 +430,14 @@ const clickSetGroupSaveBtn = (event) => {
     },
     body: JSON.stringify(group_data)
   })
-  .then(response => response.json())
-  .then(data => {
-    // 받은 데이터 처리
-    console.log(data);
-  })
-  .catch(error => {
-    console.error('Error:', error);
-  });
+    .then(response => response.json())
+    .then(data => {
+      // 받은 데이터 처리
+      console.log(data);
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    });
   cachingData = null;
 }
 
@@ -441,28 +452,28 @@ const clickTransparentMoveTable = (event) => {
   const curPage = Number(_table.dataset.page);
   const itemId = _target.dataset.id;
   console.log(cachingData)
-  const targetData = 
+  const targetData =
     cachingData
-      .find((category)=>category.categoryId == Number(curCategoryId))
+      .find((category) => category.categoryId == Number(curCategoryId))
       .pageList[curPage].tableList
-      .find((table)=>table.tableId == Number(itemId))
-  
+      .find((table) => table.tableId == Number(itemId))
+
   const targetStatusId = targetData.statusId;
   const curCachingDataLen = cachingSetTableData.length;
-  if(targetStatusId != 0 && curCachingDataLen == 0) {
+  if (targetStatusId != 0 && curCachingDataLen == 0) {
     // 첫번째 테이블 선택
     cachingSetTableData.push(targetData)
     targetData['select'] = true;
     const tables_html = changeTableHtml(cachingData
-      .find((category)=>category.categoryId == Number(curCategoryId))
+      .find((category) => category.categoryId == Number(curCategoryId))
       .pageList[curPage].tableList
     )
     const _table = document.querySelector('main section article .items');
     _table.innerHTML = tables_html;
-  }else if(targetStatusId != 0 && curCachingDataLen != 0){
+  } else if (targetStatusId != 0 && curCachingDataLen != 0) {
     if (targetData.tableId == cachingSetTableData[0].tableId) return
     // 테이블 합석
-    console.log(cachingSetTableData[0],targetData)
+    console.log(cachingSetTableData[0], targetData)
     const modal = openDefaultModal();
     modal.container.classList.add('success');
     modal.middle.innerHTML = `
@@ -473,52 +484,52 @@ const clickTransparentMoveTable = (event) => {
       </div>
     `
     modal.bottom.innerHTML = modalBottomHtml([
-      {class: 'close brand', text: '취소', fun: `onclick=""`},
-      {class: 'close brand_fill', text: '합석', fun: `onclick=""`}
+      { class: 'close brand', text: '취소', fun: `onclick=""` },
+      { class: 'close brand_fill', text: '합석', fun: `onclick=""` }
     ]);
-    modal.bottom.querySelector('.brand_fill').addEventListener('click', ()=>{
+    modal.bottom.querySelector('.brand_fill').addEventListener('click', () => {
       tableMoveList.push({
-        start_table_id : cachingSetTableData[0].tableId,
-        end_table_id : targetData.tableId,
+        start_table_id: cachingSetTableData[0].tableId,
+        end_table_id: targetData.tableId,
       })
       console.log(`${cachingSetTableData[0].table}에서 ${targetData.table}(으)로 합석합니다.`)
       delete cachingSetTableData[0].select;
-  
+
       targetData.orderList = mergeOrderLists(cachingSetTableData[0], targetData).orderList;
-      
+
       cachingSetTableData[0] = createEmptyTable(cachingSetTableData[0]);
-  
+
       const tables_html = changeTableHtml(cachingData
-        .find((category)=>category.categoryId == Number(curCategoryId))
+        .find((category) => category.categoryId == Number(curCategoryId))
         .pageList[curPage].tableList
       )
       const _table = document.querySelector('main section article .items');
       _table.innerHTML = tables_html;
-  
+
       // 초기화
       cachingSetTableData.length = 0
     })
-    
-  }else if(targetStatusId == 0 && curCachingDataLen != 0){
-    console.log('cachingSetTableData,',cachingSetTableData)
-    console.log('targetData,',targetData)
+
+  } else if (targetStatusId == 0 && curCachingDataLen != 0) {
+    console.log('cachingSetTableData,', cachingSetTableData)
+    console.log('targetData,', targetData)
     tableMoveList.push({
-      start_table_id : cachingSetTableData[0].tableId,
-      end_table_id : targetData.tableId,
+      start_table_id: cachingSetTableData[0].tableId,
+      end_table_id: targetData.tableId,
     })
     // 테이블 이동
-    console.log(`${cachingSetTableData[0].table}에서 ${targetData.table}(으)로 이동합니다.`)    
+    console.log(`${cachingSetTableData[0].table}에서 ${targetData.table}(으)로 이동합니다.`)
     delete cachingSetTableData[0].select;
-    for( key in targetData) {
-      if(key != 'table' && key != 'tableId' && key != 'position'){
+    for (key in targetData) {
+      if (key != 'table' && key != 'tableId' && key != 'position') {
         console.log(key, targetData[key], cachingSetTableData[0][key])
-        targetData[key] = JSON.parse(JSON.stringify(cachingSetTableData[0][key]));   
+        targetData[key] = JSON.parse(JSON.stringify(cachingSetTableData[0][key]));
       }
     }
     cachingSetTableData[0] = createEmptyTable(cachingSetTableData[0]);
 
     const tables_html = changeTableHtml(cachingData
-      .find((category)=>category.categoryId == Number(curCategoryId))
+      .find((category) => category.categoryId == Number(curCategoryId))
       .pageList[curPage].tableList
     )
     const _table = document.querySelector('main section article .items');
@@ -561,14 +572,14 @@ function mergeOrderLists(existingData, newData) {
 // 이동/합석 취소 버튼 클릭 시
 const clickCombineMoveCancelBtn = (event) => {
   changeStyleOnSet();
-  tableMoveList.length=0;
+  tableMoveList.length = 0;
   const curCategoryId = document.querySelector('main section nav ul li[data-state="active"]').dataset.id;
   const _table = document.querySelector('main section article .items');
   const curPage = _table.dataset.page;
-  const targetData = 
+  const targetData =
     tableData
-    .find((category)=>category.categoryId == Number(curCategoryId))
-    .pageList[curPage].tableList
+      .find((category) => category.categoryId == Number(curCategoryId))
+      .pageList[curPage].tableList
 
   const tables_html = changeTableHtml(targetData)
   _table.innerHTML = tables_html;
@@ -581,19 +592,19 @@ const clickCombineMoveSaveBtn = async (event) => {
   // 백으로 저장 api 호출하기
   const url = `/pos/set_table`;
   const method = 'PUT';
-  const fetchData = setMoveTableList(tableMoveList).map((data)=>{
+  const fetchData = setMoveTableList(tableMoveList).map((data) => {
     return {
-      start_table_id : [data.start_table_id[data.start_table_id.length-1]],
-      end_table_id : data.end_table_id
+      start_table_id: [data.start_table_id[data.start_table_id.length - 1]],
+      end_table_id: data.end_table_id
     }
   })
   // const fetchData = setMoveTableList(tableMoveList);
 
-  console.log('fetchData,',fetchData)
+  console.log('fetchData,', fetchData)
   const result = await fetchDataAsync(url, method, fetchData);
   console.log(result);
   cachingData = null;
-  tableMoveList.length=0; // 테이블 이동/합석 내역 초기화
+  tableMoveList.length = 0; // 테이블 이동/합석 내역 초기화
 }
 
 // 테이블 이동/합석 내역 데이터 정리
@@ -602,7 +613,7 @@ const setMoveTableList = (inputList) => {
   for (let inputIndex = 0; inputIndex < inputList.length; inputIndex++) {
     const current = inputList[inputIndex];
     let curStartList = [current.start_table_id];
-  
+
     for (let resultIndex = 0; resultIndex < resultList.length; resultIndex++) {
       const previous = resultList[resultIndex];
       if (current.start_table_id === previous.end_table_id || previous.end_table_id === current.end_table_id) {
@@ -618,7 +629,7 @@ const setMoveTableList = (inputList) => {
     resultList.push(dataObject);
   }
   return resultList = resultList.filter(item => item.hasOwnProperty('end_table_id'));
-  
+
 }
 
 // 빈 테이블 만들기
@@ -643,3 +654,4 @@ const changeStyleOnSet = () => {
   _aside.classList.remove('active');
 }
 
+// Notification system variables and functions moved to common.js

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -21,6 +22,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 
 </head>
+
 <body>
   <div id="container">
     <header>
@@ -37,6 +39,9 @@
         <div class="header_info">
           <span class="cur_time">2023-05-01(월) 14:00</span>
           <span class="store_state" data-state="open">영업 중</span>
+          <button class="btn_alarm" onclick="toggleNotificationSidebar()">
+            <i class="ph ph-bell"></i>
+          </button>
         </div>
       </div>
     </header>
@@ -103,13 +108,29 @@
       </aside>
     </main>
   </div>
-  
-  <!-- 직원 요청 및 호출에 대한 처리 영역 -->
-  <div id="alarm"></div>
+
+  <!-- 알림 내역 사이드바 -->
+  <div id="notificationOverlay" class="notification-overlay" onclick="toggleNotificationSidebar()"></div>
+  <aside id="notificationSidebar" class="notification-sidebar">
+    <div class="sidebar-header">
+      <h2>알림 <span class="dot"></span></h2>
+      <button class="close-btn" onclick="toggleNotificationSidebar()">
+        <i class="ph ph-x"></i>
+      </button>
+    </div>
+    <div class="sidebar-body">
+      <ul id="notificationList">
+        <!-- 알림 아이템이 여기에 동적으로 추가됩니다 -->
+      </ul>
+    </div>
+  </aside>
+
+  <div id="toastContainer" class="toast-container"></div>
 
   <!-- 공통 스크립트 -->
-  <script src="/static/js/common.js"></script>
+  <script src="/static/js/common.js?v=2"></script>
   <!-- 전용 스크립트 -->
-  <script src="/static/js/tableList.js"></script>
+  <script src="/static/js/tableList.js?v=2"></script>
 </body>
+
 </html>

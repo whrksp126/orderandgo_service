@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -17,6 +18,7 @@
   <!-- 전용 css -->
   <link rel="stylesheet" href="/static/css/store.css">
 </head>
+
 <body class="store_product">
   <div id="container">
     <header>
@@ -39,11 +41,11 @@
     <main>
       <nav>
         <ul>
-          <li class="active"><a href="">POS관리</a></li>
-          <li><a href="">테이블오더관리</a></li>
+          <li class="tab-link active" onclick="openTab(event, 'pos-mgmt')"><a>POS관리</a></li>
+          <li class="tab-link" onclick="openTab(event, 'table-order-mgmt')"><a>테이블오더관리</a></li>
         </ul>
       </nav>
-      <section>
+      <section id="pos-mgmt" class="tab-content" style="display: block;">
         <ul>
           <li>
             <h2>상품</h2>
@@ -58,13 +60,9 @@
           </li>
           <li>
             <h2>카테고리</h2>
-            <a>
+            <a href="/store/category_mgmt">
               <i class="ph ph-hard-drive"></i>
-              <span>카테고리 정보 수정</span>
-            </a>
-            <a>
-              <i class="ph ph-hard-drives"></i>
-              <span>카테고리 순서 변경</span>
+              <span>카테고리 관리</span>
             </a>
           </li>
           <li>
@@ -77,12 +75,40 @@
           </li>
         </ul>
       </section>
+
+      <section id="table-order-mgmt" class="tab-content" style="display: none;">
+        <ul>
+          <li>
+            <h2>서비스</h2>
+            <a href="/store/staff_call_mgmt">
+              <i class="ph ph-bell"></i>
+              <span>직원 호출 관리</span>
+            </a>
+          </li>
+        </ul>
+      </section>
     </main>
   </div>
-  
+
   <!-- 공통 스크립트 -->
   <script src="/static/js/common.js"></script>
   <!-- 전용 스크립트 -->
   <!-- <script src="/static/js/menuList.js"></script> -->
+  <script>
+    function openTab(evt, tabName) {
+      var i, tabcontent, tablinks;
+      tabcontent = document.getElementsByClassName("tab-content");
+      for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+      }
+      tablinks = document.getElementsByClassName("tab-link");
+      for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+      }
+      document.getElementById(tabName).style.display = "block";
+      evt.currentTarget.className += " active";
+    }
+  </script>
 </body>
+
 </html>

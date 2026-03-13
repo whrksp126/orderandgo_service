@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -16,12 +17,14 @@
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
   <!-- 전용 css -->
+  <link rel="stylesheet" href="/static/css/pos.css">
   <link rel="stylesheet" href="/static/css/table_order.css">
 
   <!-- socket.io -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 
 </head>
+
 <body class="table_order">
   <div id="container">
     <header>
@@ -65,7 +68,20 @@
       </section>
     </main>
   </div>
+  <div class="modal" onclick="closeModal(event)" style="display:none">
+    <div class="modal_content" onclick="event.stopPropagation()">
+      <div class="modal_top">
+        <h1 id="modal_title">알림</h1>
+        <i class="ph ph-x" onclick="closeModal(event)"></i>
+      </div>
+      <div class="modal_middle" id="modal_body">
+      </div>
+      <div class="modal_bottom" id="modal_footer">
+      </div>
+    </div>
+  </div>
   <script src="/static/js/common.js"></script>
   <script src="/static/js/tableOrder.js"></script>
 </body>
+
 </html>

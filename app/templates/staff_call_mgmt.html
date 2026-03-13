@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>OrderAndGo - 직원 호출 관리</title>
+  <link rel="icon" type="image/x-icon" href="/static/images/common/logo.png">
+
+  <!-- 시작 초기 css 설정 -->
+  <link rel="stylesheet" href="/static/css/reset.css">
+  <link rel="stylesheet" href="/static/css/common.css">
+  <link rel="stylesheet" href="/static/css/animation.css">
+  <!-- 아이콘 -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <!-- 전용 css -->
+  <link rel="stylesheet" href="/static/css/store.css">
+  <style>
+    /* Figma 스타일 + 그리드 레이아웃 통합 */
+    .staff-call-mgmt main {
+      display: flex;
+      height: calc(100vh - 40px);
+      gap: 20px;
+      padding: 20px;
+      background: #F5F5F5;
+      overflow: hidden;
+    }
+
+    .staff-call-mgmt article {
+      flex: 1;
+      height: 100%;
+      background: #fff;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #CCC;
+    }
+
+    .grid-settings {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    .grid-settings span {
+      font-weight: 700;
+      font-size: 15px;
+      color: #333;
+    }
+
+    .grid-btn-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .grid-btn-group input {
+      width: 50px;
+      padding: 8px;
+      border: 1px solid #CCC;
+      border-radius: 6px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .grid-btn-group button {
+      padding: 8px 15px;
+      border: 1px solid #1FAA9C;
+      background: #FFF;
+      color: #1FAA9C;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 800;
+      transition: all 0.2s;
+    }
+
+    .grid-btn-group button:active {
+      background: #1FAA9C;
+      color: #fff;
+    }
+
+    .staff-call-grid {
+      flex: 1;
+      display: grid;
+      gap: 15px;
+      width: 100%;
+      height: 100%;
+      /* 그리드 설정에 따라 JS에서 동적 변경됨 */
+    }
+
+    /* 카드 디자인 (Figma 감성 반영) */
+    .staff-call-card {
+      background: #fff;
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: 2px solid transparent;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .staff-call-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    .staff-call-card .content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(4px);
+      justify-content: center;
+    }
+
+    .staff-call-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    .staff-call-card.active,
+    .staff-call-card.empty.active {
+      border: 2px solid #1FAA9C !important;
+      background: #F3FAFA !important;
+      box-shadow: 0 0 0 4px rgba(31, 170, 156, 0.1);
+      border-style: solid !important;
+    }
+
+    .staff-call-card .name {
+      font-weight: 800;
+      font-size: 16px;
+      color: #333;
+    }
+
+    .staff-call-card .badge {
+      position: absolute;
+      top: 12px;
+      left: 15px;
+      font-size: 13px;
+      font-weight: 900;
+      color: #777;
+      background: none;
+      z-index: 2;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+    }
+
+    .staff-call-card.empty {
+      background: #FDFDFD;
+      border: 2px dashed #EEE;
+      box-shadow: none;
+    }
+
+    .staff-call-card.empty:hover {
+      border-color: #1FAA9C;
+      background: #F3FAFA;
+    }
+
+    .staff-call-card.empty i {
+      font-size: 28px;
+      color: #CCC;
+      margin-bottom: 8px;
+    }
+
+    /* 우측 편집창 */
+    .staff-call-mgmt aside {
+      width: 350px;
+      height: 100%;
+      background: #fff;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #CCC;
+    }
+
+    .image-upload-box {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border: 2px dashed #CCC;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      background: #FDFDFD;
+    }
+
+    .image-upload-box:hover {
+      border-color: #1FAA9C;
+      background: #F3FAFA;
+    }
+
+    .image-upload-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    .image-upload-box i {
+      font-size: 32px;
+      color: #CCC;
+      margin-bottom: 10px;
+    }
+
+    .image-upload-box span {
+      color: #999;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .info_row {
+      margin-bottom: 20px;
+    }
+
+    .info_row label span {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: #333;
+      font-size: 15px;
+    }
+
+    .info_row input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #CCC;
+      border-radius: 6px;
+      font-size: 14px;
+      background: #FDFDFD;
+    }
+
+    .info_row input:focus {
+      border-color: #1FAA9C;
+      outline: none;
+    }
+
+    .use-quantity-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 15px;
+      background: #F9F9F9;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border: 1px solid #EEE;
+    }
+
+    .use-quantity-toggle span {
+      font-weight: 700;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .toggle_btn {
+      width: 44px;
+      height: 24px;
+      background: #DDD;
+      border-radius: 12px;
+      position: relative;
+      transition: 0.3s;
+      border: none;
+      cursor: pointer;
+    }
+
+    .toggle_btn[data-active="true"] {
+      background: #1FAA9C;
+    }
+
+    .toggle_btn .ball {
+      width: 18px;
+      height: 18px;
+      background: #fff;
+      border-radius: 50%;
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      transition: 0.3s;
+    }
+
+    .toggle_btn[data-active="true"] .ball {
+      left: 23px;
+    }
+
+    .pane-bottom {
+      margin-top: auto;
+      display: flex;
+      gap: 10px;
+    }
+
+    .pane-bottom button {
+      flex: 1;
+      padding: 15px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 15px;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+
+    .pane-bottom .btn-save {
+      background: #1FAA9C;
+      color: #fff;
+    }
+
+    .pane-bottom .btn-delete {
+      background: #FFF;
+      color: #F43E25;
+      border-color: #F43E25;
+    }
+
+    .pane-bottom .btn-cancel {
+      background: #666;
+      color: #fff;
+    }
+
+    .detail-header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .pos-badge {
+      background: #111;
+      color: #fff;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .badge_tail {
+      background: #F3FAFA;
+      color: #1FAA9C;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 11px;
+    }
+  </style>
+</head>
+
+<body class="staff-call-mgmt set_menu_product">
+  <div id="container">
+    <header>
+      <a class="back_btn" onclick="history.back();">
+        <i class="ph-bold ph-caret-left"></i>
+      </a>
+      <div class="center">
+        <a onclick="location.reload();">
+          <h1>
+            <img src="/static/images/common/logo-order&go-white.png" alt="">
+          </h1>
+        </a>
+        <div class="header_info">
+          <span class="cur_time"></span>
+          <span class="store_state" data-state="open">영업중</span>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <article>
+        <div class="grid-settings">
+          <div style="margin-right: auto;">
+            <h2 style="font-weight: 800; font-size: 20px; color: #000;">직원 호출 항목 배치 관리</h2>
+          </div>
+          <span>그리드 배치 설정</span>
+          <div class="grid-btn-group">
+            <input type="number" id="gridRowsInput" min="1" max="10" value="4">
+            <span style="font-weight: 600; color: #999;">x</span>
+            <input type="number" id="gridColsInput" min="1" max="10" value="4">
+            <button onclick="applyGridChange()">적용</button>
+          </div>
+        </div>
+
+        <div class="staff-call-grid scrollbar_hidden" id="itemGrid" style="overflow-y: auto;">
+          <!-- JS 렌더링 -->
+          <div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: #999;">로딩 중...</div>
+        </div>
+      </article>
+
+      <aside>
+        <div class="detail-header" style="margin-bottom: 25px;">
+          <div class="detail-header-top">
+            <h2 id="paneTitle" style="font-weight: 900; font-size: 22px; color: #000;">항목 추가/편집</h2>
+            <div id="posBadge" class="pos-badge" style="display: none;">#0</div>
+          </div>
+          <p style="color: #999; font-size: 13px; margin-top: 5px;">카드를 클릭하거나 빈 슬롯을 선택하세요.</p>
+        </div>
+
+        <div class="scrollbar_hidden" style="flex: 1; overflow-y: auto; padding-right: 5px;">
+          <div class="image-upload-box" onclick="document.getElementById('imageInput').click()">
+            <img id="imagePreview" src="" style="display: none;">
+            <div id="uploadPlaceholder">
+              <i class="ph ph-camera"></i>
+              <span>이미지 업로드</span>
+            </div>
+            <input type="file" id="imageInput" accept="image/*" style="display: none;"
+              onchange="handleImageSelect(this)">
+          </div>
+
+          <div class="info_row">
+            <label>
+              <span>항목명</span>
+              <input type="text" id="itemName" placeholder="예: 물, 티슈, 앞치마">
+            </label>
+          </div>
+
+          <div class="use-quantity-toggle">
+            <span>수량 조절 활성화</span>
+            <button id="useQuantityBtn" class="toggle_btn" data-active="false" onclick="toggleUseQuantity()">
+              <div class="ball"></div>
+            </button>
+          </div>
+
+          <input type="hidden" id="selectedId" value="">
+          <input type="hidden" id="itemPosition" value="">
+        </div>
+
+        <div class="pane-bottom">
+          <button type="button" class="btn-delete" id="deleteBtn" onclick="deleteItem(event)"
+            style="display: none;">삭제</button>
+          <button type="button" class="btn-cancel" onclick="resetForm()">취소</button>
+          <button type="button" class="btn-save" onclick="saveItem()">저장하기</button>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script src="/static/js/common.js"></script>
+  <script>
+    let currentItems = [];
+    let selectedItemId = null;
+    let selectedPosition = null;
+    let gridRows = 4;
+    let gridCols = 4;
+    let selectedImageFile = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadItems();
+      updateTime();
+      setInterval(updateTime, 1000);
+    });
+
+    function updateTime() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      document.querySelector('.cur_time').textContent = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    }
+
+    async function loadItems(updateGridDims = true) {
+      try {
+        const res = await fetch('/store/get_staff_call_items');
+        const data = await res.json();
+        currentItems = data.items;
+
+        if (updateGridDims) {
+          gridRows = data.grid.rows;
+          gridCols = data.grid.cols;
+
+          document.getElementById('gridRowsInput').value = gridRows;
+          document.getElementById('gridColsInput').value = gridCols;
+
+          updateGridUI();
+        }
+
+        renderItems();
+      } catch (e) {
+        showToast('데이터를 불러오는 중 오류가 발생했습니다.', 'error');
+      }
+    }
+
+    function updateGridUI() {
+      const grid = document.getElementById('itemGrid');
+      grid.style.gridTemplateRows = `repeat(${gridRows}, 1fr)`;
+      grid.style.gridTemplateColumns = `repeat(${gridCols}, 1fr)`;
+    }
+
+    async function applyGridChange() {
+      const rows = parseInt(document.getElementById('gridRowsInput').value);
+      const cols = parseInt(document.getElementById('gridColsInput').value);
+
+      if (isNaN(rows) || isNaN(cols) || rows < 1 || cols < 1) {
+        return showToast('올바른 행과 열 숫자를 입력해주세요.', 'warning');
+      }
+
+      // 현재 상태 백업
+      const oldRows = gridRows;
+      const oldCols = gridCols;
+
+      // 즉시 UI 업데이트 (낙관적 업데이트)
+      gridRows = rows;
+      gridCols = cols;
+      updateGridUI();
+      renderItems();
+
+      try {
+        const res = await fetchDataAsync('/store/set_staff_call_grid', 'POST', { rows, cols });
+        if (res.code === 200) {
+          showToast('배치 설정이 저장되었습니다.', 'success');
+          // 서버 데이터와 동기화를 위해 백그라운드에서 로드 (그리드 설정은 덮어쓰지 않음)
+          await loadItems(false);
+        } else {
+          throw new Error(res.message || '설정 저장 실패');
+        }
+      } catch (e) {
+        // 실패 시 롤백
+        gridRows = oldRows;
+        gridCols = oldCols;
+        document.getElementById('gridRowsInput').value = oldRows;
+        document.getElementById('gridColsInput').value = oldCols;
+        updateGridUI();
+        renderItems();
+        showToast('설정 저장 중 오류가 발생했습니다.', 'error');
+      }
+    }
+
+    function renderItems() {
+      const grid = document.getElementById('itemGrid');
+      grid.innerHTML = '';
+
+      const itemMap = {};
+      currentItems.forEach(item => {
+        itemMap[item.position] = item;
+      });
+
+      const totalSlots = gridRows * gridCols;
+
+      for (let i = 0; i < totalSlots; i++) {
+        const item = itemMap[i];
+        const card = document.createElement('div');
+
+        if (item) {
+          card.className = 'staff-call-card' + (selectedItemId === item.id ? ' active' : '');
+          card.innerHTML = `
+            <span class="badge">#${i + 1}</span>
+            ${item.image ? `<img src="${item.image}">` : ''}
+            <div class="content">
+                <span class="name">${item.name}</span>
+                ${item.use_quantity ? `<span class="badge_tail" style="margin-top:8px;">수량조절</span>` : ''}
+            </div>
+          `;
+          card.onclick = () => selectItem(item);
+        } else {
+          const isActive = (selectedPosition === i && !selectedItemId);
+          card.className = 'staff-call-card empty' + (isActive ? ' active' : '');
+          card.innerHTML = `
+            <span class="badge" style="background:none; color: ${isActive ? '#1FAA9C' : '#CCC'}; font-weight: ${isActive ? '900' : '800'};">#${i + 1}</span>
+            <i class="ph ph-plus" style="color: ${isActive ? '#1FAA9C' : '#CCC'};"></i>
+            <span class="name" style="color: ${isActive ? '#1FAA9C' : '#CCC'}">추가</span>
+          `;
+          card.onclick = () => clickEmptySlot(i);
+        }
+        grid.appendChild(card);
+      }
+    }
+
+    function clickEmptySlot(position) {
+      resetForm(false); // 렌더링 없이 초기화만
+      selectedPosition = position;
+      selectedItemId = null;
+
+      document.getElementById('paneTitle').textContent = '항목 추가';
+      document.getElementById('itemPosition').value = position;
+
+      const posBadge = document.getElementById('posBadge');
+      posBadge.textContent = `#${position + 1}`;
+      posBadge.style.display = 'block';
+
+      document.getElementById('deleteBtn').style.display = 'none';
+      renderItems();
+    }
+
+    function selectItem(item) {
+      resetForm(false); // 렌더링 없이 초기화만
+      selectedItemId = item.id;
+      selectedPosition = item.position;
+
+      document.getElementById('paneTitle').textContent = '항목 편집';
+      document.getElementById('itemName').value = item.name;
+      document.getElementById('itemPosition').value = item.position;
+      document.getElementById('selectedId').value = item.id;
+      document.getElementById('useQuantityBtn').dataset.active = item.use_quantity ? 'true' : 'false';
+
+      const posBadge = document.getElementById('posBadge');
+      posBadge.textContent = `#${item.position + 1}`;
+      posBadge.style.display = 'block';
+
+      const preview = document.getElementById('imagePreview');
+      const placeholder = document.getElementById('uploadPlaceholder');
+      if (item.image) {
+        preview.src = item.image;
+        preview.style.display = 'block';
+        placeholder.style.display = 'none';
+      }
+
+      document.getElementById('deleteBtn').style.display = 'block';
+      renderItems();
+    }
+
+    function resetForm(shouldRender = true) {
+      selectedItemId = null;
+      selectedPosition = null;
+      selectedImageFile = null;
+      document.getElementById('selectedId').value = '';
+      document.getElementById('paneTitle').textContent = '항목 추가/편집';
+      document.getElementById('itemName').value = '';
+      document.getElementById('itemPosition').value = ''; // Clear itemPosition
+      document.getElementById('useQuantityBtn').dataset.active = 'false';
+
+      document.getElementById('posBadge').style.display = 'none';
+
+      document.getElementById('imagePreview').src = '';
+      document.getElementById('imagePreview').style.display = 'none';
+      document.getElementById('uploadPlaceholder').style.display = 'flex';
+      document.getElementById('imageInput').value = '';
+      document.getElementById('deleteBtn').style.display = 'none';
+
+      if (shouldRender) renderItems();
+    }
+
+    function toggleUseQuantity() {
+      const btn = document.getElementById('useQuantityBtn');
+      btn.dataset.active = btn.dataset.active === 'true' ? 'false' : 'true';
+    }
+
+    function handleImageSelect(input) {
+      if (input.files && input.files[0]) {
+        selectedImageFile = input.files[0];
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const preview = document.getElementById('imagePreview');
+          preview.src = e.target.result;
+          preview.style.display = 'block';
+          document.getElementById('uploadPlaceholder').style.display = 'none';
+        }
+        reader.readAsDataURL(selectedImageFile);
+      }
+    }
+
+    async function saveItem() {
+      const name = document.getElementById('itemName').value;
+      const position = document.getElementById('itemPosition').value;
+      const use_quantity = document.getElementById('useQuantityBtn').dataset.active === 'true';
+      const id = document.getElementById('selectedId').value;
+
+      if (!name) return showToast('항목명을 입력해주세요.', 'warning');
+      if (position === '') return showToast('슬롯을 먼저 선택해주세요.', 'warning');
+
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('position', position);
+      formData.append('use_quantity', use_quantity);
+      if (id) formData.append('id', id);
+      if (selectedImageFile) formData.append('image_file', selectedImageFile);
+
+      const method = id ? 'PATCH' : 'POST';
+
+      try {
+        const res = await fetchDataAsync('/store/set_staff_call_item', method, formData, true);
+        if (res.code === 200 || res.code === 201) {
+          showToast('성공적으로 저장되었습니다.', 'success');
+          await loadItems();
+          resetForm();
+        } else {
+          showToast(res.message || '저장 중 오류가 발생했습니다.', 'error');
+        }
+      } catch (e) {
+        showToast('서버와의 통신에 실패했습니다.', 'error');
+      }
+    }
+
+    function deleteItem(event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      if (!selectedItemId) return;
+
+      const { top, middle, bottom } = openDefaultModal();
+      top.innerHTML = modalTopHtml('항목 삭제 확인');
+      middle.innerHTML = `
+        <div style="padding: 30px; text-align: center;">
+          <i class="ph ph-warning-circle" style="font-size: 48px; color: #F43E25; margin-bottom: 15px; display: block;"></i>
+          <p style="font-size: 16px; font-weight: 700; color: #333; line-height: 1.5;">
+            정말 이 항목을 삭제하시겠습니까?<br>
+            <span style="font-size: 14px; color: #999; font-weight: 400;">삭제된 데이터는 복구할 수 없습니다.</span>
+          </p>
+        </div>
+      `;
+      bottom.innerHTML = modalBottomHtml([
+        { class: 'btn_cancel', text: '취소', fun: 'onclick="removeModal()"' },
+        { class: 'btn_delete', text: '삭제하기', fun: 'onclick="confirmDelete()"' }
+      ]);
+
+      // 버튼 스타일 조정을 위해 클래스 추가 (common.css 대응)
+      const modalBtns = bottom.querySelectorAll('button');
+      modalBtns.forEach(btn => {
+        btn.style.flex = '1';
+        btn.style.padding = '15px';
+        btn.style.borderRadius = '8px';
+        btn.style.fontWeight = '800';
+        if (btn.classList.contains('btn_delete')) {
+          btn.style.background = '#F43E25';
+          btn.style.color = '#fff';
+        } else {
+          btn.style.background = '#EEE';
+          btn.style.color = '#666';
+        }
+      });
+    }
+
+    async function confirmDelete() {
+      removeModal();
+      if (!selectedItemId) return;
+
+      try {
+        const res = await fetchDataAsync(`/store/set_staff_call_item?id=${selectedItemId}`, 'DELETE');
+        if (res.code === 200) {
+          showToast('삭제되었습니다.', 'success');
+          await loadItems();
+          resetForm();
+        } else {
+          showToast(res.message || '삭제 중 오류가 발생했습니다.', 'error');
+        }
+      } catch (e) {
+        showToast('서버와의 통신에 실패했습니다.', 'error');
+      }
+    }
+
+    // 다중 선택 기능 (이전 테이블 기반 기능으로, 현재 그리드 UI에서는 사용되지 않음)
+    function toggleAllCheckboxes(source) {
+      const checkboxes = document.querySelectorAll('.item-checkbox');
+      checkboxes.forEach(cb => cb.checked = source.checked);
+    }
+
+    function clickAllSelectBtn() {
+      const headerCheckbox = document.querySelector('.table_header input[type="checkbox"]');
+      headerCheckbox.checked = true;
+      toggleAllCheckboxes(headerCheckbox);
+    }
+
+    function clickAllCancelBtn() {
+      const headerCheckbox = document.querySelector('.table_header input[type="checkbox"]');
+      headerCheckbox.checked = false;
+      toggleAllCheckboxes(headerCheckbox);
+    }
+
+    async function deleteSelectedItems() {
+      const selectedCheckboxes = document.querySelectorAll('.item-checkbox:checked');
+      if (selectedCheckboxes.length === 0) return showToast('삭제할 항목을 선택해주세요.', 'warning');
+      if (!confirm(`선택한 ${selectedCheckboxes.length}개의 항목을 정말 삭제하시겠습니까?`)) return;
+
+      const ids = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+      let successCount = 0;
+      for (const id of ids) {
+        try {
+          const res = await fetchDataAsync(`/store/set_staff_call_item?id=${id}`, 'DELETE');
+          if (res.code === 200) successCount++;
+        } catch (e) {
+          console.error(`Error deleting item ${id}:`, e);
+        }
+      }
+
+      if (successCount > 0) {
+        showToast(`${successCount}개의 항목이 삭제되었습니다.`, 'success');
+        loadItems();
+        resetForm();
+      }
+    }
+  </script>
+</body>
+
+</html>

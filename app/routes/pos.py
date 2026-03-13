@@ -1,10 +1,8 @@
 from flask import render_template, jsonify, request
+import json
 from app.models.menu import select_main_category, select_sub_category, select_menu_all, select_menu, select_menu_option, select_menu_option_all, select_menu_all_to_main_category
 from app.models.order import find_order_list, get_orders_by_store_id
 from flask_login import login_required, current_user
-from app.routes import pos_bp
-import json
-
 from app.routes import pos_bp
 from app.models.table import \
     move_table, \
@@ -12,7 +10,8 @@ from app.models.table import \
     delete_table_category, \
     select_table, \
     set_table_group
-from app.models import db, Menu, MenuOption
+from app.models import db, Menu, MenuOption, MenuOptionGroup, StaffCallLog, StaffCallItem, Table, Order
+from app.models.staff_call import get_staff_call_logs
 
 from app import socketio
 from flask_socketio import join_room, emit
@@ -219,23 +218,25 @@ def get_main_sub_menu_list():
                                 .filter(Menu.menu_category_id == sub_category.id)\
                                 .all()
             for menu in all_menu:
-                all_option = db.session.query(MenuOption)\
-                                    .filter(MenuOption.menu_id == menu.id)\
-                                    .all()
-                option_list = []
-                for option in all_option:
-                    option_list.append({
-                        'optionId': option.id,
-                        'option': option.name,
-                        'price': option.price
-                    })
+                option_list = select_menu_option_all(menu.id)
+                if not option_list:
+                    option_list = []
+                # for option in all_option:
+                #     option_list.append({
+                #         'optionId': option.id,
+                #         'option': option.name,
+                #         'price': option.price
+                #     })
                 menu_dict = {
                     'menuId': menu.id,
                     'menu': menu.name,
                     'price': menu.price,
                     'page': menu.page,
                     'position': menu.position,
-                    'optionList': option_list
+                    'optionList': option_list,
+                    'mainDescription': menu.main_description,
+                    'imageUrl': menu.image.split(', ')[0] if menu.image else '',
+                    'imageList': menu.image.split(', ') if menu.image else []
                 }
 
 
@@ -305,7 +306,7 @@ def get_main_sub_menu_list():
 
 
 
-    return all_menu_list
+    return jsonify(all_menu_list)
 
 
 '''
@@ -418,30 +419,182 @@ def payment_history(table_id):
         payment_data = request.get_json()
         table_payment_data = create_payment_database(store_id, payment_data)
 
-    '''
-    table_payment_data = {
-        'is_finished': False,  # 추가됨. 결제끝났는지아닌지
-        'paid': False,  # 분할결제 이력 있는지-True/없는지-False
-        'first_order_time': 0,   # 추가됨
-        'discount': 0,
-        'extra_charge': 0,
-        'payment_history': {},
-        # 'payment_history': {'isDirect' : False, # 분할결제 - 직접입력이면 True
-        #     'direct' : 0,
-        #     'isDutch' : False,
-        #     'totalDutch' : 1,
-        #     'curDutch' : 1,
-        #     'dutchPrice' : 0},
-        'payment': [
-            # {   
-            #     'method': 1,    # 1-cash/2-card
-            #     'price': 5000,
-            # },
-            # {   
-            #     'method': 1,    # 1-cash/2-card
-            #     'price': 5000,
-            # }
-        ]
-    }
-    '''
     return table_payment_data
+
+# 직원 호출 로그 조회 (최근 20개)
+@pos_bp.route('/get_staff_call_logs', methods=['GET'])
+@login_required
+def api_get_staff_call_logs():
+    store_id = current_user.id
+    
+    # 1. Fetch Staff Call Logs
+    logs = get_staff_call_logs(store_id, limit=50) # Fetch more to account for grouping
+    
+    # Grouping logic for Staff Calls
+    grouped_data = {}
+    
+    for log, item, table_name in logs:
+        key = log.request_id if log.request_id else f"log_{log.id}"
+        
+        if key not in grouped_data:
+            grouped_data[key] = {
+                'id': log.id, # Use representative ID
+                'type': 'staff_call',
+                'table_name': table_name if table_name else f'테이블 {log.table_id}',
+                'requestTime': log.called_at,
+                'confirmTime': log.confirmed_at,
+                'items': []
+            }
+        
+        item_name = item.name if item else '직원 호출'
+        if item and item.use_quantity:
+            grouped_data[key]['items'].append(f"{item_name} {log.quantity}개")
+        else:
+            grouped_data[key]['items'].append(f"{item_name}")
+
+    # 2. Fetch Orders (Recent 50)
+    # Order Status: 1 (Requested/Cooking), 2 (Confirmed/Finished), 0 (Cooking? - check logic)
+    # Assuming 1 is new order, 2 is confirmed/completed.
+    # We want to show orders as notifications.
+    from app.models import Order, Table, TableCategory
+    
+    orders = db.session.query(Order, Table.name)\
+        .join(Table, Order.table_id == Table.id)\
+        .join(TableCategory, Table.table_category_id == TableCategory.id)\
+        .filter(TableCategory.store_id == store_id)\
+        .filter(Order.order_status_id.in_([1, 2]))\
+        .order_by(Order.ordered_at.desc())\
+        .limit(50).all()
+        
+    for order, table_name in orders:
+        # Group orders by table and time (rough grouping to avoid clutter?)
+        # For now, let's treat each order *item* or *table order group*?
+        # The prompt says "adding menu ordering also to notification history".
+        # Creating a notification per order might be too much if they order 10 items.
+        # But `Order` table structure seems to be one row per menu item.
+        # However, they might share `order_list_id` or similar time.
+        # Use `order_list_id` + `ordered_at` for grouping? 
+        # Actually `order_list_id` is for the whole session.
+        # Let's group by `table_id` and `ordered_at` (within a few seconds).
+        # Or just list them individually? Grouping is better.
+        # Let's simple check: if we have `ordered_at` close to each other.
+        # For simplicity, let's treat each order row as an item, and group by (table_id, ordered_at minute/second).
+        # But `Order` has `menu_options`.
+        
+        # Unique key for grouping: table_id + ordered_at (down to minute or specific batch)
+        # Check if `TableOrderList` is used.
+        pass
+
+    # Let's refine order fetching to group by 'order_list_id' isn't enough because it spans the whole meal.
+    # Group by (table_id, ordered_at). `ordered_at` should be same for a batch order.
+    
+    # Re-fetching with grouping logic in python
+    orders_data = []
+    
+    for order, table_name in orders:
+        menu = select_menu(order.menu_id)
+        menu_name = menu[0].name if menu else 'Unknown Menu'
+        
+        # Parse options
+        options = []
+        try:
+            options_data = json.loads(order.menu_options) if order.menu_options else []
+            for opt in options_data:
+                # We need option name. This might require fetching option.
+                # Optimization: select_menu_option might be heavy in loop.
+                # For now, just show menu name or count.
+                # Let's try to get option name if possible.
+                opt_obj = select_menu_option(opt['id'])
+                if opt_obj:
+                    options.append(f"{opt_obj[0].name}")
+        except:
+            pass
+            
+        item_str = f"{menu_name}"
+        if options:
+            item_str += f" ({', '.join(options)})"
+            
+        orders_data.append({
+            'id': order.id,
+            'table_name': table_name,
+            'ordered_at': order.ordered_at,
+            'status': order.order_status_id,
+            'item': item_str
+        })
+        
+    # Group orders
+    grouped_orders = {}
+    for o in orders_data:
+        # Key: table_name + ordered_at (formatted)
+        key = f"order_{o['table_name']}_{o['ordered_at'].strftime('%Y%m%d%H%M%S')}"
+        
+        if key not in grouped_orders:
+            grouped_orders[key] = {
+                'id': f"order_{o['id']}", # Representative ID (string)
+                'type': 'order',
+                'table_name': o['table_name'],
+                'requestTime': o['ordered_at'],
+                'confirmTime': o['ordered_at'] if o['status'] == 2 else None, # If status 2, it's confirmed.
+                'items': []
+            }
+        
+        grouped_orders[key]['items'].append(o['item'])
+        # If any item in the group is unconfirmed (1), the whole group should be unconfirmed?
+        # Simpler: If any item is status 1, confirmTime should be None.
+        if o['status'] == 1:
+            grouped_orders[key]['confirmTime'] = None
+
+    # Merge Collections
+    final_list = list(grouped_data.values()) + list(grouped_orders.values())
+    
+    # Sort by requestTime desc
+    final_list.sort(key=lambda x: x['requestTime'], reverse=True)
+    
+    # Format for JSON
+    result = []
+    for group in final_list[:50]: # Limit combined
+        
+        # Text Generation
+        if group['type'] == 'staff_call':
+            is_generic = len(group['items']) == 1 and '직원 호출' in group['items'][0] and '1개' in group['items'][0]
+            if is_generic:
+                text = f"<b>{group['table_name']}</b>에서 직원을 호출했습니다."
+            else:
+                items_html = '<br>'.join([f"- {item}" for item in group['items']])
+                text = f"<b>{group['table_name']}</b><br>{items_html}"
+            items_text = ', '.join(group['items'])
+            
+        else: # Order
+            items_html = '<br>'.join([f"- {item}" for item in group['items']])
+            text = f"<b>{group['table_name']}</b> 주문<br>{items_html}"
+            items_text = ', '.join(group['items'])
+
+        result.append({
+            'id': group['id'], # Can be int or string
+            'table_name': group['table_name'],
+            'items_text': items_text,
+            'requestTime': group['requestTime'].strftime('%H:%M:%S'),
+            'confirmTime': group['confirmTime'].strftime('%H:%M:%S') if group['confirmTime'] else None,
+            'text': text,
+            'is_order': group['type'] == 'order'
+        })
+
+    return jsonify(result)
+
+
+# 매장 정보 조회 (영수증용)
+@pos_bp.route('/get_store_info', methods=['GET'])
+@login_required
+def get_store_info():
+    from app.models import Store
+    store = Store.query.filter_by(id=current_user.id).first()
+    if not store:
+        return jsonify({})
+
+    return jsonify({
+        "name": store.name,
+        "business_number": store.business_number,
+        "representative_name": store.representative_name,
+        "address": store.address,
+        "tel": store.tel
+    })

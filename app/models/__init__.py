@@ -66,6 +66,14 @@ class Store(db.Model):
     store_pw = db.Column(db.String(120), nullable=False)
     name = db.Column(db.String(50), unique=True)
     logo_img = db.Column(db.String(150), nullable=False)
+    staff_call_grid_rows = db.Column(db.Integer, default=4)
+    staff_call_grid_cols = db.Column(db.Integer, default=4)
+    business_number = db.Column(db.String(50), nullable=True) # 사업자등록번호
+    representative_name = db.Column(db.String(50), nullable=True) # 대표자명
+    address = db.Column(db.String(255), nullable=True) # 매장 주소
+    tel = db.Column(db.String(50), nullable=True) # 매장 전화번호
+    receipt_header = db.Column(db.Text, nullable=True) # 영수증 머릿말
+    receipt_footer = db.Column(db.Text, nullable=True) # 영수증 꼬릿말
     created_at = db.Column(db.DateTime, default=datetime.now)
     last_logged_at = db.Column(db.DateTime, nullable=True)
 
@@ -143,15 +151,24 @@ class SubCategory(db.Model):
     #    return f'<SubCategory {self.title}>'
 
 
+class MenuOptionGroup(db.Model):
+    __tablename__ = 'menu_option_group'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    menu_id = db.Column(db.Integer, db.ForeignKey('menu.id'))
+    name = db.Column(db.String(150), nullable=False)
+    option_type = db.Column(db.String(50), nullable=False) # REQUIRED_SINGLE, OPTIONAL_SINGLE, MULTIPLE, QUANTITY
+    position = db.Column(db.Integer, nullable=True)
+    show_price = db.Column(db.Boolean, default=True)
+
 class MenuOption(db.Model):
     __tablename__ = 'menu_option'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('menu_option_group.id'))
     name = db.Column(db.String(150), nullable=False)
     price = db.Column(db.Integer, nullable=False)
     description = db.Column(db.Text, nullable=True)
     page = db.Column(db.Integer, nullable=True)
     position = db.Column(db.Integer, nullable=True)
-    menu_id = db.Column(db.Integer, db.ForeignKey('menu.id'))
 
     #def __repr__(self):
     #    return f'<MenuOption {self.title}>'
@@ -162,7 +179,7 @@ class Menu(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(150), nullable=False)
     price = db.Column(db.Integer, nullable=False)
-    image = db.Column(db.String(150), nullable=True)
+    image = db.Column(db.Text, nullable=True)
     main_description = db.Column(db.Text, nullable=True)
     sub_description = db.Column(db.Text, nullable=True)
     is_soldout = db.Column(db.Boolean, nullable=False)
@@ -283,3 +300,26 @@ class TablePaymentList(db.Model):
     payment_time = db.Column(db.DateTime, default=datetime.now)  # 결제 시간 컬럼(분할 시 최근 결제 마다 업데이트)
 
     ### store_id/table_id/first_order_time을 unique key로 걸자!
+
+
+class StaffCallItem(db.Model):
+    __tablename__ = 'staff_call_item'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    store_id = db.Column(db.Integer, db.ForeignKey('store.id'))
+    name = db.Column(db.String(150), nullable=False)
+    image = db.Column(db.String(255), nullable=True)
+    position = db.Column(db.Integer, default=0)
+    use_quantity = db.Column(db.Boolean, default=False)
+    is_active = db.Column(db.Boolean, default=True)
+
+
+class StaffCallLog(db.Model):
+    __tablename__ = 'staff_call_log'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    table_id = db.Column(db.Integer, db.ForeignKey('table.id'))
+    staff_call_item_id = db.Column(db.Integer, db.ForeignKey('staff_call_item.id'), nullable=True)
+    quantity = db.Column(db.Integer, default=1)
+    status = db.Column(db.String(50), default='REQUESTED') # REQUESTED, CONFIRMED
+    called_at = db.Column(db.DateTime, default=datetime.now)
+    confirmed_at = db.Column(db.DateTime, nullable=True)
+    request_id = db.Column(db.String(36), nullable=True)

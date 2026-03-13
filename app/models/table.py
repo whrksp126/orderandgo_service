@@ -29,16 +29,20 @@ def create_table_category(table_category_list, store_id):
             db.session.add(table_category)
             db.session.commit()
             for i in range(20): # 신규 생성한 카테고리에 테이블 자동 생성
-                data = {
-                    'name': tc['category_name'] + str(i+1),
-                    'seat_count' : None, 
-                    'is_group' : None,
-                    'table_category_id' : table_category.id,
-                    'page': 1,
-                    'position' : i+1
-                }
-                item = Table(name=data['name'], seat_count=data['seat_count'], is_group=data['is_group'], table_category_id=data['table_category_id'], page=data['page'], position=data['position'])
-                db.session.add(item)
+                table_name = tc['category_name'] + str(i+1)
+                existing_table = Table.query.filter_by(table_category_id=table_category.id, name=table_name).first()
+                
+                if not existing_table:
+                    data = {
+                        'name': table_name,
+                        'seat_count' : None, 
+                        'is_group' : None,
+                        'table_category_id' : table_category.id,
+                        'page': 1,
+                        'position' : i+1
+                    }
+                    item = Table(name=data['name'], seat_count=data['seat_count'], is_group=data['is_group'], table_category_id=data['table_category_id'], page=data['page'], position=data['position'])
+                    db.session.add(item)
             db.session.commit()
         result = True
     

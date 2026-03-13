@@ -3,16 +3,16 @@ let payment_history = undefined;
 // 테이블 주문 내역 가져오기
 const callOrderHistory = () => {
   const onSuccess = (data) => {
-    order_history=data.map((order)=>({
+    order_history = data.map((order) => ({
       id: order.id,
-      masterName : setMasterName(order),
+      masterName: setMasterName(order),
       name: order.name,
       price: order.price,
       count: 1,
       options: order.options,
     }))
-    if(order_history!=undefined && payment_history!=undefined) paymentHtml();
-    
+    if (order_history != undefined && payment_history != undefined) paymentHtml();
+
   }
   fetchData(`/pos/get_table_order_list/${lastPath}`, 'GET', {}, onSuccess)
 }
@@ -20,7 +20,7 @@ const callOrderHistory = () => {
 const callPaymentHistory = () => {
   const onSuccess = (data) => {
     payment_history = data;
-    if(order_history!=undefined && payment_history!=undefined) paymentHtml();
+    if (order_history != undefined && payment_history != undefined) paymentHtml();
   }
   fetchData(`/pos/payment_history/${lastPath}`, 'GET', {}, onSuccess)
 }
@@ -30,22 +30,22 @@ callOrderHistory();
 callPaymentHistory();
 const paymentHtml = () => {
   const isNotFirst = payment_history.payment.length > 0 ? true : false;
-  if(isNotFirst){ // 이미 결제 내역이 있는 경우
+  if (isNotFirst) { // 이미 결제 내역이 있는 경우
     const _otherBtns = document.querySelector('.payment main section article .top .other_btns');
     _otherBtns.classList.add('has_history')
   }
 
   payment_history.orderTotalPrice = changeBasketHtml(setBasketData(order_history));
-  
+
   let totalPrice = payment_history.orderTotalPrice;
   // 할인 영역 처리
   const _discount = document.querySelector('.payment .basket_container .order_btns span.discount');
   _discount.innerHTML = `${payment_history.discount.toLocaleString()} 원`
-  
+
   totalPrice -= payment_history.discount;
 
   // 추가 금액 영역 처리
-  if(payment_history.extra_charge > 0){
+  if (payment_history.extra_charge > 0) {
     const _basket = document.querySelector('.payment .basket_container .basket');
     _basket.insertAdjacentHTML('beforeend', `
     <li class="addition_data">
@@ -56,18 +56,18 @@ const paymentHtml = () => {
       </div>  
     </li>`)
     totalPrice += payment_history.extra_charge;
-    
+
   }
 
 
   const _totalPrice = document.querySelector('main aside .order_btns .price');
   _totalPrice.innerHTML = `${totalPrice.toLocaleString()} 원`;
-  
+
 
 
   // 분할 결제 영역 처리
   let receivedTotalPrice = 0
-  if(payment_history.paid){
+  if (payment_history.paid) {
     document.querySelector('.payment main section article .top .other_btns').classList.add('paid')
     const _paid = document.querySelector('.total_price .paid');
     const _remaining = _paid.querySelector('.remaining');
@@ -139,11 +139,11 @@ const clickApplyAddition = (event) => {
 }
 
 // 결제 정보 최신화 
-const setPaymentData = (curPaymentPrice=false) => {
+const setPaymentData = (curPaymentPrice = false) => {
   // 추가 금액 최신화
   const _additionLi = document.querySelector('.addition_data'); // 추가 금액
   _additionLi?.remove();
-  if(payment_history.extra_charge > 0) {
+  if (payment_history.extra_charge > 0) {
     const _basket = document.querySelector('.payment .basket_container .basket');
     _basket.insertAdjacentHTML('beforeend', `
     <li class="addition_data">
@@ -161,43 +161,43 @@ const setPaymentData = (curPaymentPrice=false) => {
   // 총 금액 최신화
   const _totalPrice = document.querySelector('.payment .basket_container .order_btns .price'); // 총 금액
   const totalPrice = payment_history.orderTotalPrice + payment_history.extra_charge - payment_history.discount;
-  _totalPrice.innerHTML = `${totalPrice.toLocaleString() }원`  
+  _totalPrice.innerHTML = `${totalPrice.toLocaleString()}원`
 
   // 받은 금액 최신화
   const _received = document.querySelector('.payment main section article .top .total_price .paid .received'); // 받은 금액
   const receivedTotalPrice = payment_history.payment.reduce((accumulator, item) => accumulator + item.price, 0);
-  if(receivedTotalPrice > 0 ){
+  if (receivedTotalPrice > 0) {
     _received.innerHTML = `| 받은 금액 ${receivedTotalPrice.toLocaleString()}`
   }
 
   // 남은 금액 최신화
   const _remaining = document.querySelector('.payment main section article .top .total_price .paid .remaining'); // 남은 금액
-  _remaining.innerHTML = `남은 금액 ${(totalPrice-receivedTotalPrice).toLocaleString()}원`
+  _remaining.innerHTML = `남은 금액 ${(totalPrice - receivedTotalPrice).toLocaleString()}원`
 
-  
+
   // 현재 받을 금액 최신화 
   const _currentPrice = document.querySelector('.payment main section article .top .total_price .cur_price > span'); // 현재 결제할 금액
-  if(!curPaymentPrice){
-    if(payment_history.payment_history.isDutch){
+  if (!curPaymentPrice) {
+    if (payment_history.payment_history.isDutch) {
       _currentPrice.innerHTML = `${(payment_history.payment_history.dutchPrice).toLocaleString()}원`;
       payment_history.curPaymentPrice = payment_history.payment_history.dutchPrice
-    }else{
-      _currentPrice.innerHTML = `${(totalPrice-receivedTotalPrice).toLocaleString()}원`;
-      payment_history.curPaymentPrice = totalPrice-receivedTotalPrice
+    } else {
+      _currentPrice.innerHTML = `${(totalPrice - receivedTotalPrice).toLocaleString()}원`;
+      payment_history.curPaymentPrice = totalPrice - receivedTotalPrice
     }
-  }else{
-    
+  } else {
+
     _currentPrice.innerHTML = `${curPaymentPrice.toLocaleString()}원`;
     payment_history.curPaymentPrice = curPaymentPrice
-  };  
+  };
 
   // 더치 페이 최신화
   const _curTotalPrice = document.querySelector('.payment main section article .top .total_price');
-  if(payment_history.payment_history.totalDutch > 1){
+  if (payment_history.payment_history.totalDutch > 1) {
     const _curDutch = document.querySelector('.payment main section article .top .total_price .cur_price > .dutch');
     _curTotalPrice.classList.add('dutch');
     _curDutch.innerHTML = `${payment_history.payment_history.curDutch}/${payment_history.payment_history.totalDutch}`
-  }else{
+  } else {
     console.log('여기')
     _curTotalPrice.classList.remove('dutch');
   }
@@ -219,20 +219,20 @@ const clickDiscount = (event) => {
 
   const totalPrice = payment_history.orderTotalPrice + payment_history.extra_charge;
   const receivedTotalPrice = payment_history.payment.reduce((accumulator, item) => accumulator + item.price, 0);
-  
-  const dicountPercent = (payment_history.discount/totalPrice) * 100
+
+  const dicountPercent = (payment_history.discount / totalPrice) * 100
   console.log(totalPrice, payment_history.discount, dicountPercent)
   _modalTitle.innerHTML = '할인'
   let html = `
   <div class="top ">
-    <div class="content won" data-type="won" data-total="${(totalPrice-receivedTotalPrice).toLocaleString()}">
+    <div class="content won" data-type="won" data-total="${(totalPrice - receivedTotalPrice).toLocaleString()}">
       <div class="tab_btns">
         <button class="won_btn" onclick="clickWonBtn(event)">원</button>
         <button class="percent_btn" onclick="clickPercentBtn(event)">%</button>
       </div>
       <div class="receive_amount">
         <h3>받을 금액</h3>
-        <span>${(totalPrice-receivedTotalPrice).toLocaleString()}원</span>
+        <span>${(totalPrice - receivedTotalPrice).toLocaleString()}원</span>
       </div>
       <div class="won_content">
         <div class="payment_amount">
@@ -253,8 +253,8 @@ const clickDiscount = (event) => {
       </div>
       <div class="split_payment_amount">
           <h3>할인 적용 금액</h3>
-          <span class="won">${(totalPrice-payment_history.discount).toLocaleString()}원</span>
-          <span class="percent">${(totalPrice-payment_history.discount).toLocaleString()}원</span>
+          <span class="won">${(totalPrice - payment_history.discount).toLocaleString()}원</span>
+          <span class="percent">${(totalPrice - payment_history.discount).toLocaleString()}원</span>
         </div>
     </div>
     <div class="number_pad" onclick="clickNumberPad(event)">
@@ -285,12 +285,12 @@ const clickDiscount = (event) => {
 
 // 분할 결제 클릭 시
 const clickSplitPayment = (event) => {
-  const isDirect = payment_history.payment_history.isDirect; 
+  const isDirect = payment_history.payment_history.isDirect;
   const direct = payment_history.payment_history.direct;
   const isDutch = payment_history.payment_history.isDutch;
   const totalDutch = payment_history.payment_history.totalDutch;
   console.log(isDirect, isDutch)
-  
+
   openModalFun(event)
   const _modal = document.querySelector('.modal');
   const _modalTitle = document.querySelector('.modal-content h1');
@@ -303,14 +303,14 @@ const clickSplitPayment = (event) => {
   _modalTitle.innerHTML = '분할 결제'
   let html = `
     <div class="top ">
-      <div class="content ${isDutch ? `dutch`:`direct`} " data-total="${(totalPrice-receivedTotalPrice).toLocaleString()}" data-type="${isDutch ? `dutch`:`direct`}">
+      <div class="content ${isDutch ? `dutch` : `direct`} " data-total="${(totalPrice - receivedTotalPrice).toLocaleString()}" data-type="${isDutch ? `dutch` : `direct`}">
         <div class="tab_btns">
           <button class="direct_btn" onclick="clickDirectBtn(event)">직접 입력</button>
           <button class="dutch_btn" onclick="clickDutchBtn(event)">더치 페이</button>
         </div>
-        <div class="receive_amount" data-price="${totalPrice-receivedTotalPrice}">
+        <div class="receive_amount" data-price="${totalPrice - receivedTotalPrice}">
             <h3>받을 금액</h3>
-            <span>${(totalPrice-receivedTotalPrice).toLocaleString()}원</span>
+            <span>${(totalPrice - receivedTotalPrice).toLocaleString()}원</span>
           </div>
         <div class="dutch_content">
           <div class="count_btns">
@@ -322,15 +322,15 @@ const clickSplitPayment = (event) => {
         <div class="direct_content">
           <div class="payment_amount">
             <h3>결제 금액</h3>
-            <input class="direct_input" value="${isDirect? `${direct.toLocaleString()}`  : `0`}" type="text" oninput="updatePaymentAmount(event)"/>
+            <input class="direct_input" value="${isDirect ? `${direct.toLocaleString()}` : `0`}" type="text" oninput="updatePaymentAmount(event)"/>
             <span class="direct_input">원</span>
           </div>
         </div>
         <div class="split_payment_amount">
             <h3>분할 결제 금액</h3>
             <span class="direct">${direct.toLocaleString()}원</span>
-            <span class="dutch" data-price="${((totalPrice-receivedTotalPrice)/totalDutch).toFixed(0)}">
-              ${ Number(((totalPrice-receivedTotalPrice)/totalDutch).toFixed(0)).toLocaleString() }원 x ${totalDutch}
+            <span class="dutch" data-price="${((totalPrice - receivedTotalPrice) / totalDutch).toFixed(0)}">
+              ${Number(((totalPrice - receivedTotalPrice) / totalDutch).toFixed(0)).toLocaleString()}원 x ${totalDutch}
             </span>
           </div>
       </div>
@@ -364,12 +364,12 @@ const clickApplyDiscount = (event) => {
   const _modal = findParentTarget(event.target, '.modal');
   const type = _modal.querySelector('.content').dataset.type;
   const discount = Number(_modal.querySelector('.won_input').value.replace(/,/g, ''));
-  if(type == 'won'){
+  if (type == 'won') {
     payment_history.discount = discount;
     setPaymentData();
     _modal.click();
   }
-  if(type == 'percent'){
+  if (type == 'percent') {
     setPaymentData();
     _modal.click();
   }
@@ -377,43 +377,43 @@ const clickApplyDiscount = (event) => {
 
 // 분할 결제 적용 버튼 클릭 시
 const clickSaveSplitPayment = (event) => {
-  const _modal = findParentTarget(event.target,'.modal');
+  const _modal = findParentTarget(event.target, '.modal');
   const type = _modal.querySelector('.content').dataset.type;
-  if(type == 'direct'){ // 금액 입력
+  if (type == 'direct') { // 금액 입력
     const price = Number(_modal.querySelector('.direct_input').value.replace(/,/g, ''));
     payment_history.payment_history.direct = price;
     payment_history.payment_history.isDutch = false;
     payment_history.payment_history.curDutch = 1;
     payment_history.payment_history.totalDutch = 0;
-    if(price>0){
+    if (price > 0) {
       payment_history.payment_history.isDirect = true;
       document.querySelector('.payment main section article .top .other_btns').classList.add('paid');
-    }else{
+    } else {
       payment_history.payment_history.isDirect = false;
       document.querySelector('.payment main section article .top .other_btns').classList.remove('paid');
     }
     setPaymentData(price);
   }
-  
-  if(type == 'dutch'){ // 더치 페이
+
+  if (type == 'dutch') { // 더치 페이
     const dutch = Number(document.querySelector('.count_btns span').textContent);
     payment_history.payment_history.totalDutch = dutch;
-    if(dutch <= 1){
+    if (dutch <= 1) {
       payment_history.payment_history.isDutch = false;
       payment_history.payment_history.curDutch = 1;
       document.querySelector('.payment main section article .top .other_btns').classList.remove('paid');
       setPaymentData()
 
-    }else{
+    } else {
       payment_history.payment_history.isDutch = true;
       document.querySelector('.payment main section article .top .other_btns').classList.add('paid');
       setPaymentData(payment_history.payment_history.dutchPrice)
     }
-    
+
   }
   _modal.click();
-  
-  
+
+
 }
 
 // 직접 입력 버튼 클릭 시
@@ -421,16 +421,16 @@ const clickDirectBtn = (event) => {
   const _modalLeftEl = document.querySelector('.payment .modal-content .modal-body .top .content');
   _modalLeftEl.classList.remove('dutch')
   _modalLeftEl.classList.add('direct')
-  _modalLeftEl.dataset.type='direct'
+  _modalLeftEl.dataset.type = 'direct'
 }
 
 // 더치 페이 버튼 클릭 시
 const clickDutchBtn = (event) => {
-  
+
   const _modalLeftEl = document.querySelector('.payment .modal-content .modal-body .top .content');
   _modalLeftEl.classList.remove('direct')
   _modalLeftEl.classList.add('dutch')
-  _modalLeftEl.dataset.type='dutch'
+  _modalLeftEl.dataset.type = 'dutch'
 }
 
 // 할인 퍼센트 버튼 클릭 시
@@ -441,9 +441,9 @@ const clickDiscountPercent = (event, num) => {
   const _input = document.querySelector(`.payment .modal-content .modal-body .top .content.${curType} .payment_amount input.${curType}_input`);
 
   _input.value = Math.min(num, 100);
-  const discount = (num/100)*total;
+  const discount = (num / 100) * total;
   payment_history.discount = discount;
-  document.querySelector('.split_payment_amount span.percent').innerHTML = `${(total-discount).toLocaleString()}원`
+  document.querySelector('.split_payment_amount span.percent').innerHTML = `${(total - discount).toLocaleString()}원`
   changePaymentAmount(curType, _input)
 
 }
@@ -455,76 +455,76 @@ const clickNumberPad = (event) => {
   const total = Number(_modalLeftEl.dataset.total.replace(/,/g, ''));
   const target = event.target;
   const targetValue = target.dataset.value;
-  if(['direct', 'won', 'percent', 'cash', 'addition'].includes(curType)){ // 직접 입력 
+  if (['direct', 'won', 'percent', 'cash', 'addition'].includes(curType)) { // 직접 입력 
     const _input = document.querySelector(`.payment .modal-content .modal-body .top .content.${curType} .payment_amount input.${curType}_input`);
     const value = _input.value.replace(/,/g, '');
-    
-    if(targetValue == undefined) return;
+
+    if (targetValue == undefined) return;
     _input.focus();
-    if(targetValue == '←'){
+    if (targetValue == '←') {
       _input.value = setReplaceNumberPad(value.slice(0, -1));
     }
-    if(targetValue == 'C'){
+    if (targetValue == 'C') {
       _input.value = '';
     }
-    if(targetValue != '←' && targetValue != 'C'){
-      if(curType != 'cash' && curType != 'addition') {
+    if (targetValue != '←' && targetValue != 'C') {
+      if (curType != 'cash' && curType != 'addition') {
         _input.value = Math.min(Number(setReplaceNumberPad(Number(value) + targetValue)
-                        .replace(/,/g, '')),total)
-                        .toLocaleString();
-        
-        
-      }else{
+          .replace(/,/g, '')), total)
+          .toLocaleString();
+
+
+      } else {
         _input.value = Number(setReplaceNumberPad(value + targetValue).replace(/,/g, '')).toLocaleString();
-        
+
       }
     }
-    if(curType == 'direct'){ // 할인 원
+    if (curType == 'direct') { // 할인 원
 
       document.querySelector('.split_payment_amount span').innerHTML = `${_input.value}원`
     }
-    if(curType == 'percent'){ // 할인 페선트
+    if (curType == 'percent') { // 할인 페선트
       _input.value = Math.min(Number(_input.value.replace(/,/g, '')), 100);
-      const discount = (Number(_input.value)/100)*total;
+      const discount = (Number(_input.value) / 100) * total;
       payment_history.discount = discount;
-      document.querySelector('.split_payment_amount span.percent').innerHTML = `${(total-discount).toLocaleString()}원`
+      document.querySelector('.split_payment_amount span.percent').innerHTML = `${(total - discount).toLocaleString()}원`
     }
     changePaymentAmount(curType, _input)
 
-    if(curType == 'won'){
-      document.querySelector('.split_payment_amount span.won').innerHTML = `${(total-_input.value.replace(/,/g, '')).toLocaleString()}원`
+    if (curType == 'won') {
+      document.querySelector('.split_payment_amount span.won').innerHTML = `${(total - _input.value.replace(/,/g, '')).toLocaleString()}원`
     }
   }
-  if(curType == 'dutch'){ // 더치 페이
+  if (curType == 'dutch') { // 더치 페이
     const _input = document.querySelector('.payment .modal-content .modal-body .top .content .dutch_content .count_btns span');
     const value = _input.innerText;
 
-    if(targetValue == undefined) return;
+    if (targetValue == undefined) return;
     _input.focus();
 
-    
-    if(value == '1' && targetValue != '0' && targetValue != '1' && targetValue != '←' && targetValue != 'C'){
+
+    if (value == '1' && targetValue != '0' && targetValue != '1' && targetValue != '←' && targetValue != 'C') {
       _input.innerText = targetValue;
-    }else{
-      if(targetValue == '←'){
+    } else {
+      if (targetValue == '←') {
         const newValue = setReplaceNumberPad(value.slice(0, -1));
         _input.innerText = newValue === "" ? "1" : newValue;
       }
-      if(targetValue == 'C'){
+      if (targetValue == 'C') {
         _input.innerText = '1';
       }
-      if(targetValue != '←' && targetValue != 'C'){
+      if (targetValue != '←' && targetValue != 'C') {
         _input.innerText = setReplaceNumberPad(value + targetValue);
       }
     }
-    
+
     payment_history.payment_history.totalDutch = Number(_input.innerText);
     const _dutch = document.querySelector('.payment .modal-content .modal-body .top .content.dutch .split_payment_amount span.dutch');
     const totalPrice = document.querySelector('.receive_amount').dataset.price;
-    payment_history.payment_history.dutchPrice = Number((totalPrice/payment_history.payment_history.totalDutch).toFixed(0))
-    _dutch.innerHTML = `${payment_history.payment_history.dutchPrice.toLocaleString()}원 x ${payment_history.payment_history.totalDutch}` 
+    payment_history.payment_history.dutchPrice = Number((totalPrice / payment_history.payment_history.totalDutch).toFixed(0))
+    _dutch.innerHTML = `${payment_history.payment_history.dutchPrice.toLocaleString()}원 x ${payment_history.payment_history.totalDutch}`
   }
-  
+
 
 }
 
@@ -540,8 +540,8 @@ const updatePaymentAmount = (event) => {
   const type = _content.dataset.type;
   const total = type == 'percent' ? 100 : Number(_content.dataset.total.replace(/,/g, ''));
 
-  if(type != 'cash' && type != 'addition'){
-    curValue = String(Math.min(Number(curValue.replace(/,/g, '')),total));
+  if (type != 'cash' && type != 'addition') {
+    curValue = String(Math.min(Number(curValue.replace(/,/g, '')), total));
   }
   event.target.value = curValue.replace(/[^0-9]/g, '').toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
   changePaymentAmount(type, event.target)
@@ -549,13 +549,13 @@ const updatePaymentAmount = (event) => {
 
 // 가격 입력 창에 값 변경될 경우
 const changePaymentAmount = (type, input) => {
-  if(type=="direct"){}
-  if(type=="dutch"){}
-  if(type=="won"){
-    
+  if (type == "direct") { }
+  if (type == "dutch") { }
+  if (type == "won") {
+
   }
-  if(type=="percent"){}
-  if(type=="cash"){
+  if (type == "percent") { }
+  if (type == "cash") {
     const value = Number(input.value.replace(/,/g, ''));
     document.querySelector('.cash_amount span').innerHTML = `${value.toLocaleString()}원`
     document.querySelector('.change_amount span').innerHTML = `${(value - payment_history.curPaymentPrice).toLocaleString()}원`
@@ -569,12 +569,12 @@ const changePaymentAmount = (type, input) => {
 const clickMinusCountBtn = (event) => {
   const _input = document.querySelector('.payment .modal-content .modal-body .top .content .dutch_content .count_btns span');
   const value = Number(_input.innerText);
-  if(value <= 1) return
+  if (value <= 1) return
   _input.innerText = String(value - 1);
   payment_history.payment_history.totalDutch = value - 1;
   const _dutch = document.querySelector('.payment .modal-content .modal-body .top .content.dutch .split_payment_amount span.dutch');
   const totalPrice = document.querySelector('.receive_amount').dataset.price;
-  payment_history.payment_history.dutchPrice = Number((totalPrice/payment_history.payment_history.totalDutch).toFixed(0))
+  payment_history.payment_history.dutchPrice = Number((totalPrice / payment_history.payment_history.totalDutch).toFixed(0))
   _dutch.innerHTML = `${payment_history.payment_history.dutchPrice.toLocaleString()}원 x ${payment_history.payment_history.totalDutch}`
 }
 
@@ -586,9 +586,9 @@ const clickPlusCountBtn = (event) => {
   payment_history.payment_history.totalDutch = value + 1;
   const _dutch = document.querySelector('.payment .modal-content .modal-body .top .content.dutch .split_payment_amount span.dutch');
   const totalPrice = document.querySelector('.receive_amount').dataset.price;
-  payment_history.payment_history.dutchPrice = Number((totalPrice/payment_history.payment_history.totalDutch).toFixed(0))
+  payment_history.payment_history.dutchPrice = Number((totalPrice / payment_history.payment_history.totalDutch).toFixed(0))
   _dutch.innerHTML = `${payment_history.payment_history.dutchPrice.toLocaleString()}원 x ${payment_history.payment_history.totalDutch}`
-  
+
 }
 
 // 현금 결제 클릭 시
@@ -600,8 +600,8 @@ const clickCashPayment = (event) => {
   console.log('payment_history,',)
   const totalPrice = payment_history.orderTotalPrice + payment_history.extra_charge;
   const receivedTotalPrice = payment_history.payment.reduce((accumulator, item) => accumulator + item.price, 0);
-  
-  const dicountPercent = (payment_history.discount/totalPrice) * 100
+
+  const dicountPercent = (payment_history.discount / totalPrice) * 100
   console.log(totalPrice, payment_history.discount, dicountPercent)
 
   _modalTitle.innerHTML = '현금 결제'
@@ -666,10 +666,10 @@ const clickCashPaymentCompleted = (event) => {
   data.payment.price = data.payment.price < price ? data.payment.price : price
   const onSuccess = (data) => {
     console.log(data);
-    if(data.is_finished){
+    if (data.is_finished) {
       document.querySelector('.modal').remove()
       createCompletedPaymentModal(event, 'CASH');
-    }else{
+    } else {
       location.reload();
     }
   }
@@ -684,27 +684,52 @@ const clickCardPayment = (event) => { // 카드 결제 클릭 시
   const data = setPayment(type);
   const onSuccess = (data) => {
     console.log(data);
-    if(data.is_finished){
+    if (data.is_finished) {
       document.querySelector('.modal')?.remove();
       createCompletedPaymentModal(event, 'CARD');
-    }else{
+    } else {
       location.reload();
     }
   }
   console.log(data)
   fetchData(`/pos/payment_history/${lastPath}`, 'POST', data, onSuccess)
-  
+
 }
 
 
 // 결제 성공 모달
-const createCompletedPaymentModal = (event, type) => {
+const createCompletedPaymentModal = async (event, type) => {
   openModalFun(event)
   const _modal = document.querySelector('.modal');
   const _modalTitle = document.querySelector('.modal-content h1');
   const _modalBody = document.querySelector('.modal-content .modal-body');
   _modal.classList.add('success_payment')
   _modalTitle.innerHTML = ''
+
+  // 영수증 데이터 준비
+  const tableId = lastPath;
+  const storeInfoResult = await fetchDataAsync(`/pos/get_store_info`, 'GET', {});
+  const tableName = document.querySelector('header h1')?.innerText || tableId;
+
+  const orderData = {
+    tableName: tableName,
+    items: order_history.map(item => ({
+      name: item.name,
+      price: item.price,
+      count: item.count,
+      options: item.options
+    }))
+  };
+
+  const paymentInfo = {
+    price: payment_history.curPaymentPrice,
+    discount: payment_history.discount,
+    extra_charge: payment_history.extra_charge,
+    method: type == 'CASH' ? 1 : 2
+  };
+
+  const receiptHtml = ReceiptEngine.generateCustomerReceipt(storeInfoResult, orderData, paymentInfo);
+
   let html = `
     <div class="top ">
       <i class="ph-fill ph-hands-clapping"></i>
@@ -712,6 +737,7 @@ const createCompletedPaymentModal = (event, type) => {
       <span>${type == 'CASH' ? `현금` : `카드`} 결제가 완료되었습니다.</span>
     </div>
     <div class="bottom">
+      <button class="view_receipt" onclick="openReceiptDetailModal('${type}')">영수증 보기</button>
       <button class="close" onclick="window.location.href='/pos/tableList'">확인</button>
     </div>
   `
@@ -719,11 +745,36 @@ const createCompletedPaymentModal = (event, type) => {
   setPayment(type == 'CASH' ? 1 : 2)
 }
 
+// 영수증 상세 모달 열기 브릿지 함수
+const openReceiptDetailModal = async (type) => {
+  const storeInfoResult = await fetchDataAsync(`/pos/get_store_info`, 'GET', {});
+  const tableName = document.querySelector('header h1')?.innerText || lastPath;
+
+  const orderData = {
+    tableName: tableName,
+    items: order_history.map(item => ({
+      name: item.name,
+      price: item.price,
+      count: item.count,
+      options: item.options
+    }))
+  };
+
+  const paymentInfo = {
+    price: payment_history.curPaymentPrice,
+    discount: payment_history.discount,
+    extra_charge: payment_history.extra_charge,
+    method: type == 'CASH' ? 1 : 2
+  };
+
+  ReceiptEngine.openReceiptModal(storeInfoResult, orderData, paymentInfo);
+}
+
 const setOrderList = () => { // 결제 전 주문 내역 정리
   const items = deepCopy(setBasketData(order_history));
-  return order_list = items.map((item)=>{
+  return order_list = items.map((item) => {
     delete item.data.id;
-    item.data.options.forEach((option)=>{
+    item.data.options.forEach((option) => {
       delete option.id
     })
     return item.data
@@ -737,9 +788,9 @@ const setPayment = (method) => { // 결제 전 데이터 만들기
   // const total_price = payment_history.orderTotalPrice + payment_history.extra_charge;
   const total_price = payment_history.orderTotalPrice + payment_history.extra_charge - payment_history.discount;
   const first_order_time = payment_history.first_order_time;
-  
+
   const payment = {
-    discount: payment_history.discount,  
+    discount: payment_history.discount,
     extra_charge: payment_history.extra_charge,
     method: method,
     price: payment_history.curPaymentPrice,
@@ -747,10 +798,10 @@ const setPayment = (method) => { // 결제 전 데이터 만들기
   }
   return {
     table_id: tableId,
-    payment : payment,
+    payment: payment,
     order_list: order_list,
-    total_price : total_price,
-    first_order_time : first_order_time
+    total_price: total_price,
+    first_order_time: first_order_time
 
   }
 }
@@ -765,7 +816,7 @@ const clickWonBtn = (event) => {
   _content.classList.remove('percent');
   _content.classList.add('won');
   _content.dataset.type = 'won';
-  
+
 }
 // 할인 퍼센트 버튼 클릭 시
 const clickPercentBtn = (event) => {

@@ -1,14 +1,18 @@
-*{
+* {
   margin: 0;
   padding: 0;
   font: inherit;
   color: inherit;
   letter-spacing: -0.03em;
 }
-*, :after, :before {
+
+*,
+:after,
+:before {
   box-sizing: border-box;
   flex-shrink: 0;
 }
+
 :root {
   -webkit-tap-highlight-color: transparent;
   -webkit-text-size-adjust: 100%;
@@ -19,19 +23,88 @@
   word-break: break-word;
   tab-size: 4
 }
-html, body, div, span, applet, object, iframe,
-h1, h2, h3, h4, h5, h6, p, blockquote, pre,
-a, abbr, acronym, address, big, cite, code,
-del, dfn, em, img, ins, kbd, q, s, samp,
-small, strike, strong, sub, sup, tt, var,
-b, u, i, center,
-dl, dt, dd, ol, ul, li,
-fieldset, form, label, legend,
-table, caption, tbody, tfoot, thead, tr, th, td,
-article, aside, canvas, details, embed,
-figure, figcaption, footer, header, hgroup,
-menu, nav, output, ruby, section, summary,
-time, mark, audio, video {
+
+html,
+body,
+div,
+span,
+applet,
+object,
+iframe,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+blockquote,
+pre,
+a,
+abbr,
+acronym,
+address,
+big,
+cite,
+code,
+del,
+dfn,
+em,
+img,
+ins,
+kbd,
+q,
+s,
+samp,
+small,
+strike,
+strong,
+sub,
+sup,
+tt,
+var,
+b,
+u,
+i,
+center,
+dl,
+dt,
+dd,
+ol,
+ul,
+li,
+fieldset,
+form,
+label,
+legend,
+table,
+caption,
+tbody,
+tfoot,
+thead,
+tr,
+th,
+td,
+article,
+aside,
+canvas,
+details,
+embed,
+figure,
+figcaption,
+footer,
+header,
+hgroup,
+menu,
+nav,
+output,
+ruby,
+section,
+summary,
+time,
+mark,
+audio,
+video {
   margin: 0;
   padding: 0;
   color: inherit;
@@ -39,13 +112,17 @@ time, mark, audio, video {
   font-weight: inherit;
   line-height: inherit;
 }
+
 html {
-  scroll-behavior:smooth;
+  scroll-behavior: smooth;
   overscroll-behavior: none;
 }
-html, body {
+
+html,
+body {
   height: 100%;
 }
+
 body {
   /* font-family: 'Noto Sans KR', sans-serif; */
   font-family: 'Pretendard Variable';
@@ -53,13 +130,26 @@ body {
   font-weight: 400;
   line-height: 1.5;
 }
-a, button {
+
+a,
+button {
   line-height: 1;
 }
-dl, dt, dd, ol, ul, li{
+
+dl,
+dt,
+dd,
+ol,
+ul,
+li {
   list-style: none;
 }
-img, picture, video, canvas, svg {
+
+img,
+picture,
+video,
+canvas,
+svg {
   display: block;
   max-width: 100%;
 }
@@ -70,52 +160,62 @@ button {
   outline: none;
   cursor: pointer;
 }
+
 a {
   text-decoration: none;
   cursor: pointer
 }
+
 table {
   border-collapse: collapse;
   border-spacing: 0;
 }
+
 textarea {
   resize: none;
 }
+
 /* 드래그 시 컬러 */
 ::selection {
   color: #fff;
   background-color: #ff3900;
-} 
+}
+
 @font-face {
   font-family: 'Noto Sans KR';
   src: url('../fonts/notoSansKR/NotoSansKR-Thin.otf') format('opentype');
   font-weight: 100;
   font-style: normal;
 }
+
 @font-face {
   font-family: 'Noto Sans KR';
   src: url('../fonts/notoSansKR/NotoSansKR-Light.otf') format('opentype');
   font-weight: 300;
   font-style: normal;
 }
+
 @font-face {
   font-family: 'Noto Sans KR';
   src: url('../fonts/notoSansKR/NotoSansKR-Regular.otf') format('opentype');
   font-weight: 400;
   font-style: normal;
 }
+
 @font-face {
   font-family: 'Noto Sans KR';
   src: url('../fonts/notoSansKR/NotoSansKR-Medium.otf') format('opentype');
   font-weight: 500;
   font-style: normal;
 }
+
 @font-face {
   font-family: 'Noto Sans KR';
   src: url('../fonts/notoSansKR/NotoSansKR-Bold.otf') format('opentype');
   font-weight: 700;
   font-style: normal;
 }
+
 @font-face {
   font-family: 'Noto Sans KR';
   src: url('../fonts/notoSansKR/NotoSansKR-Black.otf') format('opentype');
@@ -130,39 +230,45 @@ textarea {
   font-weight: 300;
   font-style: normal;
 }
+
 @font-face {
   font-family: 'Figtree';
   src: url('../fonts/figtree/Figtree-Regular.ttf') format('opentype');
   font-weight: 400;
   font-style: normal;
 }
+
 @font-face {
   font-family: 'Figtree';
   src: url('../fonts/figtree/Figtree-Medium.ttf') format('opentype');
   font-weight: 500;
   font-style: normal;
 }
+
 @font-face {
   font-family: 'Figtree';
   src: url('../fonts/figtree/Figtree-SemiBold.ttf') format('opentype');
   font-weight: 600;
   font-style: normal;
 }
+
 @font-face {
   font-family: 'Figtree';
   src: url('../fonts/figtree/Figtree-Bold.ttf') format('opentype');
   font-weight: 700;
   font-style: normal;
 }
+
 @font-face {
   font-family: 'Figtree';
   src: url('../fonts/figtree/Figtree-ExtraBold.ttf') format('opentype');
   font-weight: 800;
   font-style: normal;
 }
+
 @font-face {
   font-family: 'Figtree';
-  src: url('../fonts/figtree/Figtree-Black.tt') format('opentype');
+  src: url('../fonts/figtree/Figtree-Black.ttf') format('opentype');
   font-weight: 900;
   font-style: normal;
 }
@@ -176,48 +282,56 @@ textarea {
   font-weight: 100;
   font-style: normal;
 }
+
 @font-face {
   font-family: 'Pretendard Variable';
   src: url('../fonts/pretendard/Pretendard-ExtraLight.ttf') format('opentype');
   font-weight: 200;
   font-style: normal;
 }
+
 @font-face {
   font-family: 'Pretendard Variable';
   src: url('../fonts/pretendard/Pretendard-Light.ttf') format('opentype');
   font-weight: 300;
   font-style: normal;
 }
+
 @font-face {
   font-family: 'Pretendard Variable';
   src: url('../fonts/pretendard/Pretendard-Regular.ttf') format('opentype');
   font-weight: 400;
   font-style: normal;
 }
+
 @font-face {
   font-family: 'Pretendard Variable';
   src: url('../fonts/pretendard/Pretendard-Medium.ttf') format('opentype');
   font-weight: 500;
   font-style: normal;
 }
+
 @font-face {
   font-family: 'Pretendard Variable';
   src: url('../fonts/pretendard/Pretendard-SemiBold.ttf') format('opentype');
   font-weight: 600;
   font-style: normal;
 }
+
 @font-face {
   font-family: 'Pretendard Variable';
   src: url('../fonts/pretendard/Pretendard-Bold.ttf') format('opentype');
   font-weight: 700;
   font-style: normal;
 }
+
 @font-face {
   font-family: 'Pretendard Variable';
   src: url('../fonts/pretendard/Pretendard-ExtraBold.ttf') format('opentype');
   font-weight: 800;
   font-style: normal;
 }
+
 @font-face {
   font-family: 'Pretendard Variable';
   src: url('../fonts/pretendard/Pretendard-Black.ttf') format('opentype');

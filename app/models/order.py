@@ -90,10 +90,31 @@ def find_order_list(table_id):
 
 # 주문 취소 클릭시
 def delete_order(order_id_list):
+    if not order_id_list:
+        return True
+        
+    # 삭제할 주문들이 속한 order_list_id 리스트를 먼저 가져옴
+    order_list_ids = db.session.query(Order.order_list_id)\
+        .filter(Order.id.in_(order_id_list))\
+        .distinct().all()
+    order_list_ids = [item[0] for item in order_list_ids]
+
+    # 주문 삭제
     for order_id in order_id_list:
         order_item = db.session.query(Order).filter(Order.id == order_id).first()
-        # if order_item is None:
-            # return False
-        db.session.delete(order_item)
-        db.session.commit()
+        if order_item:
+            db.session.delete(order_item)
+    
+    db.session.commit()
+
+    # 삭제 후 각 TableOrderList가 비어있는지 확인하고 비어있으면 삭제
+    for ol_id in order_list_ids:
+        remaining_count = db.session.query(Order).filter(Order.order_list_id == ol_id).count()
+        if remaining_count == 0:
+            ol_item = db.session.query(TableOrderList).filter(TableOrderList.id == ol_id).first()
+            if ol_item:
+                db.session.delete(ol_item)
+                db.session.commit()
+                print(f"Empty table session (TableOrderList ID: {ol_id}) deleted.")
+                
     return True
