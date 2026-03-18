@@ -30,7 +30,7 @@ services:
         condition: service_healthy
     ports:
       - "5200:5000"
-    command: python app.py
+    command: /entrypoint.sh
 
 volumes:
   mysql_local_data:

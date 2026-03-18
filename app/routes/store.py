@@ -5,7 +5,7 @@ from flask import render_template, request, jsonify
 from flask_login import login_required, current_user
 from sqlalchemy import or_, func
 from app.models.menu_category import get_main_and_sub_category_by_menu_id, select_main_and_sub_category_by_store_id
-from app.models.table import create_table_category, delete_table, select_table, select_table_category, select_table_id, select_table_yn
+from app.models.table import create_table_category, delete_table, select_table, select_table_category, select_table_id, select_table_yn, update_table_layout
 from app.routes import store_bp
 from app.models import MainCategory, SubCategory, db, Menu, MenuOption, MenuOptionGroup, Store
 
@@ -134,10 +134,10 @@ def get_sub_category():
 
     # 메인카테고리 아무것도 선택 안했을 때 기본값 설정
     if main_category_id is None:
-        # TODO : store_id 세션에서 받아오기, 현재 임시로 값 넣음
-        # store_id = 1
         store_id = current_user.id
         main_categorys = select_main_category(store_id)
+        if not main_categorys:
+            return []
         main_category_id = main_categorys[0].id
 
     items = select_sub_category(main_category_id)
@@ -360,7 +360,9 @@ def set_menu():
         current_menu_id = pre_menu_id + 1
 
         # 이미지 저장
-        for index, menu_name in enumerate(json_data['image']):
+        print("[DEBUG] json_data['image']:", json_data.get('image', 'KEY_NOT_FOUND'))
+        print("[DEBUG] request.files keys:", list(request.files.keys()))
+        for index, menu_name in enumerate(json_data.get('image', [])):
             UPLOAD_FOLDER = 'app/static/images/store_'
             upload_path = f'{UPLOAD_FOLDER}{store_id}/menu_{current_menu_id}' # app/static/images/store_16/menu_30
             file = request.files.get(menu_name)
@@ -410,7 +412,7 @@ def set_menu():
         menu = select_menu(menu_id)[0]
         db_image_list = menu.image.split(', ') if getattr(menu, 'image', None) else []
         # 이미지 저장하기
-        for index, menu_name in enumerate(json_data['image']):
+        for index, menu_name in enumerate(json_data.get('image', [])):
             file = request.files.get(menu_name)
             menu_num = menu_name[9:]
             file_name = f'{name}_{menu_num}.png'
@@ -500,36 +502,36 @@ def set_table():
 def get_table():
     store_id = current_user.id
     table_categorys = select_table_category(store_id)
-    data=[]
+    data = []
     for table_category in table_categorys:
         tables = select_table(table_category.id)
-        table_list = []
-        for table in tables:
-            table_list.append({
-                'id' : table.id,
-                'name' : table.name,
-                'page' : table.page,
-                'position' : table.position
-            })
-        
-        # page 그룹화, position 정렬
-        grouped_data = {}
-        for item in table_list:
-            page = item['page']
-            if page not in grouped_data:
-                grouped_data[page] = []
-            grouped_data[page].append(item)
-        for page, tables in grouped_data.items():
-            grouped_data[page] = sorted(tables, key=lambda x: x['position'])
-        page_list = [{'page': page, 'tables': tables} for page, tables in grouped_data.items()]
-          
+        table_list = [{
+            'id': t.id,
+            'name': t.name,
+            'page': t.page,
+            'position': t.position,
+            'grid_x': t.grid_x,
+            'grid_y': t.grid_y,
+            'grid_w': t.grid_w,
+            'grid_h': t.grid_h,
+        } for t in tables]
         data.append({
-            'id' : table_category.id,
+            'id': table_category.id,
             'name': table_category.category_name,
             'position': table_category.position,
-            'pages': page_list
+            'tables': table_list,
         })
-    return data
+    return jsonify(data)
+
+
+@store_bp.route('/update_table_layout', methods=['PATCH'])
+def api_update_table_layout():
+    json_data = request.get_json()
+    tables = json_data.get('tables', [])
+    result = update_table_layout(tables)
+    if result:
+        return jsonify({'code': 200, 'msg': '레이아웃이 저장되었습니다.'})
+    return jsonify({'code': 400, 'msg': '저장에 실패하였습니다.'})
     
 # POS -> 매장관리 -> 메뉴 위치 설정 
 @store_bp.route('/set_menu_position', methods=['GET', 'POST', 'PATCH'])
@@ -728,20 +730,20 @@ def api_confirm_staff_call():
             # Let's find the order.
             order = Order.query.get(order_id)
             if order:
-                # Find other orders in the same "group" (same table, same time)
-                # This matches the grouping logic in `get_staff_call_logs`
-                # Key was: table_name + ordered_at
-                # So we look for orders with same table_id and ordered_at
-                
-                related_orders = Order.query.filter_by(
-                    table_id=order.table_id,
-                    ordered_at=order.ordered_at
+                from datetime import timedelta
+                # 같은 테이블, 같은 초(second)에 들어온 주문을 같은 배치로 간주
+                window_start = order.ordered_at.replace(microsecond=0)
+                window_end = window_start + timedelta(seconds=1)
+                related_orders = Order.query.filter(
+                    Order.table_id == order.table_id,
+                    Order.ordered_at >= window_start,
+                    Order.ordered_at < window_end
                 ).all()
-                
+
                 for o in related_orders:
                     if o.order_status_id == 1:
-                        o.order_status_id = 2 # Confirmed/Completed
-                
+                        o.order_status_id = 2
+
                 db.session.commit()
                 return jsonify({'message': 'Success'}), 200
         except Exception as e:

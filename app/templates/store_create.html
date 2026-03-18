@@ -24,15 +24,15 @@
       <h1><a href="/"><img src="/static/images/common/logo-order&go-color.png" alt=""></a></h1>
       <h1>매장 생성</h1>
       <form onsubmit="onSubmitCreateStore(event)">
-        <label for="store_num">매장명</label>
-        <input id="name" type="text" value="빨간중식" required>
-        
-        <label for="store_num">아이디</label>
-        <input id="store_id" type="text" value="testtest" required>
-  
-        <label for="">비밀번호</label>
+        <label for="name">매장명</label>
+        <input id="name" type="text" placeholder="매장명을 입력해주세요" required>
+
+        <label for="store_id">아이디</label>
+        <input id="store_id" type="text" placeholder="로그인에 사용할 아이디를 입력해주세요" required>
+
+        <label for="password">비밀번호</label>
         <div class="password_box">
-          <input type="password" value="test!@34" placeholder="비밀번호를 입력해주세요" id="password" name="password" required>
+          <input type="password" placeholder="비밀번호를 입력해주세요" id="password" name="password" required>
           <button class="not_btn_box" onclick="clickToggleShowPassword(event)">
             <i class="ph ph-eye"></i>
             <i class="ph ph-eye-slash"></i>
@@ -46,6 +46,9 @@
         </label>
         <input id="input_logo_img" type="file" hidden>
         <input type="submit" value="생성">
+        <div class="buttons">
+          <a href="/login">로그인 페이지로 돌아가기</a>
+        </div>
       </form>
     </main>
     <aside>

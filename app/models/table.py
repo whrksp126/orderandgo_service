@@ -29,7 +29,7 @@ def create_table_category(table_category_list, store_id):
             db.session.add(table_category)
             db.session.commit()
             for i in range(20): # 신규 생성한 카테고리에 테이블 자동 생성
-                table_name = tc['category_name'] + str(i+1)
+                table_name = tc['category_name'] + ' ' + str(i+1)
                 existing_table = Table.query.filter_by(table_category_id=table_category.id, name=table_name).first()
                 
                 if not existing_table:
@@ -59,8 +59,6 @@ def create_table_category(table_category_list, store_id):
 # 테이블 카테고리 조회
 def select_table_category(store_id):
     item = TableCategory.query.filter(TableCategory.store_id == store_id).all()
-    if not item:
-        return '잘못됨'
     return item
 
 # 테이블 카테고리 삭제
@@ -90,9 +88,6 @@ def delete_table_all(table_category_id):
 # 테이블 조회
 def select_table(table_category_id):
     item = Table.query.filter(Table.table_category_id == table_category_id).all()
-    if not item:
-        return '잘못됨'
-    
     return item
 
 # 테이블 이동/합석
@@ -220,6 +215,22 @@ def select_table_id(id):
         if cnt > 0: # 이용 중인 테이블이 하나라도 있으면 False
             return False
     return True
+
+# 테이블 레이아웃(grid) 일괄 저장
+def update_table_layout(tables_data):
+    for t in tables_data:
+        table = Table.query.filter(Table.id == t['id']).first()
+        if not table:
+            continue
+        table.grid_x = t.get('grid_x')
+        table.grid_y = t.get('grid_y')
+        table.grid_w = t.get('grid_w')
+        table.grid_h = t.get('grid_h')
+        if t.get('page') is not None:
+            table.page = t.get('page')
+    db.session.commit()
+    return True
+
 
 # 테이블 사용유무 조회
 def select_table_yn(id):

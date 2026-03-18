@@ -421,8 +421,6 @@ def api_update_main_category():
     data = request.get_json()
     main_category_list = data.get('main_category_list', [])
     
-    if not main_category_list:
-        return jsonify({'code': 400, 'msg': '최소 한 개의 메인 카테고리가 존재해야 합니다.'}), 400
     dummy = [
         {
             'id': 1,
@@ -453,9 +451,6 @@ def api_update_main_category():
         else:                               # 새로 생성된 카테고리
             item = MainCategory(store_id=store_id, name=main_category['name'], position=main_category['position'])
             db.session.add(item)
-            db.session.commit()
-            new_sub = SubCategory(main_category_id=item.id, name=main_category['name'], position=1)
-            db.session.add(new_sub)
             
         db.session.commit()
 
@@ -486,15 +481,17 @@ def api_update_main_category():
 def api_update_sub_category():
     data = request.get_json()
     sub_category_list = data.get('sub_category_list', [])
-    
-    if not sub_category_list:
-        return jsonify({'code': 400, 'msg': '최소 한 개의 서브 카테고리가 존재해야 합니다.'}), 400
+    main_category_id_param = data.get('main_category_id', None)
 
-    sub_category_list = sorted(sub_category_list, key=lambda x: x['id'], reverse=True)  # id 큰 순으로 정렬해서 main_category_id 찾을 수 있도록
-
-    main_category_id = db.session.query(SubCategory.main_category_id)\
-                                .filter(SubCategory.id == sub_category_list[0]['id'])\
-                                .scalar()
+    if main_category_id_param:
+        main_category_id = main_category_id_param
+    elif sub_category_list:
+        sub_category_list_sorted = sorted(sub_category_list, key=lambda x: x['id'], reverse=True)
+        main_category_id = db.session.query(SubCategory.main_category_id)\
+                                    .filter(SubCategory.id == sub_category_list_sorted[0]['id'])\
+                                    .scalar()
+    else:
+        return jsonify({'code': 400, 'msg': 'main_category_id가 필요합니다.'}), 400
     sub_categories = db.session.query(SubCategory)\
                                     .filter(SubCategory.main_category_id == main_category_id)\
                                     .all()

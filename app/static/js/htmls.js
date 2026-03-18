@@ -66,7 +66,7 @@ const modalSetMenuMainCategoryHtml = (categorys, type) => {
     <div>
       <h3>카테고리명</h3>
       <ul>
-        ${categorys.map((category)=>`
+        ${categorys.map((category) => `
         <li data-id="${category.id}">
           <button class="move"><i class="ph-fill ph-caret-up-down"></i></button>
           <div class="input_box">
@@ -89,14 +89,13 @@ const modalSetMenuMainCategoryHtml = (categorys, type) => {
 const modalSetTableCategoryHtml = (categorys) => {
   return `
     <div>
-      <h3>구역명</h3>
+      <h3>구역 설정</h3>
       <ul>
-        ${categorys.map((category, index)=>`
+        ${categorys.map((category, index) => `
         <li data-id="${category.id}" data-index="${index}">
-          <button class="move"><i class="ph-fill ph-caret-up-down"></i></button>
+          <button class="move"><i class="ph ph-dots-six-vertical"></i></button>
           <div class="input_box">
             <input type="text" value="${category.name}"/>
-            <i class="ph ph-pencil"></i>
           </div>
           <button class="delete" onclick="clickDeleteCategoryItem(event)"><i class="ph ph-trash"></i></button>
         </li>
@@ -114,10 +113,9 @@ const modalSetTableCategoryHtml = (categorys) => {
 const modalAddCategroyLiHtml = () => {
   return `
     <li data-id="" data-index="">
-      <button class="move"><i class="ph-fill ph-caret-up-down"></i></button>
+      <button class="move"><i class="ph ph-dots-six-vertical"></i></button>
       <div class="input_box">
         <input type="text" value=""/>
-        <i class="ph ph-pencil"></i>
       </div>
       <button class="delete" onclick="clickDeleteCategoryItem(event)"><i class="ph ph-trash"></i></button>
     </li>

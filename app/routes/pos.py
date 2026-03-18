@@ -1,5 +1,6 @@
 from flask import render_template, jsonify, request
 import json
+import uuid
 from app.models.menu import select_main_category, select_sub_category, select_menu_all, select_menu, select_menu_option, select_menu_option_all, select_menu_all_to_main_category
 from app.models.order import find_order_list, get_orders_by_store_id
 from flask_login import login_required, current_user
@@ -15,17 +16,164 @@ from app.models.staff_call import get_staff_call_logs
 
 from app import socketio
 from flask_socketio import join_room, emit
+from flask import request as flask_request
 
 
 @socketio.on('pos_login')
 def pos_login(data):
     if data.get('user_type') == 'pos':
-        # 포스기 클라이언트를 'pos_group'이라는 방에 추가
         join_room('pos_group')
-        print('data::',data)
         emit('login_response', {'message': '로그인이 성공하여 POS 그룹에 추가되었습니다.'})
         return {'msg': '로그인이 성공하여 POS 그룹에 추가되었습니다.'}
 
+
+# ─── Toss Front Plugin ────────────────────────────────────────────────────────
+
+# 메모리 내 저장소 (서버 재시작과 무관한 단기 데이터만)
+_pending_payments = {}       # payment_id → payment data
+_socket_store_map = {}       # socket_id → store_id (단말기 연결 추적용)
+
+
+@pos_bp.route('/toss/auth/login', methods=['POST'])
+def terminal_auth_login():
+    """단말기 플러그인 로그인 → 토큰 발급 (DB 저장)"""
+    data = request.get_json()
+    store_id_str = data.get('store_id', '').strip()
+    password = data.get('password', '')
+
+    from app.models import Store, TerminalToken
+    import bcrypt as _bcrypt
+    store = Store.query.filter_by(store_id=store_id_str).first()
+    if not store or not _bcrypt.checkpw(password.encode('utf-8'), store.store_pw.encode('utf-8')):
+        return jsonify({'error': '아이디 또는 비밀번호가 올바르지 않습니다.'}), 401
+
+    token = str(uuid.uuid4())
+    db.session.add(TerminalToken(token=token, store_id=store.id))
+    db.session.commit()
+    print(f'[Terminal] 로그인 성공: store={store.id} ({store.name})')
+    return jsonify({'token': token, 'store_id': store.id, 'store_name': store.name})
+
+
+@socketio.on('terminal_join')
+def terminal_join(data):
+    """단말기가 소켓 연결 후 인증 (DB 토큰 검증)"""
+    from app.models import TerminalToken
+    token = data.get('token')
+    if not token:
+        emit('terminal_auth_error', {'message': '인증 실패. 다시 로그인해주세요.'})
+        return
+
+    record = TerminalToken.query.filter_by(token=token).first()
+    if not record:
+        emit('terminal_auth_error', {'message': '인증 실패. 다시 로그인해주세요.'})
+        return
+
+    store_id = record.store_id
+    room = f'terminal_{store_id}'
+    join_room(room)
+    _socket_store_map[flask_request.sid] = store_id
+
+    emit('terminal_join_success', {'store_id': store_id})
+    socketio.emit('terminal_online', {'store_id': store_id}, to='pos_group')
+    print(f'[Terminal] 연결됨: store={store_id}, sid={flask_request.sid}')
+
+
+@socketio.on('terminal_status_update')
+def terminal_status_update(data):
+    """단말기 화면 상태 변경 → POS 전달"""
+    from app.models import TerminalToken
+    token = data.get('token')
+    if not token:
+        return
+    record = TerminalToken.query.filter_by(token=token).first()
+    if not record:
+        return
+    socketio.emit('terminal_status', {
+        'status': data.get('status'),
+        'payment_id': data.get('payment_id'),
+        'store_id': record.store_id,
+    }, to='pos_group')
+
+
+@socketio.on('request_cancel_payment')
+def request_cancel_payment(data):
+    """POS에서 결제 취소 요청 → 단말기 전달"""
+    payment_id = data.get('payment_id')
+    store_id = data.get('store_id')
+
+    if payment_id and payment_id in _pending_payments:
+        _pending_payments[payment_id]['status'] = 'cancelled'
+
+    socketio.emit('payment_cancelled', {'payment_id': payment_id}, to=f'terminal_{store_id}')
+    print(f'[Toss] 결제 취소 요청: payment_id={payment_id}, store={store_id}')
+
+
+@socketio.on('disconnect')
+def on_disconnect():
+    """단말기 연결 해제 감지"""
+    sid = flask_request.sid
+    if sid in _socket_store_map:
+        store_id = _socket_store_map.pop(sid)
+        socketio.emit('terminal_offline', {'store_id': store_id}, to='pos_group')
+        print(f'[Terminal] 연결 해제: store={store_id}')
+
+
+@pos_bp.route('/toss/pending', methods=['POST'])
+@login_required
+def create_toss_pending():
+    """POS 카드결제 클릭 시 pending payment 생성 + 단말기에 소켓 푸시"""
+    data = request.get_json()
+    payment_id = str(uuid.uuid4())[:8]
+    store_id = current_user.id
+
+    payment = {
+        'payment_id': payment_id,
+        'store_id': store_id,
+        'table_id': data.get('table_id'),
+        'order': data.get('order'),
+        'tax': data.get('tax'),
+        'supply_value': data.get('supply_value'),
+        'payment_key': data.get('payment_key'),
+        'status': 'pending',
+    }
+    _pending_payments[payment_id] = payment
+
+    # 단말기에 즉시 소켓 푸시
+    socketio.emit('toss_payment_request', payment, to=f'terminal_{store_id}')
+    print(f'[Toss] 결제 요청 생성+푸시: {payment_id}, store={store_id}, table={data.get("table_id")}')
+
+    return jsonify({'payment_id': payment_id, 'store_id': store_id, 'status': 'ok'})
+
+@pos_bp.route('/toss/pending', methods=['GET'])
+def get_toss_pending():
+    """단말기 플러그인이 pending payment 폴링"""
+    for payment_id, payment in list(_pending_payments.items()):
+        if payment['status'] == 'pending':
+            payment['status'] = 'processing'  # 중복 수신 방지
+            return jsonify({'pending': True, **payment})
+    return jsonify({'pending': False})
+
+@pos_bp.route('/toss/result', methods=['POST'])
+def submit_toss_result():
+    """단말기 플러그인이 결제 결과 제출 → POS에 socket emit"""
+    data = request.get_json()
+    payment_id = data.get('payment_id')
+    table_id = data.get('table_id')
+    result = data.get('result')
+
+    _pending_payments.pop(payment_id, None)
+
+    print(f'[Toss] 결제 결과 수신: payment_id={payment_id}, type={result.get("type")}')
+
+    # POS에 결과 전송
+    socketio.emit('toss_payment_result', {
+        'table_id': table_id,
+        'result': result,
+    }, to='pos_group')
+
+    return jsonify({'status': 'ok'})
+
+# ─────────────────────────────────────────────────────────────────────────────
 
 
 @pos_bp.route('/tableList')
@@ -107,9 +255,14 @@ def get_table_page():
                     if order.order_status_id == 2:
                         statusId = 2
                 return {
-                    "tableId": table.id, 
+                    "tableId": table.id,
                     "table": table.name,
                     "position": table.position,
+                    "page": table.page,
+                    "gridX": table.grid_x,
+                    "gridY": table.grid_y,
+                    "gridW": table.grid_w,
+                    "gridH": table.grid_h,
                     "statusId": statusId,
                     "status": "",
                     "groupId" : table.is_group,
@@ -120,9 +273,14 @@ def get_table_page():
             else :
                 # print("없음")
                 return {
-                    "tableId": table.id, 
+                    "tableId": table.id,
                     "table": table.name,
                     "position": table.position,
+                    "page": table.page,
+                    "gridX": table.grid_x,
+                    "gridY": table.grid_y,
+                    "gridW": table.grid_w,
+                    "gridH": table.grid_h,
                     "statusId": 0,
                     "status": "",
                     "groupId" : table.is_group,
@@ -131,23 +289,10 @@ def get_table_page():
                     "orderList" : [],
                 }
 
-        # 페이지별로 그룹화
-        page_list = []
-        current_page = None
-        for table in sorted_tables:
-            if table.page != current_page:
-                current_page = table.page
-                page_list.append({
-                    "page": current_page, 
-                    "tableList": [sort_table(table)]
-                })
-            else:
-                page_list[-1]["tableList"].append(sort_table(table))
-
         all_table_list.append({
             "categoryId" : category_id,
             "category" : category_name,
-            "pageList" : page_list
+            "tableList" : [sort_table(t) for t in sorted_tables],
         })
 
     return jsonify(all_table_list)
@@ -465,118 +610,87 @@ def api_get_staff_call_logs():
         .filter(Order.order_status_id.in_([1, 2]))\
         .order_by(Order.ordered_at.desc())\
         .limit(50).all()
-        
-    for order, table_name in orders:
-        # Group orders by table and time (rough grouping to avoid clutter?)
-        # For now, let's treat each order *item* or *table order group*?
-        # The prompt says "adding menu ordering also to notification history".
-        # Creating a notification per order might be too much if they order 10 items.
-        # But `Order` table structure seems to be one row per menu item.
-        # However, they might share `order_list_id` or similar time.
-        # Use `order_list_id` + `ordered_at` for grouping? 
-        # Actually `order_list_id` is for the whole session.
-        # Let's group by `table_id` and `ordered_at` (within a few seconds).
-        # Or just list them individually? Grouping is better.
-        # Let's simple check: if we have `ordered_at` close to each other.
-        # For simplicity, let's treat each order row as an item, and group by (table_id, ordered_at minute/second).
-        # But `Order` has `menu_options`.
-        
-        # Unique key for grouping: table_id + ordered_at (down to minute or specific batch)
-        # Check if `TableOrderList` is used.
-        pass
 
-    # Let's refine order fetching to group by 'order_list_id' isn't enough because it spans the whole meal.
-    # Group by (table_id, ordered_at). `ordered_at` should be same for a batch order.
-    
-    # Re-fetching with grouping logic in python
     orders_data = []
-    
     for order, table_name in orders:
         menu = select_menu(order.menu_id)
         menu_name = menu[0].name if menu else 'Unknown Menu'
-        
-        # Parse options
+
         options = []
         try:
             options_data = json.loads(order.menu_options) if order.menu_options else []
             for opt in options_data:
-                # We need option name. This might require fetching option.
-                # Optimization: select_menu_option might be heavy in loop.
-                # For now, just show menu name or count.
-                # Let's try to get option name if possible.
                 opt_obj = select_menu_option(opt['id'])
                 if opt_obj:
                     options.append(f"{opt_obj[0].name}")
         except:
             pass
-            
+
         item_str = f"{menu_name}"
         if options:
             item_str += f" ({', '.join(options)})"
-            
+
         orders_data.append({
             'id': order.id,
             'table_name': table_name,
             'ordered_at': order.ordered_at,
             'status': order.order_status_id,
-            'item': item_str
+            'item': item_str,
+            'is_pos': order.is_pos,
         })
-        
-    # Group orders
+
+    # Group orders by (table_name + ordered_at 초 단위)
     grouped_orders = {}
     for o in orders_data:
-        # Key: table_name + ordered_at (formatted)
         key = f"order_{o['table_name']}_{o['ordered_at'].strftime('%Y%m%d%H%M%S')}"
-        
+
         if key not in grouped_orders:
+            # 포스기 주문은 자동 확인 완료 처리
             grouped_orders[key] = {
-                'id': f"order_{o['id']}", # Representative ID (string)
+                'id': f"order_{o['id']}",
                 'type': 'order',
                 'table_name': o['table_name'],
                 'requestTime': o['ordered_at'],
-                'confirmTime': o['ordered_at'] if o['status'] == 2 else None, # If status 2, it's confirmed.
+                'confirmTime': o['ordered_at'] if o['is_pos'] else None,
+                'source': '포스기' if o['is_pos'] else '테이블 오더',
                 'items': []
             }
-        
+
         grouped_orders[key]['items'].append(o['item'])
-        # If any item in the group is unconfirmed (1), the whole group should be unconfirmed?
-        # Simpler: If any item is status 1, confirmTime should be None.
-        if o['status'] == 1:
+        # 비포스기 주문 중 미확인 항목이 있으면 미확인 유지
+        if not o['is_pos'] and o['status'] == 1:
             grouped_orders[key]['confirmTime'] = None
 
-    # Merge Collections
+    # Merge & Sort
     final_list = list(grouped_data.values()) + list(grouped_orders.values())
-    
-    # Sort by requestTime desc
     final_list.sort(key=lambda x: x['requestTime'], reverse=True)
-    
-    # Format for JSON
+
     result = []
-    for group in final_list[:50]: # Limit combined
-        
-        # Text Generation
+    for group in final_list[:50]:
         if group['type'] == 'staff_call':
-            is_generic = len(group['items']) == 1 and '직원 호출' in group['items'][0] and '1개' in group['items'][0]
+            is_generic = len(group['items']) == 1 and '직원 호출' in group['items'][0]
             if is_generic:
                 text = f"<b>{group['table_name']}</b>에서 직원을 호출했습니다."
             else:
                 items_html = '<br>'.join([f"- {item}" for item in group['items']])
                 text = f"<b>{group['table_name']}</b><br>{items_html}"
             items_text = ', '.join(group['items'])
-            
-        else: # Order
+            source = None
+        else:
             items_html = '<br>'.join([f"- {item}" for item in group['items']])
-            text = f"<b>{group['table_name']}</b> 주문<br>{items_html}"
+            source = group.get('source', '테이블 오더')
+            text = f"<b>{group['table_name']}</b> 주문 <span class='noti-source'>[{source}]</span><br>{items_html}"
             items_text = ', '.join(group['items'])
 
         result.append({
-            'id': group['id'], # Can be int or string
+            'id': group['id'],
             'table_name': group['table_name'],
             'items_text': items_text,
             'requestTime': group['requestTime'].strftime('%H:%M:%S'),
             'confirmTime': group['confirmTime'].strftime('%H:%M:%S') if group['confirmTime'] else None,
             'text': text,
-            'is_order': group['type'] == 'order'
+            'is_order': group['type'] == 'order',
+            'source': source,
         })
 
     return jsonify(result)

@@ -97,7 +97,10 @@
           </div>
           <div class="payment_btns">
             <button onclick="clickCashPayment(event)" class="cash_btn">현금 결제</button>
-            <button onclick="clickCardPayment(event)" class="card_btn">카드 결제</button>
+            <button onclick="clickCardPayment(event)" class="card_btn">
+              카드 결제
+              <span class="terminal-badge offline" title="단말기 연결 안됨">●</span>
+            </button>
           </div>
         </article>
       </section>
@@ -108,6 +111,8 @@
   <!-- 직원 요청 및 호출에 대한 처리 영역 -->
   <div id="alarm"></div>
 
+  <!-- socket.io -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
   <!-- 공통 스크립트 -->
   <script src="/static/js/common.js?v=2"></script>
   <!-- 전용 스크립트 -->

@@ -1,0 +1,695 @@
+/* =============================================
+   Table Canvas — shared by set_table & pos/tableList
+   CELL_SIZE: 60px / COLS: 20 / ROWS: 14
+   ============================================= */
+
+/* set_table article 레이아웃 오버라이드 */
+.set_table_position main section article {
+  background: #f0f2f5 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
+/* pos/tableList article 레이아웃 오버라이드 */
+body:not(.set_table_position) main section article {
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  background: #f8f9fa !important;
+}
+
+/* pos/tableList 캔버스 배경 — 흰색으로 */
+body:not(.set_table_position) .canvas-scroll-wrap {
+  background-color: #f8f9fa;
+  padding: 12px;
+}
+
+body:not(.set_table_position) #table-canvas {
+  background-color: #f8f9fa;
+}
+
+/* === Layout === */
+.table-canvas-wrap {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.canvas-scroll-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: 20px;
+  background-color: #484848;
+  box-sizing: border-box;
+}
+
+/* === Canvas (꽉 채우기) === */
+#table-canvas {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-color: #484848;
+  background-size: 60px 60px;
+  touch-action: none;
+}
+
+/* === Page Navigation (좌우 원형 화살표 오버레이) === */
+.canvas-page-nav {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+}
+
+.page-arrow-btn {
+  pointer-events: all;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #fff;
+  color: #444;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.page-arrow-btn:hover {
+  background: #f5f5f5;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+.page-arrow-placeholder {
+  width: 38px;
+  height: 38px;
+}
+
+/* === Table Card (both modes) === */
+.table-card {
+  position: absolute;
+  box-sizing: border-box;
+  border-radius: 10px;
+  border: 1.5px solid #d5d8de;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.table-card h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #222;
+  padding: 20px 20px 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: text;
+}
+
+/* 카드 인라인 이름 편집 input */
+.card-name-input {
+  font-size: 16px;
+  font-weight: 600;
+  color: #222;
+  padding: 18px 16px 6px;
+  margin: 0;
+  border: none;
+  border-bottom: 2px solid #1FAA9C;
+  background: transparent;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 미배치 아이템 인라인 이름 편집 input */
+.unplaced-name-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: #444;
+  border: none;
+  border-bottom: 1.5px solid #1FAA9C;
+  background: transparent;
+  outline: none;
+  padding: 0;
+}
+
+/* === Edit Mode Card === */
+.table-card.edit-card {
+  cursor: grab;
+  touch-action: none;
+}
+
+.table-card.edit-card:active {
+  cursor: grabbing;
+}
+
+.table-card.edit-card .card-actions {
+  display: flex;
+  gap: 4px;
+  padding: 8px 12px 16px;
+  margin-top: auto;
+}
+
+.table-card.edit-card .card-actions button {
+  background: none;
+  border: none;
+  padding: 4px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #888;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.table-card.edit-card .card-actions button:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.table-card.edit-card .card-actions .delete-btn:hover {
+  color: #e74c3c;
+}
+
+/* Dragging state */
+.table-card.dragging {
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+  opacity: 0.92;
+  z-index: 500;
+  cursor: grabbing !important;
+}
+
+/* Overlap / invalid state */
+.table-card.overlap {
+  border-color: #e74c3c !important;
+  background: #fff5f5 !important;
+  animation: shake 0.3s ease;
+}
+
+@keyframes shake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-4px);
+  }
+
+  75% {
+    transform: translateX(4px);
+  }
+}
+
+/* Ghost card (dragging from unplaced panel) */
+.table-card.ghost {
+  opacity: 0.7;
+  border: 2px dashed #1FAA9C;
+  background: #e8faf8;
+  pointer-events: none;
+  z-index: 600;
+}
+
+/* === Resize Handle === */
+.resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  cursor: se-resize;
+  touch-action: none;
+  z-index: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 3px;
+}
+
+.resize-handle::after {
+  content: '';
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid #aab;
+  border-bottom: 2px solid #aab;
+  border-radius: 0 0 2px 0;
+}
+
+/* === Unplaced Panel (Edit Mode only) === */
+.unplaced-panel {
+  width: 220px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  background: #eef0f3;
+  border-left: 1px solid #dde1e8;
+  padding: 20px;
+  box-sizing: border-box;
+  overflow: hidden;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.unplaced-panel.drop-highlight {
+  background: #e0f5f3;
+  border-left-color: #1FAA9C;
+}
+
+.unplaced-panel h3 {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+  padding: 0 2px;
+}
+
+.unplaced-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.unplaced-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex: initial;
+  gap: 4px;
+  width: 100%;
+  max-height: 80px;
+  padding: 8px 10px 40px;
+  box-sizing: border-box;
+  background: #fff;
+  border: 1px solid #d5d8de;
+  border-radius: 8px;
+  touch-action: none;
+  transition: box-shadow 0.1s;
+}
+
+.unplaced-item:active {
+  cursor: grabbing;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.unplaced-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: #444;
+  white-space: normal;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  word-break: break-all;
+}
+
+.unplaced-actions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.unplaced-actions button {
+  background: none;
+  border: none;
+  padding: 5px 5px;
+  border-radius: 5px;
+  cursor: pointer;
+  color: #bbb;
+  font-size: 13px;
+  line-height: 1;
+  transition: background 0.1s, color 0.1s;
+}
+
+.unplaced-actions button:hover {
+  background: #f0f0f0;
+  color: #555;
+}
+
+.unplaced-actions .delete-btn:hover {
+  color: #e74c3c;
+}
+
+/* === 테이블 추가 버튼 (button.brand 스타일 일관성) === */
+.add-table-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  box-sizing: border-box;
+  background: #fff;
+  color: #1FAA9C;
+  border: 1px solid #1FAA9C;
+  border-radius: 8px;
+  padding: 9px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.add-table-btn:hover {
+  background: #f0faf9;
+}
+
+/* === 선택(교환) 상태 === */
+.table-card.edit-card.selected {
+  background: #E0FAF7;
+  border: 2px dashed #1FAA9C;
+  box-shadow: none;
+}
+
+/* === 교환 오버레이 아이콘 === */
+.card-swap-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(31, 170, 156, 0.1);
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+.table-card.edit-card.selected .card-swap-overlay {
+  display: flex;
+}
+
+.card-swap-overlay i {
+  font-size: 26px;
+  color: #1FAA9C;
+}
+
+/* === 자동 배치 애니메이션 === */
+.table-card.placing {
+  animation: placeIn 0.35s ease;
+}
+
+@keyframes placeIn {
+  from {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* === Save Button (Edit Mode) === */
+.save-layout-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+  background: #1FAA9C;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.save-layout-btn:active {
+  transform: scale(0.97);
+  background: #178e82;
+}
+
+.save-layout-btn.dirty::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: #ffe066;
+  border-radius: 50%;
+}
+
+/* === View Mode Card (pos/tableList) === */
+.table-card.view-card {
+  cursor: pointer;
+  transition: box-shadow 0.1s;
+}
+
+.table-card.view-card:active {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* 빈 테이블 */
+.table-card.view-card[data-status="0"] {
+  background: #ffffff;
+  border-color: #d5d8de;
+}
+
+/* 주문 있음 */
+.table-card.view-card[data-status="1"],
+.table-card.view-card[data-status="2"] {
+  background: #fff8ec;
+  border-color: #f0a500;
+}
+
+/* Group border */
+.table-card.view-card.has-group {
+  border-width: 2px;
+}
+
+/* View card inner layout */
+.table-card.view-card .card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 8px;
+  gap: 8px;
+}
+
+.table-card.view-card .card-title h2 {
+  padding: 0;
+  font-size: 20px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.table-card.view-card .card-title h2 .ph-bell-ringing {
+  display: none;
+  color: #e74c3c;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.table-card.view-card[data-call="true"] .ph-bell-ringing {
+  display: inline;
+}
+
+/* 상태 배지 — pill 스타일 */
+.table-card.view-card .table_state {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  border: 1.5px solid currentColor;
+}
+
+.table-card.view-card[data-status="0"] .table_state {
+  display: none;
+}
+
+.table-card.view-card[data-status="1"] .table_state {
+  color: #f0a500;
+}
+
+.table-card.view-card[data-status="2"] .table_state {
+  color: #1FAA9C;
+}
+
+.table-card.view-card .card-body {
+  flex: 1;
+  overflow: hidden;
+  padding: 0 20px 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.table-card.view-card .card-body ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.table-card.view-card .card-body li {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.7;
+}
+
+.table-card.view-card .card-body li span:last-child {
+  color: #444;
+  font-weight: 500;
+}
+
+.table-card.view-card .card-body li.order_more {
+  color: #555;
+  font-size: 13px;
+  font-weight: 700;
+  justify-content: flex-start;
+}
+
+/* 빈 테이블 + 아이콘 */
+.view-empty-icon {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.view-empty-icon i {
+  font-size: 32px;
+  color: #ccc;
+}
+
+/* Group badge — edit mode: top-right */
+.item_grop_num {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  z-index: 5;
+}
+
+/* Group badge — view mode (pos/tableList): top-left, border overlap */
+.table-card.view-card .item_grop_num {
+  top: -9px;
+  left: 12px;
+  right: auto;
+  width: 22px;
+  height: 22px;
+  font-size: 11px;
+}
+
+/* Transparent overlays for group/move mode */
+.transparent_group_box,
+.transparent_move_box {
+  display: none;
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.table-card.view-card .transparent_group_box i,
+.table-card.view-card .transparent_move_box i {
+  font-size: 22px;
+  color: #fff;
+}
+
+/* Group mode */
+article.group .table-card.view-card .transparent_group_box {
+  display: flex;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* Move mode */
+article.move .table-card.view-card .transparent_move_box {
+  display: flex;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* Select highlight */
+.table-card.view-card.select {
+  box-shadow: 0 0 0 3px #1FAA9C;
+}
+
+/* Disabled overlay */
+article.disabled .table-card.view-card {
+  pointer-events: none;
+}
+
+article.disabled .table-card.view-card .transparent_group_box,
+article.disabled .table-card.view-card .transparent_move_box {
+  pointer-events: auto;
+}
+
+/* Empty state for canvas */
+.canvas-empty-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #bbb;
+  pointer-events: none;
+}
+
+.canvas-empty-state i {
+  font-size: 48px;
+}
+
+.canvas-empty-state p {
+  font-size: 14px;
+}

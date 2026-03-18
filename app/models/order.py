@@ -1,4 +1,5 @@
 import json
+import traceback
 from flask import session, jsonify
 from sqlalchemy import and_
 from app.models import db, Table, TableCategory, Order, TableOrderList, Menu, MenuOption
@@ -21,21 +22,27 @@ def get_orders_by_store_id(store_id):
     return orders
 
 # 주문하기 클릭 시
-def make_order(store_id, table_id, order_list):
-    
+def make_order(store_id, table_id, order_list, is_pos=False):
+    table_id = int(table_id)
+
     # 현재 이용중인 TableOrderList를 가져옴
     table_order_list_item = db.session\
         .query(TableOrderList)\
         .filter(TableOrderList.table_id == table_id)\
         .filter(TableOrderList.checkingout_at.is_(None))\
         .first()
-        
+
     # table_order_list_item이 None이면 첫 주문
     if table_order_list_item is None:
+        print(f"[make_order] 새 TableOrderList 생성 - table_id={table_id}, store_id={store_id}")
         table_order_list_item = TableOrderList(table_id=table_id, store_id=store_id)
         db.session.add(table_order_list_item)
         db.session.commit()
-        
+
+    from datetime import datetime
+    ordered_at = datetime.now()  # 같은 배치는 동일한 시간으로 저장
+
+    print(f"[make_order] table_order_list_item.id={table_order_list_item.id}, order_list 개수={len(order_list)}")
     for o in order_list:
         option_data = []
         for option in o['options']:
@@ -43,16 +50,19 @@ def make_order(store_id, table_id, order_list):
                 'id': option['id'],
                 'count': option['count']
             })
+        print(f"[make_order] 주문 생성 - menu_id={o['id']}, table_id={table_id}, is_pos={is_pos}")
         # order_status_id는 임의로 1로 함. temp
         order_item = Order(
-            order_status_id = 1, 
-            menu_id = o['id'], 
-            table_id = table_id, 
+            order_status_id = 1,
+            menu_id = int(o['id']),
+            table_id = table_id,
             order_list_id = table_order_list_item.id,
-            menu_options = json.dumps(option_data)
+            menu_options = json.dumps(option_data),
+            is_pos = is_pos,
+            ordered_at = ordered_at,
         )
         db.session.add(order_item)
-        db.session.commit()
+    db.session.commit()
 
     return True
     

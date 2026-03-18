@@ -1,9 +1,7 @@
-body{
-
-}
+/* ── 레이아웃 ── */
 #app {
-  display:flex;   
-  height:100%;
+  display: flex;
+  height: 100%;
   overflow: hidden;
 }
 main {
@@ -17,7 +15,7 @@ main {
   margin: 0 auto;
   padding: 50px;
 }
-aside{
+aside {
   background: #22B2A3;
   width: 100%;
 }
@@ -31,13 +29,48 @@ h1 img {
   height: 35px;
   margin: 0 auto;
 }
+
+/* ── 탭 버튼 ── */
+.login_tabs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #999;
+}
+.login_tabs .divider {
+  color: #ccc;
+}
+.login_tabs button {
+  flex: 1;
+  font-size: 18px;
+  font-weight: 700;
+  color: #999;
+}
+.login_tabs button.active {
+  color: var(--backgound-color-1fa);
+}
+.login_tabs .tab_label {
+  font-size: 16px;
+  font-weight: 700;
+  color: #999;
+}
+.login_tabs .tab_label.active {
+  color: var(--backgound-color-1fa);
+}
+
+/* ── 폼 공통 ── */
 form {
   display: flex;
-  justify-content: center;
   flex-flow: column;
   gap: 20px;
 }
-form input:not([type="checkbox"]){
+form.hidden {
+  display: none;
+}
+form input:not([type="checkbox"]):not([type="submit"]) {
+  flex: 1;
+  width: 100%;
   padding: 10px;
   border-radius: 5px;
   border: 1px solid #999;
@@ -47,21 +80,20 @@ form input:not([type="checkbox"]){
 }
 form input[type="submit"] {
   height: 50px;
-  background: var(--backgound-color-1fa);
+  padding: 10px;
+  border-radius: 5px;
   border: none;
+  background: var(--backgound-color-1fa);
   color: #fff;
   font-size: 16px;
   font-weight: 700;
+  transition: background 0.2s, opacity 0.2s;
+  cursor: pointer;
 }
-
-form select {
-  display: none;
-}
-form.has_manager_section.store #store_id{
-  display: none;
-}
-form.has_manager_section.store select{
-  display: block;
+form input[type="submit"]:disabled {
+  background: #C8C8C8;
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 form label {
   margin-bottom: -10px;
@@ -69,49 +101,19 @@ form label {
   font-size: 16px;
   font-weight: 600;
 }
-.input_save_id{
-  display: flex;
-}
-.buttons {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content:space-between;
-  font-size: 14px;
-  font-weight: 400;
-  color: #666;
-}
-.buttons:first-child {
-  margin-bottom: 15px;
-  color: #999;
-}
-.buttons:first-child:after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 1px;
-  height: 100%;
-  background: #999;
-}
-.create_store {
-  display: none;
-}
-.has_manager_section .buttons.another{
-  display: none;
-}
-.has_manager_section .create_store{
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #666;
+form select {
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #999;
+  color: #000;
   font-size: 14px;
   font-weight: 400;
 }
+
+/* ── 전화번호 입력 ── */
 .tel_box {
   display: flex;
   align-items: center;
-  justify-content:space-between;
 }
 .tel_box > input {
   flex: 1;
@@ -121,6 +123,60 @@ form label {
   padding: 5px;
 }
 
+/* ── 비밀번호 박스 ── */
+.password_box {
+  position: relative;
+  display: flex;
+}
+.password_box input {
+  padding-right: 40px !important;
+}
+.not_btn_box {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+}
+.password_box .ph-eye-slash { display: none; }
+.password_box.active .ph-eye-slash { display: inline; }
+.password_box.active .ph-eye { display: none; }
+
+/* ── 하단 링크 ── */
+.bottom_links {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #666;
+}
+.bottom_links.center {
+  justify-content: center;
+}
+.bottom_links a {
+  color: #666;
+}
+
+/* ── 매장 없음 ── */
+#no_store_wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 0 4px;
+  text-align: center;
+}
+#no_store_wrap p {
+  color: #999;
+  font-size: 14px;
+  margin: 0;
+}
+#no_store_wrap a {
+  color: var(--backgound-color-1fa);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* ── register.html / find_password.html 전용 ── */
 form > div {
   position: relative;
   display: flex;
@@ -129,19 +185,11 @@ form > div {
 form > div.tel_box {
   gap: 0;
 }
-
-form input:not([type="checkbox"]){
-  flex: 1;
-  width: 100%;
-}
 form button:not(.not_btn_box) {
   flex: 1;
   font-size: 18px;
   font-weight: 700;
   color: #999;
-}
-form.has_manager_section button.admin_btn{
-  pointer-events: none;
 }
 form button.border_btn {
   flex: none;
@@ -152,34 +200,15 @@ form button.border_btn {
   font-size: 16px;
   font-weight: 600;
 }
-form .not_btn_box {
-  position: absolute;
-  top: 50%;
-  right: 20px;
-  transform: translate(0,-50%);
-}
-.password_box .ph-eye-slash{
-  display: none;
-}
-.password_box.active .ph-eye-slash{
-  display: inline;
-}
-.password_box.active .ph-eye{
-  display: none;
-}
-
-form .password_box input {
-  padding-right: 40px;
-}
-.store select{
-  padding: 10px;
-  border-radius: 5px;
-  border: 1px solid #999;
-  color: #000;
+.buttons.another {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 14px;
-  font-weight: 400;
+  color: #666;
 }
 
+/* ── 로고 업로드 (store_create.html) ── */
 label[for="input_logo_img"] {
   position: relative;
   display: flex;
@@ -196,54 +225,96 @@ label[for="input_logo_img"] h3 {
   font-weight: 600;
   text-align: center;
 }
-label[for="input_logo_img"] img {
-  display: none;
-}
-label[for="input_logo_img"].active img {
-  display: block;
-}
+label[for="input_logo_img"] img { display: none; }
+label[for="input_logo_img"].active img { display: block; }
 label[for="input_logo_img"] .dotted_line {
   position: absolute;
-  top: 10px;
-  left: 10px;
-  right: 10px;
-  bottom: 10px;
+  top: 10px; left: 10px; right: 10px; bottom: 10px;
   border: 1px dashed #ccc;
   border-radius: 5px;
-
   color: #999;
 }
-.login label[for="store_id"] {
+
+/* ── 인라인 폼 에러 메시지 ── */
+.form_msg {
   display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  animation: slideDown 0.25s ease;
 }
-.login #store_id{
-  display: none;
+.form_msg.show { display: flex; }
+.form_msg.error {
+  background: #FFF0F0;
+  border: 1px solid #FFCDD2;
+  color: #C62828;
 }
-.login .store label[for="store_id"] {
-  display: block;
+.form_msg.success {
+  background: #F0FBF9;
+  border: 1px solid #B2DFDB;
+  color: #00695C;
 }
-.login .store #store_id{
-  display: block;
+.form_msg i {
+  font-size: 16px;
+  flex-shrink: 0;
 }
-.login .tel_box {
-  display: none;
+
+/* ── 에러 시 shake + 빨간 테두리 ── */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-6px); }
+  40%       { transform: translateX(6px); }
+  60%       { transform: translateX(-4px); }
+  80%       { transform: translateX(4px); }
 }
-.login label[for="admin_tel"] {
-  display: none;
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-.login .admin .tel_box{
+form.shake { animation: shake 0.4s ease; }
+form.input_error input:not([type="submit"]),
+form.input_error select {
+  border-color: #E57373;
+}
+
+/* ── 토스트 알림 ── */
+.toast_wrap {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
+  flex-flow: column;
+  gap: 10px;
+  align-items: center;
+  z-index: 9999;
+  pointer-events: none;
 }
-.login .admin label[for="admin_tel"]{
-  display: block;
+.toast_item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  animation: toastIn 0.3s ease;
+  pointer-events: auto;
 }
-.login .store .store_btn {
-  color: var(--backgound-color-1fa);
+.toast_item.success { background: #1FAA9C; color: #fff; }
+.toast_item.error   { background: #E53935; color: #fff; }
+.toast_item.fade_out { animation: toastOut 0.3s ease forwards; }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-.login .admin .admin_btn {
-  color: var(--backgound-color-1fa);
-}
-
-
-aside {
+@keyframes toastOut {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(12px); }
 }

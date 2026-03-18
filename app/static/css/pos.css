@@ -1634,3 +1634,124 @@ main section>aside .custom_btns button {
   opacity: 0 !important;
   transform: translateY(-60px) translateZ(-100px) scale(0.8) !important;
 }
+/* 테이블 없을 때 빈 상태 안내 */
+main section nav:empty,
+main section nav ul:empty ~ * {
+  /* 카테고리 nav 최소 높이 유지 */
+}
+
+main section nav {
+  min-height: 49px;
+}
+
+.items .empty_state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 100%;
+  text-align: center;
+}
+
+.items .empty_state i {
+  font-size: 48px;
+  color: #1FAA9C;
+  opacity: 0.4;
+}
+
+.items .empty_state p {
+  font-size: 17px;
+  font-weight: 700;
+  color: #333;
+  margin-top: 4px;
+}
+
+.items .empty_state span {
+  font-size: 13px;
+  font-weight: 400;
+  color: #999;
+}
+
+.items .empty_state a {
+  margin-top: 12px;
+  padding: 10px 22px;
+  border: 1.5px solid #1FAA9C;
+  border-radius: 8px;
+  color: #1FAA9C;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+}
+
+.items .empty_state a:hover {
+  background: #1FAA9C;
+  color: #fff;
+}
+
+
+/* ─── 단말기 카드 결제 모달 ─────────────────────────────────────── */
+#card-payment-modal .card-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#card-payment-modal .card-modal-box {
+  background: #fff;
+  border-radius: 16px;
+  padding: 40px 32px;
+  text-align: center;
+  min-width: 280px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+}
+
+#card-payment-modal .card-modal-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+#card-payment-modal h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 10px;
+}
+
+#card-payment-modal .terminal-status-msg {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 28px;
+  min-height: 20px;
+}
+
+#card-payment-modal .card-modal-cancel-btn {
+  padding: 12px 28px;
+  background: #f5f5f5;
+  color: #333;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#card-payment-modal .card-modal-cancel-btn:hover {
+  background: #ececec;
+}
+
+/* ─── 단말기 연결 상태 배지 ─────────────────────────────────────── */
+.card_btn .terminal-badge {
+  font-size: 10px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.card_btn .terminal-badge.online  { color: #2ecc40; }
+.card_btn .terminal-badge.offline { color: #aaa; }

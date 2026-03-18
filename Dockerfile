@@ -14,5 +14,8 @@ COPY . .
 
 EXPOSE 5000
 
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 # prod: gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:5000 app:app
-CMD ["python", "app.py"]
+CMD ["/entrypoint.sh"]

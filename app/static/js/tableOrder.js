@@ -109,6 +109,21 @@ const getTableData = async () => {
 const createTableHtml = () => {
   const data = STORE.table_list;
   if (!data) return; // 데이터가 없으면 중단
+
+  // 데이터가 없을 때 안내 메시지 표시
+  if (data.length === 0) {
+    document.querySelector('.table_order main section nav ul').innerHTML = '';
+    document.querySelector('.table_order main section article .items').innerHTML = `
+      <div class="empty_state">
+        <i class="ph ph-table"></i>
+        <p>등록된 테이블이 없습니다.</p>
+        <span>매장 관리에서 테이블 카테고리와 테이블을 생성해주세요.</span>
+        <a href="/store/product">매장 관리로 이동 →</a>
+      </div>
+    `;
+    return;
+  }
+
   const categoryNum = STORE.cur_category_index;
   const pageNum = STORE.cur_page_index;
   const curData = data[categoryNum].pages[pageNum].tables;
@@ -799,7 +814,7 @@ const clickOrder = async (event) => {
     return;
   }
 
-  const url = `/order`;
+  const url = `/order/`;
   const method = 'POST';
   const fetchData = {
     store_id: STORE.store_id,

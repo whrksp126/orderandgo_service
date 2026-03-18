@@ -123,6 +123,10 @@ class Table(db.Model):
     table_category_id = db.Column(db.Integer, db.ForeignKey('table_category.id'))
     page = db.Column(db.Integer, nullable=True)
     position = db.Column(db.Integer, nullable=True)
+    grid_x = db.Column(db.Integer, nullable=True)
+    grid_y = db.Column(db.Integer, nullable=True)
+    grid_w = db.Column(db.Integer, nullable=True)
+    grid_h = db.Column(db.Integer, nullable=True)
     # category_page_id = db.Column(db.Integer, db.ForeignKey('table_category_page.id'))
 
     #def __repr__(self):
@@ -217,6 +221,7 @@ class Order(db.Model):
     order_list_id = db.Column(db.Integer, db.ForeignKey('table_order_list.id'))
     menu_options = db.Column(db.Text)
     ordered_at = db.Column(db.DateTime, default=datetime.now)
+    is_pos = db.Column(db.Boolean, default=False)
     
     def set_menu_options(self, options_dict):
           # Python Dictionary를 JSON 형식으로 변환하여 저장
@@ -323,3 +328,11 @@ class StaffCallLog(db.Model):
     called_at = db.Column(db.DateTime, default=datetime.now)
     confirmed_at = db.Column(db.DateTime, nullable=True)
     request_id = db.Column(db.String(36), nullable=True)
+
+
+class TerminalToken(db.Model):
+    __tablename__ = 'terminal_token'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    token = db.Column(db.String(36), unique=True, nullable=False, index=True)
+    store_id = db.Column(db.Integer, db.ForeignKey('store.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now)

@@ -1,30 +1,29 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>OrderAndGo</title>
   <link rel="icon" type="image/x-icon" href="/static/images/common/logo.png">
 
-  <!-- 시작 초기 css 설정 -->
   <link rel="stylesheet" href="/static/css/responsive.css">
   <link rel="stylesheet" href="/static/css/reset.css">
   <link rel="stylesheet" href="/static/css/common.css">
   <link rel="stylesheet" href="/static/css/animation.css">
-
 
   <script src="/static/js/htmls.js"></script>
 
   <!-- 아이콘 -->
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
-  <!-- 전용 css -->
   <link rel="stylesheet" href="/static/css/store.css">
+  <link rel="stylesheet" href="/static/css/canvas.css">
 </head>
+
 <body class="set_table_position">
   <div id="container">
     <header>
-      <!-- <h1>POS - Header</h1>-->
       <a class="back_btn" onclick="history.back();">
         <i class="ph-bold ph-caret-left"></i>
       </a>
@@ -53,47 +52,33 @@
           </button>
         </nav>
         <article>
-          <div class="tables items" data-page="0">
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-            
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
-            <button class="item"><i class="ph ph-plus"></i></button>
+          <div class="table-canvas-wrap">
+            <div class="canvas-scroll-wrap">
+              <div id="table-canvas"></div>
+              <div id="page-nav" class="canvas-page-nav"></div>
+            </div>
+            <div class="unplaced-panel">
+              <h3>미배치</h3>
+              <button class="add-table-btn" onclick="clickAddTableBtn()">
+                <i class="ph ph-plus"></i> 테이블 추가
+              </button>
+              <ul class="unplaced-list scrollbar_hidden"></ul>
+              <button class="save-layout-btn" onclick="clickSaveLayoutBtn()">
+                <i class="ph ph-floppy-disk"></i> 저장
+              </button>
+            </div>
           </div>
-          <button class="change_page_btn prev_page_btn" onclick="clickChangeTablePosition(event, 'prev')">
-            <i class="ph ph-caret-left"></i>
-          </button>
-          <button class="change_page_btn next_page_btn" onclick="clickChangeTablePosition(event, 'next')">
-            <i class="ph ph-caret-right"></i>
-          </button>
         </article>
       </section>
     </main>
   </div>
-  
+
   <!-- 공통 스크립트 -->
   <script src="/static/js/common.js"></script>
-  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js" ></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
   <!-- 전용 스크립트 -->
   <script src="/static/js/setTablePosition.js"></script>
 </body>
+
 </html>

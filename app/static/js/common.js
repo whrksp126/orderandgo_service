@@ -648,7 +648,7 @@ const showToast = (message, type = 'info') => {
 // Socket.io 초기화 및 전역 socket 객체 설정 (socket.io.js가 로드된 경우에만)
 var socket;
 if (typeof io !== 'undefined') {
-  socket = io.connect('http://' + document.domain + ':' + location.port);
+  socket = io.connect(location.protocol + '//' + document.domain + (location.port ? ':' + location.port : ''));
 
   // POS 로그인 (메인 또는 메뉴 목록 페이지일 때만 실행)
   const isPosPage = window.location.pathname.includes('/pos/');
@@ -700,7 +700,8 @@ if (typeof io !== 'undefined') {
           table_name: tableName,
           requestTime: timestamp,
           confirmTime: null,
-          is_order: true
+          is_order: true,
+          source: '테이블 오더',
         });
 
         showToast(`${tableName}에서 새로운 주문이 들어왔습니다.`);
@@ -802,7 +803,9 @@ async function loadStaffCallLogs() {
 const renderNotiItem = (noti) => {
   let message = noti.text;
 
-  // 확인 완료된 항목은 콤마 리스트로 표현 (단, 일반 직원 호출 제외)
+  // 포스기 주문은 확인 버튼 없이 바로 확인 완료 처리
+  const isAutoConfirmed = noti.is_order && noti.source === '포스기';
+  // 확인 완료된 직원 호출은 콤마 리스트로 표현
   if (noti.confirmTime && noti.items_text && !message.includes('직원을 호출했습니다')) {
     message = `<b>${noti.table_name}</b><br>${noti.items_text}`;
   }
@@ -812,12 +815,13 @@ const renderNotiItem = (noti) => {
       <div class="content">
         <div class="message">${message}</div>
         <div class="times">
+          ${noti.source ? `<span class="request-time">접수: ${noti.source}</span>` : ''}
           <span class="request-time">요청: ${noti.requestTime}</span>
           ${noti.confirmTime ? `<span class="confirm-time">확인: ${noti.confirmTime}</span>` : ''}
         </div>
       </div>
       <div class="action">
-        ${noti.confirmTime
+        ${noti.confirmTime || isAutoConfirmed
       ? ''
       : `<button class="confirm-btn" onclick="confirmNotification('${noti.id}')">확인</button>`
     }

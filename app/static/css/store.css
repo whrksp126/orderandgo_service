@@ -734,9 +734,9 @@ section ul li .submit_btn {
 }
 
 .set_menu_product main aside .middle label .add_option_btn span {
-  color: #000;
-  font-size: 14px;
-  font-weight: 700;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
 }
 
 .set_menu_product main aside .middle label>span {
@@ -763,10 +763,7 @@ section ul li .submit_btn {
 }
 
 .set_menu_options .option_header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
+  margin-bottom: 12px;
 }
 
 .set_menu_options .option_header span {
@@ -777,42 +774,172 @@ section ul li .submit_btn {
 .set_menu_options .add_group_btn {
   display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 10px;
-  border-radius: 5px;
-  border: 1px solid #1FAA9C;
-  color: #1FAA9C;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 9px;
+  border: none;
+  border-radius: 0;
+  color: #BBBBBB;
   font-size: 13px;
-  background: #FFF;
-  font-weight: 700;
+  font-weight: 400;
+  background: transparent;
+  transition: color .2s;
+  cursor: pointer;
+}
+
+.set_menu_options .add_group_btn:hover {
+  color: #1FAA9C;
 }
 
 .menu_option_groups {
   display: flex;
-  flex-flow: column;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .option_group {
-  padding: 20px 0;
-  border-bottom: 1px solid #EEE;
+  border: 1px solid #E8E8E8;
+  border-radius: 8px;
+  background: #FAFAFA;
+  overflow: hidden;
+}
+
+.option_group .group_header {
+  background: #F5F5F5;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-bottom: 1px solid #EBEBEB;
+}
+
+.option_group .group_top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.option_group .group_top .group_drag_btn {
+  font-size: 20px;
+  color: #BBB;
+  cursor: grab;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.option_group .group_top .group_drag_btn:active {
+  cursor: grabbing;
+}
+
+.option_group .group_top input {
+  flex: 1;
+  height: 36px;
+  border: 1px solid #DDD;
+  border-radius: 5px;
+  padding: 0 10px;
+  font-size: 13px;
+  background: #FFF;
+}
+
+.option_group .group_top input:focus {
+  border-color: #1FAA9C;
+  outline: none;
+}
+
+.option_group .group_meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.option_group .group_meta .option_type_btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.option_group .group_meta .option_type_btn>span {
+  font-size: 12px;
+  color: #888;
+  line-height: 1;
+}
+
+.option_group .group_meta .option_type_btn>i {
+  font-size: 11px;
+  color: #AAA;
+  transition: transform .2s;
+  line-height: 1;
+}
+
+.option_group .group_meta .option_type_btn.open>i {
+  transform: rotate(180deg);
+}
+
+.option_group .group_meta .option_type_list {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 140px;
+  background: #FFF;
+  border: 1px solid #E8E8E8;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.option_group .group_meta .option_type_btn.open .option_type_list {
+  display: block;
+}
+
+.option_group .group_meta .option_type_list li {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #555;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.option_group .group_meta .option_type_list li:hover {
+  background: #F5F5F5;
+  color: #1FAA9C;
+}
+
+.option_group .delete_group_btn {
+  font-size: 16px;
+  color: #CCC;
+  padding: 4px;
+  flex-shrink: 0;
+  transition: color .2s;
+  line-height: 1;
+}
+
+.option_group .delete_group_btn:hover {
+  color: #F43E25;
 }
 
 .option_group .group_header .is_show_price_toggle {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 14px;
-  color: #666;
-  margin-right: 10px;
+  gap: 6px;
+  font-size: 12px;
+  color: #888;
 }
 
 .option_group .group_header .is_show_price_toggle button {
   position: relative;
-  width: 40px;
-  height: 20px;
+  width: 36px;
+  height: 18px;
   padding: 2px;
-  border-radius: 10px;
-  background: #ccc;
+  border-radius: 9px;
+  background: #CCC;
   transition: all .25s;
   border: none;
 }
@@ -822,162 +949,113 @@ section ul li .submit_btn {
 }
 
 .option_group .group_header .is_show_price_toggle button .ball {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  background: #fff;
+  background: #FFF;
   transition: all .25s;
   transform: translateX(0);
 }
 
 .option_group .group_header .is_show_price_toggle button[data-active="true"] .ball {
-  transform: translateX(20px);
+  transform: translateX(18px);
 }
 
 .option_group .group_header .is_show_price_toggle input[type="checkbox"] {
   display: none;
 }
 
-.option_group:last-child {
-  border-bottom: none;
-}
-
-.option_group .group_header {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
-}
-
-.option_group .group_header input {
-  flex: 2 !important;
-  height: 38px !important;
-  border: 1px solid #CCC !important;
-  border-radius: 5px !important;
-  padding: 0 10px !important;
-}
-
-.option_group .group_header input:focus {
-  border-color: #1FAA9C !important;
-}
-
-.option_group .group_header select {
-  flex: 1.2;
-  height: 38px;
-  border: 1px solid #DDD;
-  border-radius: 5px;
-  font-size: 13px;
-  padding: 0 8px;
-  background: #FDFDFD;
-}
-
-.option_group .delete_group_btn {
-  padding: 0 5px;
-  color: #CCC;
-  font-size: 22px;
-  transition: color .2s;
-}
-
-.option_group .delete_group_btn:hover {
-  color: #F43E25;
-}
-
-.option_group .group_header .group_drag_btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: grab;
-  color: #CCC;
-  font-size: 20px;
-}
-
-.option_group .menu_options {
-  display: flex;
-  gap: 10px;
-  justify-content: start;
-  margin-right: -20px;
-  margin-bottom: 15px;
-  overflow-x: auto;
-  width: 100%;
-  padding-bottom: 10px;
-}
-
-/* 옵션 아이템 카드 스타일 */
-.option_item {
-  min-width: 140px;
-  width: 140px;
-  padding: 0;
-  border: none;
-  background: none;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.option_item .option_top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.option_item .option_top .drag_btn {
-  display: flex;
-  align-items: center;
-  color: #CCC;
-  cursor: grab;
-}
-
-.option_item .option_top .drag_btn:active {
-  cursor: grabbing;
-}
-
-.option_item .option_top .delete_btn {
-  padding: 4px;
-  border-radius: 4px;
-  border: none;
-  color: #CCC;
-  background: transparent;
-  font-size: 16px;
-  transition: all .2s;
-}
-
-.option_item .option_top .delete_btn:hover {
-  border-color: #F43E25;
-  color: #F43E25;
-}
-
-.option_item .option_inputs {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.option_item .option_inputs input {
-  width: 100%;
-  height: 30px !important;
-  /* 작게 설정 */
-  font-size: 13px !important;
-  padding: 5px 8px !important;
-  background: #FFF;
-}
-
-
 .option_group .add_option_btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 5px;
-  border: 1px solid #1FAA9C;
-  background: #FFF;
-  color: #1FAA9C;
-  font-size: 18px;
-  transition: all .2s;
+  gap: 4px;
+  width: 100%;
+  padding: 9px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: #BBBBBB;
+  font-size: 13px;
+  font-weight: 400;
+  transition: color .2s;
+  cursor: pointer;
 }
 
 .option_group .add_option_btn:hover {
-  background: #1FAA9C;
-  color: #FFF;
+  color: #1FAA9C;
+}
+
+/* 옵션 아이템 리스트 스타일 */
+.option_group .menu_options {
+  display: flex;
+  flex-direction: column;
+  padding: 0 12px;
+}
+
+.option_item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid #F0F0F0;
+}
+
+.option_item:last-child {
+  border-bottom: none;
+}
+
+.option_item .drag_btn {
+  font-size: 18px;
+  color: #BBB;
+  cursor: grab;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.option_item .drag_btn:active {
+  cursor: grabbing;
+}
+
+.option_item input[data-title="option_name"] {
+  flex: 2;
+  height: 32px;
+  border: 1px solid #DDD;
+  border-radius: 5px;
+  padding: 0 8px;
+  font-size: 13px;
+  background: #FFF;
+}
+
+.option_item input[data-title="option_price"] {
+  flex: 1;
+  min-width: 60px;
+  height: 32px;
+  border: 1px solid #DDD;
+  border-radius: 5px;
+  padding: 0 8px;
+  font-size: 13px;
+  background: #FFF;
+}
+
+.option_item input:focus {
+  border-color: #1FAA9C;
+  outline: none;
+}
+
+.option_item .delete_btn {
+  font-size: 16px;
+  color: #CCC;
+  padding: 4px;
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  transition: color .2s;
+  line-height: 1;
+}
+
+.option_item .delete_btn:hover {
+  color: #F43E25;
 }
 
 .set_menu_product main aside .bottom {
@@ -1241,6 +1319,7 @@ section ul li .submit_btn {
   align-items: center;
   border-bottom: 1px solid #CCC;
   background: #FFF;
+  min-height: 50px;
 }
 
 .set_table_position main section nav ul {
@@ -1270,6 +1349,7 @@ section ul li .submit_btn {
 }
 
 .set_table_position main section article {
+  position: relative;
   background: rgba(0, 0, 0, 0.50);
 }
 
@@ -1354,72 +1434,278 @@ section ul li .submit_btn {
   transform: translate(-50%, -50%);
 }
 
+/* 테이블 설정 - 빈 상태 */
+.set_table_position main section article .empty_state {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.set_table_position main section article .empty_state i {
+  font-size: 48px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.set_table_position main section article .empty_state p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+}
+
+.set_table_position main section article .empty_state button {
+  margin-top: 4px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  background: var(--main, #1FAA9C);
+  color: #FFF;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
 /* 매장 테이블 관리 페이지 */
 /* Option Price Visibility */
 .option_inputs .price_row {
+  margin-bottom: 5px;
+}
 
-  /* Option Price Visibility */
-  .option_inputs .price_row {
-    margin-bottom: 5px;
-  }
+.show_price_row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 5px;
+}
 
-  /* Generic Show Price Row Styles (applies to both group header and option inputs) */
-  .show_price_row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 5px;
-  }
+.show_price_row span {
+  font-size: 12px;
+  color: #666;
+  font-weight: 700;
+}
 
-  .show_price_row span {
-    font-size: 12px;
-    color: #666;
-    font-weight: 700;
-  }
+.show_price_row .toggle_box {
+  display: flex;
+  align-items: center;
+}
 
-  .show_price_row .toggle_box {
-    display: flex;
-    align-items: center;
-  }
+.show_price_row .toggle_box button {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  background: #CCC;
+  transition: all .25s;
+  border: none;
+  padding: 2px;
+}
 
-  .show_price_row .toggle_box button {
-    position: relative;
-    width: 36px;
-    height: 20px;
-    border-radius: 10px;
-    background: #CCC;
-    transition: all .25s;
-    border: none;
-    padding: 2px;
-  }
+.show_price_row .toggle_box button[data-active="true"] {
+  background: #1FAA9C;
+}
 
-  .show_price_row .toggle_box button[data-active="true"] {
-    background: #1FAA9C;
-  }
+.show_price_row .toggle_box button .ball {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: all .25s;
+  transform: translateX(0);
+}
 
-  .show_price_row .toggle_box button .ball {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: #fff;
-    transition: all .25s;
-    transform: translateX(0);
-  }
+.show_price_row .toggle_box button[data-active="true"] .ball {
+  transform: translateX(16px);
+}
 
-  .show_price_row .toggle_box button[data-active="true"] .ball {
-    transform: translateX(16px);
-  }
+.group_header .show_price_row {
+  margin-left: auto;
+  margin-right: 10px;
+  gap: 8px;
+}
 
-  /* Specific adjustments for group header */
-  .group_header .show_price_row {
-    margin-left: auto;
-    /* Push to right if needed, though flex parent handles it */
-    margin-right: 10px;
-    gap: 8px;
-  }
+.group_header .show_price_row span {
+  font-size: 13px;
+  white-space: nowrap;
+}
 
-  .group_header .show_price_row span {
-    font-size: 13px;
-    /* Slightly larger in header */
-    white-space: nowrap;
-  }
+/* ===== 인라인 카테고리 매니저 ===== */
+.inline_cat_mgr {
+  width: 100%;
+}
+
+/* wrapper — 캐럿 앱솔루트 기준점 */
+.cat_input_wrap {
+  position: relative;
+  width: 100%;
+}
+
+/* 인풋 — label input 충돌 규칙보다 높은 specificity */
+.set_menu_product main aside .middle label .cat_input {
+  width: 100%;
+  height: 40px;
+  padding: 0 54px 0 12px;
+  border: 1px solid #CCC;
+  border-radius: 5px;
+  background: #fff;
+  font-size: 13px;
+  color: #333;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.cat_input::placeholder {
+  color: #BBB;
+}
+
+.cat_input:focus,
+.inline_cat_mgr.open .cat_input {
+  border-color: #1FAA9C;
+}
+
+/* 수정 버튼 — 캐럿 왼쪽에 앱솔루트 */
+.cat_edit_btn {
+  position: absolute;
+  right: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  color: #1FAA9C;
+  font-size: 12px;
+  transition: background 0.12s;
+}
+
+.cat_edit_btn:hover {
+  background: #EDF7F6;
+}
+
+/* 편집 모드 인풋 테두리 */
+.cat_input_wrap.editing .cat_input {
+  border-color: #1FAA9C;
+}
+
+/* 캐럿 — 인풋 우측 앱솔루트 */
+.cat_caret {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: #AAA;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.2s, color 0.15s;
+}
+
+.cat_caret:hover {
+  color: #1FAA9C;
+}
+
+.inline_cat_mgr.open .cat_caret {
+  transform: translateY(-50%) rotate(180deg);
+  color: #1FAA9C;
+}
+
+/* 드롭다운 패널 */
+.cat_dropdown {
+  position: fixed;
+  z-index: 9999;
+  background: #fff;
+  border: 1px solid #E5E5E5;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+/* 목록 */
+.cat_list {
+  display: flex;
+  flex-direction: column;
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 4px;
+  gap: 1px;
+}
+
+.cat_item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.cat_item:hover {
+  background: #F3FAFA;
+}
+
+.cat_item.selected {
+  background: #EDF7F6;
+}
+
+.cat_item.selected .cat_name {
+  color: #1FAA9C;
+  font-weight: 600;
+}
+
+.cat_drag_handle {
+  font-size: 13px;
+  color: #CCC;
+  cursor: grab;
+  flex-shrink: 0;
+}
+
+.cat_drag_handle:active {
+  cursor: grabbing;
+}
+
+.cat_name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 400;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cat_delete_btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  color: #CCC;
+  font-size: 11px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.12s, color 0.12s;
+}
+
+.cat_item:hover .cat_delete_btn {
+  opacity: 1;
+}
+
+.cat_delete_btn:hover {
+  color: #F43E25;
+}
+
+.cat_empty {
+  padding: 12px 8px;
+  font-size: 12px;
+  color: #BBB;
+  text-align: center;
+}

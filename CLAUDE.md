@@ -57,10 +57,12 @@ docker compose -f docker-compose.local.yml down
 ## 서버 배포
 
 ```bash
-./deploy.sh dev    # dev 배포 (빌드 → Docker Hub 푸시 → 서버 적용)
-./deploy.sh stg    # stg 배포
-./deploy.sh prod   # prod 배포
+./deploy.sh dev    # dev 배포 (서버에서 git pull → build & up)
+./deploy.sh stg    # stg 배포 (서버에서 git pull → build & up)
+./deploy.sh prod   # prod 배포 (서버에서 git pull → build & up)
 ```
+
+> Docker Hub 불필요. 서버에서 직접 빌드.
 
 ## 환경별 도메인
 

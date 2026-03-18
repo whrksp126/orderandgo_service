@@ -1,9 +1,10 @@
 from flask import Flask
-from flask_socketio import SocketIO 
+from flask_socketio import SocketIO
 from config import Config
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
+from flask_cors import CORS
 
 from sqlalchemy.ext.declarative import declarative_base
 from contextlib import contextmanager
@@ -21,7 +22,14 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
-    socketio.init_app(app)
+    _toss_origins = [
+        "https://orderandgo-front.plugin.tossplace.com",
+        "https://orderandgo-front.plugin-dev.tossplace.com",
+    ]
+    CORS(app, resources={
+        r"/pos/toss/*": {"origins": _toss_origins}
+    })
+    socketio.init_app(app, cors_allowed_origins="*")
     
     # 모든 모델 클래스들을 한번에 import
     from app import models

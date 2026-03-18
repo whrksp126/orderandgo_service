@@ -853,6 +853,18 @@ main section article .change_page_btn.next_page_btn {
   background: #1FAA9C;
 }
 
+.noti-source {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #666;
+  background: #f0f0f0;
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
 /* ######### 알림 사이드바 ######### */
 /* 주문 성공 오버레이 스타일 */
 .order-success-overlay {

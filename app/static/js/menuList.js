@@ -729,7 +729,7 @@ const clickOrder = async (event) => {
   const target = findParentTarget(event.target, 'li.order');
   if (target.dataset.iscancel == 'false') { // 주문하기
     console.log('주문하기')
-    const url = `/order`;
+    const url = `/order/`;
     const method = 'POST';
     const fetchData = {
       table_id: lastPath,
@@ -738,12 +738,10 @@ const clickOrder = async (event) => {
     };
     const result = await fetchDataAsync(url, method, fetchData);
     if (result.code == 200) {
-      // window.location.href = '/pos/tableList'
-      // SPA 방식으로 변경
-      menuAllData = []; // 장바구니 데이터 초기화
-      changeBasketHtml(setBasketData(menuAllData)); // 장바구니 UI 갱신
-      initGetTableOrderList(); // 주문내역(왼쪽 상단 버튼 등) 갱신
       showToast('주문이 완료되었습니다.');
+      setTimeout(() => {
+        window.location.href = '/pos/tableList';
+      }, 1500);
     }
   } else { // 주문취소
     console.log('주문취소')

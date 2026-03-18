@@ -7,25 +7,27 @@ def find_last_main_category_position(store_id):
     last_position = db.session.query(func.max(MainCategory.position))\
                             .filter(MainCategory.store_id == store_id)\
                             .first()
-    return last_position[0]+1
+    return (last_position[0] or 0) + 1
 
 # 마지막+1 서브카테고리 포지션 리턴
 def find_last_sub_category_position(main_category_id):
     last_position = db.session.query(func.max(SubCategory.position))\
                             .filter(SubCategory.main_category_id == main_category_id)\
                             .first()
-    return last_position[0]+1
+    return (last_position[0] or 0) + 1
 
 # 메인카테고리 생성
 def create_main_category(store_id, name):
-    main_category = MainCategory(store_id=store_id, name=name)
+    position = find_last_main_category_position(store_id)
+    main_category = MainCategory(store_id=store_id, name=name, position=position)
     db.session.add(main_category)
     db.session.commit()
     return main_category
 
 # 서브카테고리 생성
 def create_sub_category(main_category_id, name):
-    sub_category = SubCategory(main_category_id=main_category_id, name=name)
+    position = find_last_sub_category_position(main_category_id)
+    sub_category = SubCategory(main_category_id=main_category_id, name=name, position=position)
     db.session.add(sub_category)
     db.session.commit()
     return True

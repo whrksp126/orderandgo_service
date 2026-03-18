@@ -55,28 +55,43 @@ def delete_user_by_id(id):
 ### 회원가입
 # 관리자 회원가입
 def create_admin_user(tel, password):
+    if User.query.filter_by(tel=tel).first():
+        return 'duplicate'
     try:
         user = User(tel=tel, password=bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()))
         db.session.add(user)
         db.session.commit()
-    except:
+    except Exception as e:
         db.session.rollback()
+        print(f'[회원가입 오류] {e}')
         return False
     return True
 
 # 스토어 회원가입
 def create_store_user(user_id, store_id, password, name, logo_img):
-    store = Store(user_id=user_id, store_id=store_id, store_pw=bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()), name=name, logo_img=logo_img)
-    db.session.add(store)
-    db.session.commit()
-    
-    # 메뉴 메인, 서브 카테고리 생성
-    main_category = create_main_category(store.id, '메인', 1)
-    create_sub_category(main_category.id, '메인', 1)
-    # 테이블 카테고리 생성
-    table_category_item = create_table_category(store.id, '매장')
+    existing = Store.query.filter_by(store_id=store_id).first()
+    if existing:
+        print(f"[중복] store_id='{store_id}' 이미 존재: id={existing.id}, name={existing.name}")
+        return 'duplicate'
+    existing_name = Store.query.filter_by(name=name).first()
+    if existing_name:
+        print(f"[중복] name='{name}' 이미 존재: id={existing_name.id}, store_id={existing_name.store_id}")
+        return 'duplicate_name'
+    try:
+        store = Store(user_id=user_id, store_id=store_id, store_pw=bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()), name=name, logo_img=logo_img)
+        db.session.add(store)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"스토어 생성 실패: {e}")
+        return False
 
-    
+    # 메뉴 메인, 서브 카테고리 생성
+    main_category = create_main_category(store.id, '메인')
+    create_sub_category(main_category.id, '메인')
+    # 테이블 카테고리 생성
+    table_category_item = create_table_category([{'id': None, 'category_name': '매장', 'position': 1}], store.id)
+
     return store
 
 
@@ -115,5 +130,20 @@ def get_store_user_login(store_id, password):
 # 스토어 아이디로 유저 조회
 def get_store_by_storeid(store_id):
     return Store.query.filter_by(id=store_id).first()
+
+
+# 전화번호로 관리자 유저 조회
+def get_user_by_tel(tel):
+    return User.query.filter_by(tel=tel).first()
+
+
+# 비밀번호 재설정
+def reset_user_password(tel, new_password):
+    user = User.query.filter_by(tel=tel).first()
+    if not user:
+        return False
+    user.password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
+    db.session.commit()
+    return True
 
 

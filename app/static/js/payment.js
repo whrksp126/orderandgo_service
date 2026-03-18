@@ -1,5 +1,110 @@
 let order_history = undefined;
 let payment_history = undefined;
+
+// 현재 진행 중인 카드 결제 정보
+let _currentCardPayment = null; // { payment_id, store_id }
+
+// ─── Toss 단말기 소켓 이벤트 ──────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  if (typeof socket === 'undefined') return;
+
+  // 결제 결과 수신
+  socket.on('toss_payment_result', async (data) => {
+    if (String(data.table_id) !== String(lastPath)) return;
+
+    _closeCardPaymentModal();
+    _currentCardPayment = null;
+
+    const _cardBtn = document.querySelector('.card_btn');
+    if (_cardBtn) { _cardBtn.disabled = false; _cardBtn.style.opacity = ''; }
+
+    const result = data.result;
+    if (result.type !== 'SUCCESS') {
+      alert(`결제가 완료되지 않았습니다. (${result.type}${result.error ? ': ' + result.error : ''})`);
+      return;
+    }
+
+    const paymentData = setPayment(2); // CARD
+    if (result.response) {
+      paymentData.payment.payment_history.toss_payment_key = result.response.paymentKey || '';
+      paymentData.payment.payment_history.toss_approval_no = result.response.card?.approvalNo || result.response.approvalNumber || '';
+      paymentData.payment.payment_history.toss_details = result.response;
+    }
+
+    fetchData(`/pos/payment_history/${lastPath}`, 'POST', paymentData, (responseData) => {
+      if (responseData.is_finished) {
+        createCompletedPaymentModal({ preventDefault: () => {} }, 'CARD');
+      } else {
+        location.reload();
+      }
+    });
+  });
+
+  // 단말기 온라인/오프라인
+  socket.on('terminal_online', () => _setTerminalBadge(true));
+  socket.on('terminal_offline', () => _setTerminalBadge(false));
+
+  // 단말기 화면 상태 변경 → 모달 업데이트
+  socket.on('terminal_status', (data) => {
+    const statusMap = {
+      'showing_order': '단말기에 주문 표시 중...',
+      'processing': '카드 처리 중...',
+      'idle': '대기 중',
+    };
+    const msg = statusMap[data.status] || data.status;
+    const el = document.querySelector('#card-payment-modal .terminal-status-msg');
+    if (el) el.textContent = msg;
+  });
+});
+
+function _setTerminalBadge(online) {
+  const badge = document.querySelector('.card_btn .terminal-badge');
+  if (!badge) return;
+  badge.className = `terminal-badge ${online ? 'online' : 'offline'}`;
+  badge.title = online ? '단말기 연결됨' : '단말기 연결 안됨';
+}
+
+function _openCardPaymentModal(paymentId, storeId) {
+  _currentCardPayment = { payment_id: paymentId, store_id: storeId };
+
+  // 기존 모달이 있으면 제거
+  document.querySelector('#card-payment-modal')?.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'card-payment-modal';
+  modal.innerHTML = `
+    <div class="card-modal-overlay">
+      <div class="card-modal-box">
+        <div class="card-modal-icon">💳</div>
+        <h2>카드 결제 진행 중</h2>
+        <p class="terminal-status-msg">단말기에 주문 전송 중...</p>
+        <button class="card-modal-cancel-btn" onclick="clickCancelCardPayment()">결제 취소</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+function _closeCardPaymentModal() {
+  document.querySelector('#card-payment-modal')?.remove();
+}
+
+function clickCancelCardPayment() {
+  if (!_currentCardPayment) return;
+  if (typeof socket !== 'undefined') {
+    socket.emit('request_cancel_payment', {
+      payment_id: _currentCardPayment.payment_id,
+      store_id: _currentCardPayment.store_id,
+    });
+  }
+  _closeCardPaymentModal();
+  _currentCardPayment = null;
+
+  const _cardBtn = document.querySelector('.card_btn');
+  if (_cardBtn) { _cardBtn.disabled = false; _cardBtn.style.opacity = ''; }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 // 테이블 주문 내역 가져오기
 const callOrderHistory = () => {
   const onSuccess = (data) => {
@@ -679,21 +784,67 @@ const clickCashPaymentCompleted = (event) => {
   // createCompletedPaymentModal(event, 'CASH');
 }
 
-const clickCardPayment = (event) => { // 카드 결제 클릭 시
-  const type = 2 // CARD
-  const data = setPayment(type);
-  const onSuccess = (data) => {
-    console.log(data);
-    if (data.is_finished) {
-      document.querySelector('.modal')?.remove();
-      createCompletedPaymentModal(event, 'CARD');
-    } else {
-      location.reload();
-    }
-  }
-  console.log(data)
-  fetchData(`/pos/payment_history/${lastPath}`, 'POST', data, onSuccess)
+const clickCardPayment = async (event) => { // 카드 결제 클릭 시 (토스 단말기 연동)
+  const totalPrice = payment_history.curPaymentPrice;
+  const tax = Math.round(totalPrice / 11);
+  const supplyValue = totalPrice - tax;
 
+  // 버튼 비활성화 (중복 클릭 방지)
+  const _cardBtn = event.currentTarget;
+  _cardBtn.disabled = true;
+  _cardBtn.style.opacity = '0.5';
+
+  // 단말기에 표시할 주문 데이터 구성 (sdk.template.renderOrderPage 포맷)
+  const orderItems = order_history.map(item => {
+    const entry = {
+      label: item.name,
+      value: item.price * item.count,
+    };
+    if (item.count > 1) entry.quantity = item.count;
+    if (item.options && item.options.length > 0) {
+      entry.options = item.options.map(opt => ({
+        type: 'option',
+        label: opt.name,
+        value: opt.price * opt.count,
+      }));
+    }
+    return entry;
+  });
+
+  const orderData = {
+    items: orderItems,
+    discounts: payment_history.discount > 0
+      ? [{ label: '할인', value: payment_history.discount }]
+      : [],
+    summary: {
+      totalAmount: totalPrice,
+      discountAmount: payment_history.discount || 0,
+    },
+  };
+
+  try {
+    const response = await fetch('/pos/toss/pending', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        table_id: lastPath,
+        order: orderData,
+        tax: tax,
+        supply_value: supplyValue,
+        payment_key: `ORD_${Date.now()}_${lastPath}`,
+      }),
+    });
+
+    if (!response.ok) throw new Error('서버 오류');
+    const resData = await response.json();
+
+    // 결제 대기 모달 표시 (취소 버튼 포함)
+    _openCardPaymentModal(resData.payment_id, resData.store_id);
+  } catch (e) {
+    alert('결제 요청 중 오류가 발생했습니다.');
+    _cardBtn.disabled = false;
+    _cardBtn.style.opacity = '';
+  }
 }
 
 

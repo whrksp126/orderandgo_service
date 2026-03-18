@@ -17,6 +17,7 @@
 
   <!-- 전용 css -->
   <link rel="stylesheet" href="/static/css/pos.css">
+  <link rel="stylesheet" href="/static/css/canvas.css">
 
   <!-- socket.io -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
@@ -50,53 +51,18 @@
         <!-- <h1>POS - section</h1> -->
         <nav>
           <!-- <h1>POS - Nav</h1> -->
-          <ul>
-            <li data-state="active">
-              <button>1층</button>
-            </li>
-          </ul>
+          <ul></ul>
           <button class="btn_set" onclick="clickSetBtn(event)">
             <i class="ph ph-gear-six"></i>
           </button>
         </nav>
 
         <article>
-          <div class="tables items">
-            <!-- <h1>POS - article</h1> -->
-            <!-- 
-            <button class="table item" data-state="isServed" data-call="call">
-              <div class="title">
-                <h2>테이블 1 <i class="ph-fill ph-bell-ringing"></i></h2>
-                
-                <div class="table_state">완료</div>
-              </div>
-              <div class="body">
-                <i class="ph-bold ph-plus"></i>
-                <ul>
-                  <li>
-                    <span>메뉴명</span>
-                    <span>1</span>
-                  </li>
-                  <li>
-                    <span>메뉴명</span>
-                    <span>1</span>
-                  </li>
-                  <li>
-                    <span>메뉴명</span>
-                    <span>1</span>
-                  </li>
-                  <li>
-                    <span>외2</span>
-                  </li>
-                </ul>
-              </div>
-            </button>
-            <button class="table item" data-id="" data-state="" onclick="">
-              <div class="body">
-                <ul></ul>
-              </div>
-            </button>
-            -->
+          <div class="table-canvas-wrap">
+            <div class="canvas-scroll-wrap">
+              <div id="table-canvas"></div>
+              <div id="page-nav" class="canvas-page-nav"></div>
+            </div>
           </div>
         </article>
         <!-- 메뉴판 페이지에서 메뉴 옵션 선택 영역 -->
