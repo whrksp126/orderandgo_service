@@ -171,9 +171,16 @@ def create_toss_pending():
 @pos_bp.route('/toss/pending', methods=['GET'])
 def get_toss_pending():
     """단말기 플러그인이 pending payment 폴링"""
+    from app.models import TerminalToken
+    token = request.args.get('token')
+    record = TerminalToken.query.filter_by(token=token).first() if token else None
+    store_id = record.store_id if record else None
+
     for payment_id, payment in list(_pending_payments.items()):
         if payment['status'] == 'pending':
-            payment['status'] = 'processing'  # 중복 수신 방지
+            if store_id and payment.get('store_id') != store_id:
+                continue
+            payment['status'] = 'processing'
             return jsonify({'pending': True, **payment})
     return jsonify({'pending': False})
 

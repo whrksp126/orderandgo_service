@@ -838,32 +838,6 @@ const clickCardPayment = async (event) => { // 카드 결제 클릭 시 (토스 
     if (!response.ok) throw new Error('서버 오류');
     const resData = await response.json();
 
-    if (!resData.ws_address) {
-      alert('단말기가 연결되어 있지 않습니다. 단말기 앱을 확인해주세요.');
-      _cardBtn.disabled = false;
-      _cardBtn.style.opacity = '';
-      return;
-    }
-
-    // 단말기 WS 서버에 직접 결제 데이터 전송
-    const ws = new WebSocket(resData.ws_address);
-    ws.onopen = () => {
-      ws.send(JSON.stringify({
-        payment_id: resData.payment_id,
-        table_id: lastPath,
-        order: orderData,
-        tax: tax,
-        supply_value: supplyValue,
-        payment_key: `ORD_${Date.now()}_${lastPath}`,
-      }));
-      ws.close();
-    };
-    ws.onerror = () => {
-      alert('단말기 연결에 실패했습니다. 단말기 앱을 확인해주세요.');
-      _cardBtn.disabled = false;
-      _cardBtn.style.opacity = '';
-    };
-
     // 결제 대기 모달 표시 (취소 버튼 포함)
     _openCardPaymentModal(resData.payment_id, resData.store_id);
   } catch (e) {
