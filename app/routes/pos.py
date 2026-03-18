@@ -31,7 +31,7 @@ def pos_login(data):
 
 # 메모리 내 저장소 (서버 재시작과 무관한 단기 데이터만)
 _pending_payments = {}       # payment_id → payment data
-_socket_store_map = {}       # socket_id → store_id (단말기 연결 추적용)
+_terminal_ws = {}            # store_id → ws_address (단말기 WS 서버 주소)
 
 
 @pos_bp.route('/toss/auth/login', methods=['POST'])
@@ -57,6 +57,24 @@ def terminal_auth_login():
     db.session.commit()
     print(f'[Terminal] 로그인 성공: store={store.id} ({store.name}), serial={serial_number or store.terminal_serial}')
     return jsonify({'token': token, 'store_id': store.id, 'store_name': store.name, 'serial_number': serial_number or store.terminal_serial})
+
+
+@pos_bp.route('/toss/terminal/register', methods=['POST'])
+def terminal_register():
+    """단말기 sdk.websocket 서버 주소 등록"""
+    from app.models import TerminalToken
+    data = request.get_json()
+    token = data.get('token')
+    ws_address = data.get('ws_address')
+
+    record = TerminalToken.query.filter_by(token=token).first()
+    if not record:
+        return jsonify({'error': '인증 실패'}), 401
+
+    store_id = record.store_id
+    _terminal_ws[store_id] = ws_address
+    print(f'[Terminal] WS 등록: store={store_id}, address={ws_address}')
+    return jsonify({'status': 'ok'})
 
 
 @socketio.on('terminal_join')
@@ -145,11 +163,10 @@ def create_toss_pending():
     }
     _pending_payments[payment_id] = payment
 
-    # 단말기에 즉시 소켓 푸시
-    socketio.emit('toss_payment_request', payment, to=f'terminal_{store_id}')
-    print(f'[Toss] 결제 요청 생성+푸시: {payment_id}, store={store_id}, table={data.get("table_id")}')
+    ws_address = _terminal_ws.get(store_id)
+    print(f'[Toss] 결제 요청 생성: {payment_id}, store={store_id}, table={data.get("table_id")}, ws={ws_address}')
 
-    return jsonify({'payment_id': payment_id, 'store_id': store_id, 'status': 'ok'})
+    return jsonify({'payment_id': payment_id, 'store_id': store_id, 'ws_address': ws_address, 'status': 'ok'})
 
 @pos_bp.route('/toss/pending', methods=['GET'])
 def get_toss_pending():
