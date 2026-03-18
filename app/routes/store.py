@@ -706,6 +706,48 @@ def api_set_staff_call_grid():
         return jsonify({'message': 'Success', 'code': 200}), 200
     return jsonify({'message': 'Failed', 'code': 400}), 400
 
+# 단말기 관리 페이지
+@store_bp.route('/terminal_mgmt', methods=['GET'])
+@login_required
+def terminal_mgmt():
+    return render_template('store_terminal_mgmt.html')
+
+
+# 단말기 정보 조회 API
+@store_bp.route('/get_terminal_info', methods=['GET'])
+@login_required
+def api_get_terminal_info():
+    from app.models import Store, TerminalToken
+    store = Store.query.get(current_user.id)
+    if not store:
+        return jsonify({'code': 404, 'msg': '매장 정보를 찾을 수 없습니다.'}), 404
+
+    latest_token = TerminalToken.query.filter_by(store_id=store.id)\
+        .order_by(TerminalToken.created_at.desc()).first()
+
+    return jsonify({
+        'store_id': store.store_id,
+        'terminal_serial': store.terminal_serial or '',
+        'is_connected': latest_token is not None,
+        'last_connected_at': latest_token.created_at.isoformat() if latest_token else None,
+    })
+
+
+# 단말기 시리얼 저장 API
+@store_bp.route('/update_terminal_info', methods=['PATCH'])
+@login_required
+def api_update_terminal_info():
+    from app.models import Store
+    data = request.get_json()
+    store = Store.query.get(current_user.id)
+    if not store:
+        return jsonify({'code': 404, 'msg': '매장 정보를 찾을 수 없습니다.'}), 404
+
+    store.terminal_serial = data.get('terminal_serial', '').strip() or None
+    db.session.commit()
+    return jsonify({'code': 200, 'msg': '저장되었습니다.'})
+
+
 # 직원 호출 로그 확인(Confirm) API
 @store_bp.route('/confirm_staff_call', methods=['POST'])
 @login_required

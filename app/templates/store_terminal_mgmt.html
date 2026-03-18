@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>OrderAndGo - 단말기 관리</title>
+  <link rel="icon" type="image/x-icon" href="/static/images/common/logo.png">
+
+  <!-- 시작 초기 css 설정 -->
+  <link rel="stylesheet" href="/static/css/responsive.css">
+  <link rel="stylesheet" href="/static/css/reset.css">
+  <link rel="stylesheet" href="/static/css/common.css">
+  <link rel="stylesheet" href="/static/css/animation.css">
+  <!-- 아이콘 -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <!-- 전용 css -->
+  <link rel="stylesheet" href="/static/css/store.css">
+  <style>
+    body {
+      background-color: #F8F9FA;
+    }
+
+    .terminal_mgmt_page main {
+      display: flex;
+      flex-direction: row;
+      gap: 24px;
+      padding: 24px;
+      height: calc(100vh - 80px);
+      align-items: stretch;
+      background-color: #F8F9FA;
+    }
+
+    /* ── 공통 카드 ── */
+    .mgmt_column {
+      flex: 1;
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      border: 1px solid #E9ECEF;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .column_header {
+      padding: 24px;
+      border-bottom: 1px solid #F1F3F5;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #fff;
+    }
+
+    .column_header h2 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #212529;
+      letter-spacing: -0.5px;
+    }
+
+    .column_body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px 24px;
+      background-color: #fff;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .column_footer {
+      padding: 24px;
+      border-top: 1px solid #F1F3F5;
+      background-color: #fff;
+    }
+
+    /* ── 연결 상태 뱃지 ── */
+    .status_badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .status_badge.connected {
+      background-color: #EBFBEE;
+      color: #2F9E44;
+    }
+
+    .status_badge.disconnected {
+      background-color: #F8F9FA;
+      color: #868E96;
+    }
+
+    .status_dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .status_badge.connected .status_dot {
+      background-color: #40C057;
+    }
+
+    .status_badge.disconnected .status_dot {
+      background-color: #ADB5BD;
+    }
+
+    /* ── 정보 행 ── */
+    .info_row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .info_label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #868E96;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+
+    .info_value_wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .info_value {
+      flex: 1;
+      padding: 12px 16px;
+      background-color: #F8F9FA;
+      border: 1px solid #E9ECEF;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #495057;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .info_value.empty {
+      color: #ADB5BD;
+      font-weight: 400;
+      font-style: italic;
+    }
+
+    /* ── 인풋 필드 ── */
+    .input_row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .input_label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #868E96;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+
+    .input_wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .terminal_input {
+      flex: 1;
+      padding: 12px 16px;
+      background-color: #fff;
+      border: 1px solid #CED4DA;
+      border-radius: 8px;
+      font-size: 1rem;
+      color: #495057;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .terminal_input:focus {
+      border-color: #1FAA9C;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(31, 170, 156, 0.1);
+    }
+
+    .terminal_input::placeholder {
+      color: #ADB5BD;
+    }
+
+    /* ── 아이콘 버튼 ── */
+    .icon_action_btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+      flex-shrink: 0;
+    }
+
+    .icon_action_btn.copy {
+      background-color: #E7F5FF;
+      color: #1C7ED6;
+    }
+
+    .icon_action_btn.copy:hover {
+      background-color: #1C7ED6;
+      color: #fff;
+      transform: translateY(-2px);
+    }
+
+    .icon_action_btn.reset {
+      background-color: #FFF5F5;
+      color: #FA5252;
+    }
+
+    .icon_action_btn.reset:hover {
+      background-color: #FA5252;
+      color: #fff;
+      transform: translateY(-2px);
+    }
+
+    .icon_action_btn i {
+      font-size: 1.2rem;
+    }
+
+    /* ── 저장 버튼 ── */
+    .save_btn {
+      width: 100%;
+      padding: 16px;
+      background-color: #12b886;
+      color: white;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .save_btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(18, 184, 134, 0.35);
+    }
+
+    /* ── 구분선 ── */
+    .divider {
+      height: 1px;
+      background-color: #F1F3F5;
+      margin: 4px 0;
+    }
+
+    /* ── 안내 섹션 (오른쪽 카드) ── */
+    .guide_step {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 16px 0;
+    }
+
+    .guide_step:not(:last-child) {
+      border-bottom: 1px solid #F8F9FA;
+    }
+
+    .step_num {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background-color: #1FAA9C;
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .step_content {
+      flex: 1;
+      padding-top: 4px;
+    }
+
+    .step_title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #212529;
+      margin-bottom: 4px;
+    }
+
+    .step_desc {
+      font-size: 0.875rem;
+      color: #868E96;
+      line-height: 1.6;
+    }
+
+    .step_desc strong {
+      color: #495057;
+      font-weight: 700;
+    }
+
+    /* ── 연결 시각 ── */
+    .connected_time {
+      font-size: 0.8rem;
+      color: #ADB5BD;
+      margin-top: 4px;
+    }
+
+    @media (max-width: 768px) {
+      .terminal_mgmt_page main {
+        flex-direction: column;
+        height: auto;
+        padding: 16px;
+      }
+
+      .mgmt_column {
+        height: auto;
+      }
+    }
+  </style>
+</head>
+
+<body class="store_product terminal_mgmt_page">
+  <div id="container">
+    <header>
+      <a class="back_btn" href="/store/product">
+        <i class="ph-bold ph-caret-left"></i>
+      </a>
+      <div class="center">
+        <a onclick="location.reload();">
+          <h1>
+            <img src="/static/images/common/logo-order&go-white.png" alt="">
+          </h1>
+        </a>
+        <div class="header_info">
+          <span class="cur_time"></span>
+          <span class="store_state" data-state="open">영업중</span>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- 왼쪽: 단말기 연결 정보 -->
+      <section class="mgmt_column" id="terminal_info_column">
+        <header class="column_header">
+          <h2>단말기 연결 정보</h2>
+          <span class="status_badge disconnected" id="connection_status_badge">
+            <span class="status_dot"></span>
+            <span id="connection_status_text">확인 중...</span>
+          </span>
+        </header>
+
+        <div class="column_body scrollbar_hidden">
+          <!-- 연결 시각 -->
+          <div id="last_connected_wrap" style="display: none;">
+            <p class="connected_time" id="last_connected_time"></p>
+          </div>
+
+          <!-- 매장 아이디 (읽기 전용) -->
+          <div class="info_row">
+            <span class="info_label">매장 아이디 (단말기 앱 입력용)</span>
+            <div class="info_value_wrap">
+              <div class="info_value" id="store_id_display">불러오는 중...</div>
+              <button class="icon_action_btn copy" onclick="copyStoreId()" title="복사">
+                <i class="ph ph-copy"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- 단말기 시리얼 번호 -->
+          <div class="input_row">
+            <span class="input_label">단말기 시리얼 번호</span>
+            <div class="input_wrap">
+              <input
+                class="terminal_input"
+                id="terminal_serial_input"
+                type="text"
+                placeholder="단말기 로그인 시 자동 등록됩니다"
+              />
+              <button class="icon_action_btn reset" onclick="clickResetSerial()" title="시리얼 초기화">
+                <i class="ph ph-arrow-counter-clockwise"></i>
+              </button>
+            </div>
+            <p style="font-size: 0.8rem; color: #ADB5BD; margin-top: 4px;">
+              단말기에서 로그인하면 자동으로 등록됩니다. 직접 입력도 가능합니다.
+            </p>
+          </div>
+        </div>
+
+        <footer class="column_footer">
+          <button class="save_btn" onclick="clickSaveTerminalInfo()">
+            <i class="ph-bold ph-floppy-disk"></i>
+            <span>저장</span>
+          </button>
+        </footer>
+      </section>
+
+      <!-- 오른쪽: 연결 방법 안내 -->
+      <section class="mgmt_column" id="guide_column">
+        <header class="column_header">
+          <h2>연결 방법 안내</h2>
+        </header>
+
+        <div class="column_body scrollbar_hidden">
+          <div class="guide_step">
+            <div class="step_num">1</div>
+            <div class="step_content">
+              <p class="step_title">토스 단말기에서 오더앤고 앱 실행</p>
+              <p class="step_desc">토스 단말기의 홈 화면에서 오더앤고 플러그인 앱을 실행합니다.</p>
+            </div>
+          </div>
+
+          <div class="guide_step">
+            <div class="step_num">2</div>
+            <div class="step_content">
+              <p class="step_title">매장 아이디 입력</p>
+              <p class="step_desc">
+                왼쪽에 표시된 <strong>매장 아이디</strong>를 단말기 앱의 로그인 화면에 입력합니다.
+              </p>
+            </div>
+          </div>
+
+          <div class="guide_step">
+            <div class="step_num">3</div>
+            <div class="step_content">
+              <p class="step_title">비밀번호 입력</p>
+              <p class="step_desc">매장 계정 비밀번호를 입력합니다.</p>
+            </div>
+          </div>
+
+          <div class="guide_step">
+            <div class="step_num">4</div>
+            <div class="step_content">
+              <p class="step_title">연결 완료 확인</p>
+              <p class="step_desc">
+                로그인 성공 시 단말기 시리얼 번호가 자동으로 등록되고,<br>
+                왼쪽 상단의 상태가 <strong>연결됨</strong>으로 변경됩니다.
+              </p>
+            </div>
+          </div>
+
+          <div class="guide_step">
+            <div class="step_num">5</div>
+            <div class="step_content">
+              <p class="step_title">결제 사용</p>
+              <p class="step_desc">
+                POS 화면에서 카드결제 버튼을 누르면 단말기로 결제 요청이 전송됩니다.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 공통 스크립트 -->
+  <script src="/static/js/common.js"></script>
+  <!-- 전용 스크립트 -->
+  <script src="/static/js/store_terminal_mgmt.js"></script>
+</body>
+
+</html>
