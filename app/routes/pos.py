@@ -56,7 +56,15 @@ def terminal_auth_login():
     db.session.add(TerminalToken(token=token, store_id=store.id))
     db.session.commit()
     print(f'[Terminal] 로그인 성공: store={store.id} ({store.name}), serial={serial_number or store.terminal_serial}')
-    return jsonify({'token': token, 'store_id': store.id, 'store_name': store.name, 'serial_number': serial_number or store.terminal_serial})
+    return jsonify({
+        'token': token,
+        'store_id': store.id,
+        'store_name': store.name,
+        'serial_number': serial_number or store.terminal_serial,
+        'merchant_id': store.toss_merchant_id,
+        'merchant_name': store.name,
+        'business_number': store.toss_business_number,
+    })
 
 
 @pos_bp.route('/toss/terminal/register', methods=['POST'])
@@ -150,6 +158,12 @@ def create_toss_pending():
     payment_id = str(uuid.uuid4())[:8]
     store = Store.query.filter_by(user_id=current_user.id).first()
     store_id = store.id
+
+    if not store.toss_merchant_id or not store.toss_business_number:
+        return jsonify({
+            'code': 422,
+            'msg': '단말기 가맹점 정보가 설정되지 않았습니다.\n매장관리 → 단말기 관리에서 토스 가맹점 ID와 사업자등록번호를 입력해주세요.',
+        }), 422
 
     payment = {
         'payment_id': payment_id,

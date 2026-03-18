@@ -728,6 +728,8 @@ def api_get_terminal_info():
     return jsonify({
         'store_id': store.store_id,
         'terminal_serial': store.terminal_serial or '',
+        'toss_merchant_id': store.toss_merchant_id or '',
+        'toss_business_number': store.toss_business_number or '',
         'is_connected': latest_token is not None,
         'last_connected_at': latest_token.created_at.isoformat() if latest_token else None,
     })
@@ -744,6 +746,9 @@ def api_update_terminal_info():
         return jsonify({'code': 404, 'msg': '매장 정보를 찾을 수 없습니다.'}), 404
 
     store.terminal_serial = data.get('terminal_serial', '').strip() or None
+    merchant_id = data.get('toss_merchant_id')
+    store.toss_merchant_id = int(merchant_id) if merchant_id else None
+    store.toss_business_number = data.get('toss_business_number', '').strip() or None
     db.session.commit()
     return jsonify({'code': 200, 'msg': '저장되었습니다.'})
 

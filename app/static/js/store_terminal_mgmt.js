@@ -25,6 +25,10 @@ const loadTerminalInfo = () => {
       storeIdEl.classList.add('empty');
     }
 
+    // 토스 가맹점 정보
+    document.getElementById('toss_merchant_id_input').value = data.toss_merchant_id || '';
+    document.getElementById('toss_business_number_input').value = data.toss_business_number || '';
+
     // 단말기 시리얼
     const serialInput = document.getElementById('terminal_serial_input');
     serialInput.value = data.terminal_serial || '';
@@ -88,10 +92,14 @@ const clickResetSerial = () => {
 /* ── 저장 ─────────────────────────────────────────────── */
 const clickSaveTerminalInfo = async () => {
   const serial = document.getElementById('terminal_serial_input').value.trim();
+  const merchantId = document.getElementById('toss_merchant_id_input').value.trim();
+  const businessNumber = document.getElementById('toss_business_number_input').value.trim();
 
   try {
     const result = await fetchDataAsync('/store/update_terminal_info', 'PATCH', {
       terminal_serial: serial,
+      toss_merchant_id: merchantId,
+      toss_business_number: businessNumber,
     });
 
     if (result && result.code === 200) {

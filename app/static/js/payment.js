@@ -835,8 +835,14 @@ const clickCardPayment = async (event) => { // 카드 결제 클릭 시 (토스 
       }),
     });
 
-    if (!response.ok) throw new Error('서버 오류');
     const resData = await response.json();
+
+    if (!response.ok) {
+      alert(resData.msg || '결제 요청 중 오류가 발생했습니다.');
+      _cardBtn.disabled = false;
+      _cardBtn.style.opacity = '';
+      return;
+    }
 
     // 결제 대기 모달 표시 (취소 버튼 포함)
     _openCardPaymentModal(resData.payment_id, resData.store_id);
