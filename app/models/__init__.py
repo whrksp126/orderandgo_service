@@ -74,6 +74,7 @@ class Store(db.Model):
     tel = db.Column(db.String(50), nullable=True) # 매장 전화번호
     receipt_header = db.Column(db.Text, nullable=True) # 영수증 머릿말
     receipt_footer = db.Column(db.Text, nullable=True) # 영수증 꼬릿말
+    terminal_serial = db.Column(db.String(50), nullable=True) # 토스 프론트 단말기 시리얼 번호
     created_at = db.Column(db.DateTime, default=datetime.now)
     last_logged_at = db.Column(db.DateTime, nullable=True)
 

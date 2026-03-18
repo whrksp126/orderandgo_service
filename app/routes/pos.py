@@ -43,15 +43,20 @@ def terminal_auth_login():
 
     from app.models import Store, TerminalToken
     import bcrypt as _bcrypt
+    serial_number = data.get('serial_number', '').strip()
     store = Store.query.filter_by(store_id=store_id_str).first()
     if not store or not _bcrypt.checkpw(password.encode('utf-8'), store.store_pw.encode('utf-8')):
         return jsonify({'error': '아이디 또는 비밀번호가 올바르지 않습니다.'}), 401
 
+    if serial_number:
+        store.terminal_serial = serial_number
+        db.session.commit()
+
     token = str(uuid.uuid4())
     db.session.add(TerminalToken(token=token, store_id=store.id))
     db.session.commit()
-    print(f'[Terminal] 로그인 성공: store={store.id} ({store.name})')
-    return jsonify({'token': token, 'store_id': store.id, 'store_name': store.name})
+    print(f'[Terminal] 로그인 성공: store={store.id} ({store.name}), serial={serial_number or store.terminal_serial}')
+    return jsonify({'token': token, 'store_id': store.id, 'store_name': store.name, 'serial_number': serial_number or store.terminal_serial})
 
 
 @socketio.on('terminal_join')
