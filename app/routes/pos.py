@@ -122,9 +122,11 @@ def on_disconnect():
 @login_required
 def create_toss_pending():
     """POS 카드결제 클릭 시 pending payment 생성 + 단말기에 소켓 푸시"""
+    from app.models import Store
     data = request.get_json()
     payment_id = str(uuid.uuid4())[:8]
-    store_id = current_user.id
+    store = Store.query.filter_by(user_id=current_user.id).first()
+    store_id = store.id
 
     payment = {
         'payment_id': payment_id,
