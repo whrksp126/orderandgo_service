@@ -197,9 +197,15 @@ def create_toss_pending():
 def get_toss_pending():
     """단말기 플러그인이 pending payment 폴링"""
     from app.models import TerminalToken
+    from datetime import datetime
     token = request.args.get('token')
     record = TerminalToken.query.filter_by(token=token).first() if token else None
     store_id = record.store_id if record else None
+
+    # 마지막 폴링 시각 갱신 → 실제 연결 상태 감지용
+    if record:
+        record.last_polled_at = datetime.now()
+        db.session.commit()
 
     for payment_id, payment in list(_pending_payments.items()):
         if payment['status'] == 'pending':

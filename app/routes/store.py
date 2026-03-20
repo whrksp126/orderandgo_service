@@ -722,16 +722,23 @@ def api_get_terminal_info():
     if not store:
         return jsonify({'code': 404, 'msg': '매장 정보를 찾을 수 없습니다.'}), 404
 
+    from datetime import datetime, timedelta
     latest_token = TerminalToken.query.filter_by(store_id=store.id)\
         .order_by(TerminalToken.created_at.desc()).first()
 
+    # 10초 이내 폴링이 있었으면 실제 연결 중으로 판단
+    is_connected = (
+        latest_token is not None and
+        latest_token.last_polled_at is not None and
+        datetime.now() - latest_token.last_polled_at < timedelta(seconds=10)
+    )
+    last_polled = latest_token.last_polled_at.isoformat() if (latest_token and latest_token.last_polled_at) else None
+
     return jsonify({
-        'store_id': store.store_id,
-        'terminal_serial': store.terminal_serial or '',
         'toss_merchant_id': store.toss_merchant_id or '',
         'toss_business_number': store.toss_business_number or '',
-        'is_connected': latest_token is not None,
-        'last_connected_at': latest_token.created_at.isoformat() if latest_token else None,
+        'is_connected': is_connected,
+        'last_connected_at': last_polled,
     })
 
 

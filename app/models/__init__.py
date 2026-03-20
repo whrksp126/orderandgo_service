@@ -339,3 +339,4 @@ class TerminalToken(db.Model):
     token = db.Column(db.String(36), unique=True, nullable=False, index=True)
     store_id = db.Column(db.Integer, db.ForeignKey('store.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
+    last_polled_at = db.Column(db.DateTime, nullable=True)  # 단말기 마지막 폴링 시각
