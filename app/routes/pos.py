@@ -215,6 +215,33 @@ def get_toss_pending():
             return jsonify({'pending': True, **payment})
     return jsonify({'pending': False})
 
+@pos_bp.route('/toss/cancel', methods=['POST'])
+@login_required
+def cancel_toss_pending():
+    """POS에서 결제 취소 요청 → 단말기가 폴링으로 감지"""
+    data = request.get_json()
+    payment_id = data.get('payment_id')
+    if payment_id and payment_id in _pending_payments:
+        _pending_payments[payment_id]['status'] = 'cancelled'
+    print(f'[Toss] 결제 취소: payment_id={payment_id}')
+    return jsonify({'status': 'ok'})
+
+
+@pos_bp.route('/toss/status', methods=['GET'])
+def get_toss_status():
+    """단말기가 결제 취소 여부를 폴링"""
+    payment_id = request.args.get('payment_id')
+    if not payment_id:
+        return jsonify({'status': 'not_found'})
+    payment = _pending_payments.get(payment_id)
+    if not payment:
+        return jsonify({'status': 'not_found'})
+    status = payment['status']
+    if status == 'cancelled':
+        _pending_payments.pop(payment_id, None)
+    return jsonify({'status': status})
+
+
 @pos_bp.route('/toss/result', methods=['POST'])
 def submit_toss_result():
     """단말기 플러그인이 결제 결과 제출 → POS에 socket emit"""

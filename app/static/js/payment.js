@@ -91,12 +91,11 @@ function _closeCardPaymentModal() {
 
 function clickCancelCardPayment() {
   if (!_currentCardPayment) return;
-  if (typeof socket !== 'undefined') {
-    socket.emit('request_cancel_payment', {
-      payment_id: _currentCardPayment.payment_id,
-      store_id: _currentCardPayment.store_id,
-    });
-  }
+  fetch('/pos/toss/cancel', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ payment_id: _currentCardPayment.payment_id }),
+  }).catch(() => {});
   _closeCardPaymentModal();
   _currentCardPayment = null;
 
