@@ -3,35 +3,19 @@
    단말기 관리 페이지 전용 스크립트
    ============================================================ */
 
-let currentStoreId = '';
-
 /* ── 초기화 ─────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
   loadTerminalInfo();
+  // 5초마다 연결 상태만 갱신
+  setInterval(pollConnectionStatus, 5000);
 });
 
 /* ── 단말기 정보 불러오기 ─────────────────────────────── */
 const loadTerminalInfo = () => {
   fetchData('/store/get_terminal_info', 'GET', {}, (data) => {
-    currentStoreId = data.store_id || '';
-
-    // 매장 아이디
-    const storeIdEl = document.getElementById('store_id_display');
-    if (data.store_id) {
-      storeIdEl.textContent = data.store_id;
-      storeIdEl.classList.remove('empty');
-    } else {
-      storeIdEl.textContent = '등록된 아이디 없음';
-      storeIdEl.classList.add('empty');
-    }
-
     // 토스 가맹점 정보
     document.getElementById('toss_merchant_id_input').value = data.toss_merchant_id || '';
     document.getElementById('toss_business_number_input').value = data.toss_business_number || '';
-
-    // 단말기 시리얼
-    const serialInput = document.getElementById('terminal_serial_input');
-    serialInput.value = data.terminal_serial || '';
 
     // 연결 상태
     updateConnectionStatus(data.is_connected, data.last_connected_at);
@@ -63,41 +47,20 @@ const updateConnectionStatus = (isConnected, lastConnectedAt) => {
   }
 };
 
-/* ── 매장 아이디 복사 ─────────────────────────────────── */
-const copyStoreId = () => {
-  if (!currentStoreId) {
-    showToast('복사할 매장 아이디가 없습니다.', 'error');
-    return;
-  }
-  navigator.clipboard.writeText(currentStoreId)
-    .then(() => showToast('매장 아이디가 복사되었습니다.', 'success'))
-    .catch(() => {
-      // fallback
-      const el = document.createElement('textarea');
-      el.value = currentStoreId;
-      document.body.appendChild(el);
-      el.select();
-      document.execCommand('copy');
-      document.body.removeChild(el);
-      showToast('매장 아이디가 복사되었습니다.', 'success');
-    });
-};
-
-/* ── 시리얼 초기화 ─────────────────────────────────────── */
-const clickResetSerial = () => {
-  document.getElementById('terminal_serial_input').value = '';
-  showToast('시리얼 번호가 초기화되었습니다. 저장 버튼을 눌러 적용하세요.', 'warning');
+/* ── 연결 상태 폴링 (5초마다, 입력 필드 건드리지 않음) ── */
+const pollConnectionStatus = () => {
+  fetchData('/store/get_terminal_info', 'GET', {}, (data) => {
+    updateConnectionStatus(data.is_connected, data.last_connected_at);
+  });
 };
 
 /* ── 저장 ─────────────────────────────────────────────── */
 const clickSaveTerminalInfo = async () => {
-  const serial = document.getElementById('terminal_serial_input').value.trim();
   const merchantId = document.getElementById('toss_merchant_id_input').value.trim();
   const businessNumber = document.getElementById('toss_business_number_input').value.trim();
 
   try {
     const result = await fetchDataAsync('/store/update_terminal_info', 'PATCH', {
-      terminal_serial: serial,
       toss_merchant_id: merchantId,
       toss_business_number: businessNumber,
     });

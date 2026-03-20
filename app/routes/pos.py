@@ -34,6 +34,17 @@ _pending_payments = {}       # payment_id → payment data
 _terminal_ws = {}            # store_id → ws_address (단말기 WS 서버 주소)
 
 
+@pos_bp.route('/toss/auth/verify', methods=['GET'])
+def terminal_auth_verify():
+    """단말기 토큰 유효성 검사"""
+    from app.models import TerminalToken
+    token = request.args.get('token', '').strip()
+    if not token:
+        return jsonify({'valid': False}), 200
+    record = TerminalToken.query.filter_by(token=token).first()
+    return jsonify({'valid': record is not None}), 200
+
+
 @pos_bp.route('/toss/auth/login', methods=['POST'])
 def terminal_auth_login():
     """단말기 플러그인 로그인 → 토큰 발급 (DB 저장)"""

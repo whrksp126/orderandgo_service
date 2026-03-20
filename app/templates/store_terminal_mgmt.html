@@ -42,6 +42,7 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      padding: 0;
     }
 
     .column_header {
@@ -67,7 +68,7 @@
       background-color: #fff;
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      gap: 20px;
     }
 
     .column_footer {
@@ -118,12 +119,10 @@
       gap: 8px;
     }
 
-    .info_label {
+    .field_label {
       font-size: 0.85rem;
       font-weight: 700;
-      color: #868E96;
-      letter-spacing: 0.3px;
-      text-transform: uppercase;
+      color: #495057;
     }
 
     .info_value_wrap {
@@ -160,14 +159,6 @@
       gap: 8px;
     }
 
-    .input_label {
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: #868E96;
-      letter-spacing: 0.3px;
-      text-transform: uppercase;
-    }
-
     .input_wrap {
       display: flex;
       align-items: center;
@@ -186,7 +177,7 @@
     }
 
     .terminal_input:focus {
-      border-color: #1FAA9C;
+      border-color: var(--brand-color);
       outline: none;
       box-shadow: 0 0 0 3px rgba(31, 170, 156, 0.1);
     }
@@ -195,7 +186,7 @@
       color: #ADB5BD;
     }
 
-    /* ── 아이콘 버튼 ── */
+    /* ── 복사 버튼 ── */
     .icon_action_btn {
       width: 44px;
       height: 44px;
@@ -220,19 +211,29 @@
       transform: translateY(-2px);
     }
 
-    .icon_action_btn.reset {
-      background-color: #FFF5F5;
-      color: #FA5252;
-    }
-
-    .icon_action_btn.reset:hover {
-      background-color: #FA5252;
-      color: #fff;
-      transform: translateY(-2px);
-    }
-
     .icon_action_btn i {
       font-size: 1.2rem;
+    }
+
+    /* ── 경고 박스 ── */
+    .warning_box {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 14px 16px;
+      background-color: #FFF9DB;
+      border: 1px solid #FFE066;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      color: #875800;
+      line-height: 1.5;
+    }
+
+    .warning_box i {
+      font-size: 1.1rem;
+      color: #F59F00;
+      flex-shrink: 0;
+      margin-top: 1px;
     }
 
     /* ── 저장 버튼 ── */
@@ -258,14 +259,13 @@
       box-shadow: 0 4px 12px rgba(18, 184, 134, 0.35);
     }
 
-    /* ── 구분선 ── */
-    .divider {
-      height: 1px;
-      background-color: #F1F3F5;
-      margin: 4px 0;
+    /* ── 연결 시각 ── */
+    .connected_time {
+      font-size: 0.8rem;
+      color: #ADB5BD;
     }
 
-    /* ── 안내 섹션 (오른쪽 카드) ── */
+    /* ── 안내 스텝 ── */
     .guide_step {
       display: flex;
       align-items: flex-start;
@@ -281,7 +281,7 @@
       width: 32px;
       height: 32px;
       border-radius: 50%;
-      background-color: #1FAA9C;
+      background-color: var(--brand-color);
       color: #fff;
       font-size: 0.9rem;
       font-weight: 800;
@@ -314,11 +314,9 @@
       font-weight: 700;
     }
 
-    /* ── 연결 시각 ── */
-    .connected_time {
-      font-size: 0.8rem;
-      color: #ADB5BD;
-      margin-top: 4px;
+    /* store.css .store_product section 오버라이드 */
+    .store_product.terminal_mgmt_page section {
+      padding: 0;
     }
 
     @media (max-width: 768px) {
@@ -371,35 +369,22 @@
             <p class="connected_time" id="last_connected_time"></p>
           </div>
 
-          <!-- 매장 아이디 (읽기 전용) -->
-          <div class="info_row">
-            <span class="info_label">매장 아이디 (단말기 앱 입력용)</span>
-            <div class="info_value_wrap">
-              <div class="info_value" id="store_id_display">불러오는 중...</div>
-              <button class="icon_action_btn copy" onclick="copyStoreId()" title="복사">
-                <i class="ph ph-copy"></i>
-              </button>
-            </div>
-          </div>
-
-          <div class="divider"></div>
-
           <!-- 토스 가맹점 ID -->
           <div class="input_row">
-            <span class="input_label">토스 가맹점 ID</span>
+            <span class="field_label">토스 가맹점 ID <span style="font-weight:400; color:#ADB5BD;">(매장 고유번호)</span></span>
             <div class="input_wrap">
               <input
                 class="terminal_input"
                 id="toss_merchant_id_input"
                 type="number"
-                placeholder="토스 개발자센터에서 확인"
+                placeholder="토스플레이스 카톡 안내 참고"
               />
             </div>
           </div>
 
           <!-- 사업자등록번호 -->
           <div class="input_row">
-            <span class="input_label">사업자등록번호</span>
+            <span class="field_label">사업자등록번호</span>
             <div class="input_wrap">
               <input
                 class="terminal_input"
@@ -409,30 +394,12 @@
                 maxlength="12"
               />
             </div>
-            <p style="font-size: 0.8rem; color: #ADB5BD; margin-top: 4px;">
-              단말기 로그인 시 자동으로 각 매장에 적용됩니다. 미입력 시 카드결제가 불가합니다.
-            </p>
           </div>
 
-          <div class="divider"></div>
-
-          <!-- 단말기 시리얼 번호 -->
-          <div class="input_row">
-            <span class="input_label">단말기 시리얼 번호</span>
-            <div class="input_wrap">
-              <input
-                class="terminal_input"
-                id="terminal_serial_input"
-                type="text"
-                placeholder="단말기 로그인 시 자동 등록됩니다"
-              />
-              <button class="icon_action_btn reset" onclick="clickResetSerial()" title="시리얼 초기화">
-                <i class="ph ph-arrow-counter-clockwise"></i>
-              </button>
-            </div>
-            <p style="font-size: 0.8rem; color: #ADB5BD; margin-top: 4px;">
-              단말기에서 로그인하면 자동으로 등록됩니다. 직접 입력도 가능합니다.
-            </p>
+          <!-- 경고 박스 -->
+          <div class="warning_box">
+            <i class="ph-fill ph-warning"></i>
+            <span>가맹점 ID와 사업자등록번호가 미입력되면 카드결제가 불가합니다. 토스플레이스 카톡 안내 또는 토스플레이스 앱에서 확인하세요.</span>
           </div>
         </div>
 
@@ -454,26 +421,30 @@
           <div class="guide_step">
             <div class="step_num">1</div>
             <div class="step_content">
-              <p class="step_title">토스 단말기에서 오더앤고 앱 실행</p>
-              <p class="step_desc">토스 단말기의 홈 화면에서 오더앤고 플러그인 앱을 실행합니다.</p>
+              <p class="step_title">가맹점 정보 입력 후 저장</p>
+              <p class="step_desc">
+                왼쪽에서 <strong>토스 가맹점 ID</strong>와 <strong>사업자등록번호</strong>를 입력하고 저장합니다.<br>
+                토스플레이스 카톡 안내에서 확인할 수 있습니다.
+              </p>
             </div>
           </div>
 
           <div class="guide_step">
             <div class="step_num">2</div>
             <div class="step_content">
-              <p class="step_title">매장 아이디 입력</p>
-              <p class="step_desc">
-                왼쪽에 표시된 <strong>매장 아이디</strong>를 단말기 앱의 로그인 화면에 입력합니다.
-              </p>
+              <p class="step_title">토스 단말기에서 오더앤고 앱 실행</p>
+              <p class="step_desc">토스 단말기 홈 화면에서 오더앤고 플러그인 앱을 실행합니다.</p>
             </div>
           </div>
 
           <div class="guide_step">
             <div class="step_num">3</div>
             <div class="step_content">
-              <p class="step_title">비밀번호 입력</p>
-              <p class="step_desc">매장 계정 비밀번호를 입력합니다.</p>
+              <p class="step_title">매장 아이디 · 비밀번호로 로그인</p>
+              <p class="step_desc">
+                왼쪽에 표시된 <strong>매장 아이디</strong>와 매장 계정 비밀번호를 입력해 로그인합니다.<br>
+                단말기 시리얼 번호는 로그인 시 자동으로 등록됩니다.
+              </p>
             </div>
           </div>
 
@@ -482,8 +453,7 @@
             <div class="step_content">
               <p class="step_title">연결 완료 확인</p>
               <p class="step_desc">
-                로그인 성공 시 단말기 시리얼 번호가 자동으로 등록되고,<br>
-                왼쪽 상단의 상태가 <strong>연결됨</strong>으로 변경됩니다.
+                로그인 성공 후 이 페이지 좌측 상단 상태가 <strong>연결됨</strong>으로 변경되면 준비 완료입니다.
               </p>
             </div>
           </div>
@@ -491,9 +461,10 @@
           <div class="guide_step">
             <div class="step_num">5</div>
             <div class="step_content">
-              <p class="step_title">결제 사용</p>
+              <p class="step_title">카드결제 사용</p>
               <p class="step_desc">
-                POS 화면에서 카드결제 버튼을 누르면 단말기로 결제 요청이 전송됩니다.
+                POS 화면에서 <strong>카드결제</strong> 버튼을 누르면 단말기로 결제 요청이 전송됩니다.<br>
+                결제 완료 후 POS 화면이 자동으로 업데이트됩니다.
               </p>
             </div>
           </div>
