@@ -31,12 +31,16 @@ const updateConnectionStatus = (isConnected, lastConnectedAt) => {
 
   badge.classList.remove('connected', 'disconnected');
 
+  const logoutBtn = document.getElementById('logout_terminal_btn');
+
   if (isConnected) {
     badge.classList.add('connected');
     text.textContent = '연결됨';
+    if (logoutBtn) logoutBtn.style.display = 'flex';
   } else {
     badge.classList.add('disconnected');
     text.textContent = '미연결';
+    if (logoutBtn) logoutBtn.style.display = 'none';
   }
 
   if (lastConnectedAt) {
@@ -73,6 +77,22 @@ const clickSaveTerminalInfo = async () => {
     }
   } catch (e) {
     showToast('저장 중 오류가 발생했습니다.', 'error');
+  }
+};
+
+/* ── 단말기 로그아웃 ──────────────────────────────────── */
+const clickLogoutTerminal = async () => {
+  if (!confirm('단말기를 로그아웃 시키겠습니까?\n단말기 화면이 로그인 화면으로 돌아갑니다.')) return;
+  try {
+    const result = await fetchDataAsync('/store/terminal_logout', 'POST', {});
+    if (result && result.code === 200) {
+      showToast('단말기 로그아웃 처리되었습니다.', 'success');
+      updateConnectionStatus(false, null);
+    } else {
+      showToast(result?.msg || '로그아웃 요청에 실패했습니다.', 'error');
+    }
+  } catch (e) {
+    showToast('로그아웃 요청 중 오류가 발생했습니다.', 'error');
   }
 };
 

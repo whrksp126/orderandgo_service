@@ -726,11 +726,13 @@ def api_get_terminal_info():
     latest_token = TerminalToken.query.filter_by(store_id=store.id)\
         .order_by(TerminalToken.created_at.desc()).first()
 
-    # 10초 이내 폴링이 있었으면 실제 연결 중으로 판단
+    # 10초 이내 폴링 + 가맹점 정보 모두 있어야 연결됨으로 판단
     is_connected = (
         latest_token is not None and
         latest_token.last_polled_at is not None and
-        datetime.now() - latest_token.last_polled_at < timedelta(seconds=10)
+        datetime.now() - latest_token.last_polled_at < timedelta(seconds=10) and
+        bool(store.toss_merchant_id) and
+        bool(store.toss_business_number)
     )
     last_polled = latest_token.last_polled_at.isoformat() if (latest_token and latest_token.last_polled_at) else None
 
@@ -740,6 +742,19 @@ def api_get_terminal_info():
         'is_connected': is_connected,
         'last_connected_at': last_polled,
     })
+
+
+@store_bp.route('/terminal_logout', methods=['POST'])
+@login_required
+def api_terminal_logout():
+    """단말기 토큰 삭제 → 단말기 폴링 시 logout 감지"""
+    from app.models import Store, TerminalToken
+    store = Store.query.filter_by(user_id=current_user.id).first()
+    if not store:
+        return jsonify({'code': 404, 'msg': '매장 정보를 찾을 수 없습니다.'}), 404
+    TerminalToken.query.filter_by(store_id=store.id).delete()
+    db.session.commit()
+    return jsonify({'code': 200, 'msg': '단말기 로그아웃 처리되었습니다.'})
 
 
 # 단말기 시리얼 저장 API

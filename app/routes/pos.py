@@ -200,6 +200,11 @@ def get_toss_pending():
     from datetime import datetime
     token = request.args.get('token')
     record = TerminalToken.query.filter_by(token=token).first() if token else None
+
+    # 토큰이 제공됐는데 DB에 없으면 → 로그아웃 처리됨
+    if token and not record:
+        return jsonify({'logout': True})
+
     store_id = record.store_id if record else None
 
     # 마지막 폴링 시각 갱신 → 실제 연결 상태 감지용

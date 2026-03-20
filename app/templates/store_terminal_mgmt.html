@@ -236,6 +236,30 @@
       margin-top: 1px;
     }
 
+    /* ── 로그아웃 버튼 ── */
+    .logout_btn {
+      width: 100%;
+      padding: 13px;
+      background-color: #fff;
+      color: #e03131;
+      border: 1.5px solid #ffc9c9;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      margin-top: 8px;
+    }
+
+    .logout_btn:hover {
+      background-color: #fff5f5;
+      border-color: #e03131;
+    }
+
     /* ── 저장 버튼 ── */
     .save_btn {
       width: 100%;
@@ -402,6 +426,10 @@
           <button class="save_btn" onclick="clickSaveTerminalInfo()">
             <i class="ph-bold ph-floppy-disk"></i>
             <span>저장</span>
+          </button>
+          <button class="logout_btn" id="logout_terminal_btn" onclick="clickLogoutTerminal()" style="display:none;">
+            <i class="ph-bold ph-sign-out"></i>
+            <span>단말기 로그아웃</span>
           </button>
         </footer>
       </section>
