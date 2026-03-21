@@ -13,9 +13,25 @@ document.addEventListener('DOMContentLoaded', () => {
 /* ── 단말기 정보 불러오기 ─────────────────────────────── */
 const loadTerminalInfo = () => {
   fetchData('/store/get_terminal_info', 'GET', {}, (data) => {
-    // 토스 가맹점 정보
-    document.getElementById('toss_merchant_id_input').value = data.toss_merchant_id || '';
-    document.getElementById('toss_business_number_input').value = data.toss_business_number || '';
+    // 토스 가맹점 정보 (읽기 전용 표시)
+    const merchantEl = document.getElementById('toss_merchant_id_display');
+    const bizEl = document.getElementById('toss_business_number_display');
+
+    if (data.toss_merchant_id) {
+      merchantEl.textContent = data.toss_merchant_id;
+      merchantEl.classList.remove('empty');
+    } else {
+      merchantEl.textContent = '단말기 로그인 시 자동 등록됩니다';
+      merchantEl.classList.add('empty');
+    }
+
+    if (data.toss_business_number) {
+      bizEl.textContent = data.toss_business_number;
+      bizEl.classList.remove('empty');
+    } else {
+      bizEl.textContent = '단말기 로그인 시 자동 등록됩니다';
+      bizEl.classList.add('empty');
+    }
 
     // 연결 상태
     updateConnectionStatus(data.is_connected, data.last_connected_at);
@@ -56,28 +72,6 @@ const pollConnectionStatus = () => {
   fetchData('/store/get_terminal_info', 'GET', {}, (data) => {
     updateConnectionStatus(data.is_connected, data.last_connected_at);
   });
-};
-
-/* ── 저장 ─────────────────────────────────────────────── */
-const clickSaveTerminalInfo = async () => {
-  const merchantId = document.getElementById('toss_merchant_id_input').value.trim();
-  const businessNumber = document.getElementById('toss_business_number_input').value.trim();
-
-  try {
-    const result = await fetchDataAsync('/store/update_terminal_info', 'PATCH', {
-      toss_merchant_id: merchantId,
-      toss_business_number: businessNumber,
-    });
-
-    if (result && result.code === 200) {
-      showToast('저장되었습니다.', 'success');
-      loadTerminalInfo();
-    } else {
-      showToast(result?.msg || '저장에 실패했습니다.', 'error');
-    }
-  } catch (e) {
-    showToast('저장 중 오류가 발생했습니다.', 'error');
-  }
 };
 
 /* ── 단말기 로그아웃 ──────────────────────────────────── */

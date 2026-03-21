@@ -394,39 +394,24 @@
           </div>
 
           <!-- 토스 가맹점 ID -->
-          <div class="input_row">
-            <span class="field_label">토스 가맹점 ID <span style="font-weight:400; color:#ADB5BD;">(매장 고유번호)</span></span>
-            <div class="input_wrap">
-              <input
-                class="terminal_input"
-                id="toss_merchant_id_input"
-                type="number"
-                placeholder="토스플레이스 카톡 안내 참고"
-              />
+          <div class="info_row">
+            <span class="field_label">토스 가맹점 ID <span style="font-weight:400; color:#12b886; font-size:0.8rem;">단말기 로그인 시 자동 등록</span></span>
+            <div class="info_value_wrap">
+              <span class="info_value empty" id="toss_merchant_id_display">단말기 로그인 시 자동 등록됩니다</span>
             </div>
           </div>
 
           <!-- 사업자등록번호 -->
-          <div class="input_row">
-            <span class="field_label">사업자등록번호</span>
-            <div class="input_wrap">
-              <input
-                class="terminal_input"
-                id="toss_business_number_input"
-                type="text"
-                placeholder="000-00-00000"
-                maxlength="12"
-              />
+          <div class="info_row">
+            <span class="field_label">사업자등록번호 <span style="font-weight:400; color:#12b886; font-size:0.8rem;">단말기 로그인 시 자동 등록</span></span>
+            <div class="info_value_wrap">
+              <span class="info_value empty" id="toss_business_number_display">단말기 로그인 시 자동 등록됩니다</span>
             </div>
           </div>
 
         </div>
 
         <footer class="column_footer">
-          <button class="save_btn" onclick="clickSaveTerminalInfo()">
-            <i class="ph-bold ph-floppy-disk"></i>
-            <span>저장</span>
-          </button>
           <button class="logout_btn" id="logout_terminal_btn" onclick="clickLogoutTerminal()" style="display:none;">
             <i class="ph-bold ph-sign-out"></i>
             <span>단말기 로그아웃</span>
@@ -441,19 +426,45 @@
         </header>
 
         <div class="column_body scrollbar_hidden">
-          <div class="guide_step">
-            <div class="step_num">1</div>
-            <div class="step_content">
-              <p class="step_title">가맹점 정보 입력 후 저장</p>
-              <p class="step_desc">
-                왼쪽에서 <strong>토스 가맹점 ID</strong>와 <strong>사업자등록번호</strong>를 입력하고 저장합니다.<br>
-                토스플레이스 카톡 안내에서 확인할 수 있습니다.
-              </p>
+
+          <!-- VAN 대리점 설정 섹션 -->
+          <div style="margin-bottom: 8px;">
+            <p style="font-size: 0.8rem; font-weight: 800; color: #868E96; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 16px;">STEP 1 · VAN 대리점 통해 최초 설정 (1회)</p>
+
+            <div class="guide_step">
+              <div class="step_num" style="background-color: #4dabf7;">A</div>
+              <div class="step_content">
+                <p class="step_title">VAN 대리점에 플러그인 활성화 요청</p>
+                <p class="step_desc">
+                  단말기를 설치해준 <strong>VAN 대리점에 연락</strong>하여 아래 내용을 전달합니다.<br><br>
+                  <span style="display:inline-block; background:#F1F3F5; border:1px solid #DEE2E6; border-radius:6px; padding:10px 14px; font-family:monospace; font-size:0.875rem; color:#212529; line-height:1.8;">
+                    "토스플레이스 파트너스에서<br>
+                    오더앤고 프론트 플러그인을<br>
+                    저희 매장 단말기에 활성화해주세요.<br><br>
+                    플러그인 ID: <strong>orderandgo-front</strong>"
+                  </span>
+                </p>
+              </div>
+            </div>
+
+            <div class="guide_step">
+              <div class="step_num" style="background-color: #4dabf7;">B</div>
+              <div class="step_content">
+                <p class="step_title">VAN 대리점 처리 완료 확인</p>
+                <p class="step_desc">
+                  VAN 대리점이 토스플레이스 파트너스에서 활성화 처리를 완료하면,<br>
+                  토스 단말기 홈 화면에 <strong>오더앤고 앱 아이콘</strong>이 표시됩니다.
+                </p>
+              </div>
             </div>
           </div>
 
+          <div style="border-top: 2px dashed #F1F3F5; margin: 8px 0 20px 0;"></div>
+
+          <p style="font-size: 0.8rem; font-weight: 800; color: #868E96; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 16px;">STEP 2 · 오더앤고 연동</p>
+
           <div class="guide_step">
-            <div class="step_num">2</div>
+            <div class="step_num">1</div>
             <div class="step_content">
               <p class="step_title">토스 단말기에서 오더앤고 앱 실행</p>
               <p class="step_desc">토스 단말기 홈 화면에서 오더앤고 플러그인 앱을 실행합니다.</p>
@@ -461,18 +472,18 @@
           </div>
 
           <div class="guide_step">
-            <div class="step_num">3</div>
+            <div class="step_num">2</div>
             <div class="step_content">
               <p class="step_title">매장 아이디 · 비밀번호로 로그인</p>
               <p class="step_desc">
                 왼쪽에 표시된 <strong>매장 아이디</strong>와 매장 계정 비밀번호를 입력해 로그인합니다.<br>
-                단말기 시리얼 번호는 로그인 시 자동으로 등록됩니다.
+                단말기 시리얼 번호, 가맹점 ID, 사업자등록번호가 자동으로 등록됩니다.
               </p>
             </div>
           </div>
 
           <div class="guide_step">
-            <div class="step_num">4</div>
+            <div class="step_num">3</div>
             <div class="step_content">
               <p class="step_title">연결 완료 확인</p>
               <p class="step_desc">
@@ -482,7 +493,7 @@
           </div>
 
           <div class="guide_step">
-            <div class="step_num">5</div>
+            <div class="step_num">4</div>
             <div class="step_content">
               <p class="step_title">카드결제 사용</p>
               <p class="step_desc">
@@ -491,6 +502,7 @@
               </p>
             </div>
           </div>
+
         </div>
       </section>
     </main>

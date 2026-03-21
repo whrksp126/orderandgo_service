@@ -61,7 +61,13 @@ def terminal_auth_login():
 
     if serial_number:
         store.terminal_serial = serial_number
-        db.session.commit()
+    merchant_id = data.get('merchant_id')
+    merchant_business_number = data.get('merchant_business_number')
+    if merchant_id:
+        store.toss_merchant_id = int(merchant_id)
+    if merchant_business_number:
+        store.toss_business_number = merchant_business_number
+    db.session.commit()
 
     token = str(uuid.uuid4())
     db.session.add(TerminalToken(token=token, store_id=store.id))
