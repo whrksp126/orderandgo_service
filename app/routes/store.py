@@ -718,7 +718,7 @@ def terminal_mgmt():
 @login_required
 def api_get_terminal_info():
     from app.models import Store, TerminalToken
-    store = Store.query.get(current_user.id)
+    store = Store.query.filter_by(user_id=current_user.id).first()
     if not store:
         return jsonify({'code': 404, 'msg': '매장 정보를 찾을 수 없습니다.'}), 404
 
@@ -762,12 +762,11 @@ def api_terminal_logout():
 @login_required
 def api_update_terminal_info():
     from app.models import Store
-    data = request.get_json()
-    store = Store.query.get(current_user.id)
+    data = request.get_json() or {}
+    store = Store.query.filter_by(user_id=current_user.id).first()
     if not store:
         return jsonify({'code': 404, 'msg': '매장 정보를 찾을 수 없습니다.'}), 404
 
-    store.terminal_serial = data.get('terminal_serial', '').strip() or None
     merchant_id = data.get('toss_merchant_id')
     store.toss_merchant_id = int(merchant_id) if merchant_id else None
     store.toss_business_number = data.get('toss_business_number', '').strip() or None
