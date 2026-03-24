@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>OrderAndGo</title>
+  <link rel="icon" type="image/x-icon" href="/static/images/common/logo.png">
+
+  <link rel="stylesheet" href="/static/css/responsive.css">
+  <link rel="stylesheet" href="/static/css/reset.css">
+  <link rel="stylesheet" href="/static/css/common.css">
+  <link rel="stylesheet" href="/static/css/animation.css">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <link rel="stylesheet" href="/static/css/store.css?v=17">
+</head>
+
+<body class="payment_history_page">
+  <div id="container">
+    <header>
+      <a class="back_btn" onclick="history.back();">
+        <i class="ph-bold ph-caret-left"></i>
+      </a>
+      <div class="center">
+        <a onclick="location.reload();">
+          <h1>
+            <img src="/static/images/common/logo-order&go-white.png" alt="">
+          </h1>
+        </a>
+        <div class="header_info">
+          <span class="cur_time">2023-05-01(월) 14:00</span>
+          <span class="store_state" data-state="open">영업중</span>
+        </div>
+      </div>
+    </header>
+
+    <section>
+      <ul>
+        <li>
+          <h2>조회 일자</h2>
+          <input type="date" id="date-picker" class="input_box ph-date">
+        </li>
+        <li>
+          <h2>구분</h2>
+          <select id="filter-select" class="input_box ph-select">
+            <option value="all">전체</option>
+            <option value="paid">결제 내역</option>
+            <option value="cancelled">취소 내역</option>
+          </select>
+        </li>
+        <li>
+          <h2>정렬</h2>
+          <select id="sort-select" class="input_box ph-select">
+            <option value="time_desc">시간 (최신순)</option>
+            <option value="time_asc">시간 (오래된순)</option>
+            <option value="amount_desc">금액 (높은순)</option>
+            <option value="amount_asc">금액 (낮은순)</option>
+          </select>
+        </li>
+        <li class="btn-li">
+          <button class="submit_btn" onclick="fetchPaymentHistory()">조회</button>
+        </li>
+      </ul>
+    </section>
+
+    <main>
+      <article>
+        <div class="summary_bar">
+          <div class="summary_item">
+            <span class="label">조회 결과</span>
+            <span class="value" id="summary-count">-</span>
+          </div>
+          <div class="divider"></div>
+          <div class="summary_item highlight">
+            <span class="label">결제 합계</span>
+            <span class="value" id="summary-paid">-</span>
+          </div>
+          <div class="divider"></div>
+          <div class="summary_item cancel-color">
+            <span class="label">취소 합계</span>
+            <span class="value" id="summary-cancelled">-</span>
+          </div>
+        </div>
+
+        <div class="article_bottom scrollbar_hidden">
+          <ul class="payment_list scrollbar_hidden">
+            <li class="table_header">
+              <div>결제 시간</div>
+              <div>테이블</div>
+              <div>주문 내역</div>
+              <div>결제 수단</div>
+              <div>금액</div>
+              <div>상태</div>
+            </li>
+            <li class="table_loading">
+              <i class="ph ph-circle-notch spin-icon"></i>
+              <span>결제 내역을 불러오는 중입니다...</span>
+            </li>
+            <li class="no_data" style="display:none;">
+              <i class="ph ph-receipt"></i>
+              <span>해당 날짜의 결제 내역이 없습니다.</span>
+            </li>
+          </ul>
+        </div>
+      </article>
+    </main>
+  </div>
+
+  <!-- 결제 상세 모달 -->
+  <div id="payment-detail-modal" class="payment-detail-modal hidden">
+    <div class="modal-overlay" onclick="closeDetailModal()"></div>
+    <div class="modal-box">
+      <button class="close-btn" onclick="closeDetailModal()">
+        <i class="ph ph-x"></i>
+      </button>
+
+      <h2>결제 상세 내역</h2>
+
+      <div class="detail-section">
+        <h3>기본 정보</h3>
+        <div class="info-row">
+          <span class="info-label">테이블</span>
+          <span class="info-value" id="detail-table-name">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">주문 시작</span>
+          <span class="info-value" id="detail-first-order">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">결제 시간</span>
+          <span class="info-value" id="detail-payment-time">-</span>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <h3>주문 내역</h3>
+        <ul class="order-list" id="detail-order-list"></ul>
+        <div class="info-row discount-row" id="detail-discount-row" style="display:none;">
+          <span class="info-label">할인</span>
+          <span class="info-value cancel-color" id="detail-discount">-</span>
+        </div>
+        <div class="info-row extra-row" id="detail-extra-row" style="display:none;">
+          <span class="info-label">추가 금액</span>
+          <span class="info-value" id="detail-extra">-</span>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <h3>결제 내역</h3>
+        <ul class="payment-list-detail" id="detail-payment-list"></ul>
+        <div class="total-row">
+          <span>합계</span>
+          <span id="detail-total">-</span>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-receipt" disabled title="영수증 출력 기능은 추후 지원 예정입니다.">
+          <i class="ph ph-printer"></i> 영수증 출력
+        </button>
+        <button class="btn-cancel" id="detail-cancel-btn" onclick="cancelPayment()">
+          결제 취소
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/common.js"></script>
+  <script src="/static/js/store_payment_history.js?v=1"></script>
+</body>
+
+</html>

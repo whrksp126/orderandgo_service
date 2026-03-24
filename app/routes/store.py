@@ -775,6 +775,163 @@ def api_update_terminal_info():
 
 
 # 직원 호출 로그 확인(Confirm) API
+@store_bp.route('/payment_history', methods=['GET'])
+@login_required
+def payment_history_page():
+    return render_template('store_payment_history.html')
+
+
+@store_bp.route('/get_payment_history', methods=['GET'])
+@login_required
+def get_payment_history():
+    import ast
+    from app.models import TablePaymentList, Payment, Payment_method, Table
+
+    store_id = current_user.id
+    date_str = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
+    filter_type = request.args.get('filter', 'all')  # all, paid, cancelled
+    sort = request.args.get('sort', 'time_desc')     # time_desc, time_asc, amount_desc, amount_asc
+
+    try:
+        target_date = datetime.strptime(date_str, '%Y-%m-%d')
+    except ValueError:
+        target_date = datetime.now()
+
+    date_start = target_date.replace(hour=0, minute=0, second=0, microsecond=0)
+    date_end = target_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+    query = db.session.query(TablePaymentList, Table.name)\
+        .outerjoin(Table, Table.id == TablePaymentList.table_id)\
+        .filter(TablePaymentList.store_id == store_id)\
+        .filter(TablePaymentList.payment_time >= date_start)\
+        .filter(TablePaymentList.payment_time <= date_end)
+
+    if sort == 'time_asc':
+        query = query.order_by(TablePaymentList.payment_time.asc())
+    else:
+        query = query.order_by(TablePaymentList.payment_time.desc())
+
+    tpl_list = query.all()
+
+    result = []
+    for tpl, table_name in tpl_list:
+        payments_q = db.session.query(Payment, Payment_method.method)\
+            .join(Payment_method, Payment_method.id == Payment.payment_method_id)\
+            .filter(Payment.table_payment_list_id == tpl.id)\
+            .all()
+
+        payment_list = []
+        total_paid = 0
+        total_cancelled = 0
+        has_cancelled = False
+
+        for p, method_name in payments_q:
+            is_cancelled = p.payment_status == 2
+            payment_list.append({
+                'id': p.id,
+                'method': method_name,
+                'method_id': p.payment_method_id,
+                'amount': p.payment_amount,
+                'status': p.payment_status,
+                'datetime': p.payment_datetime.strftime('%H:%M:%S') if p.payment_datetime else '',
+            })
+            if is_cancelled:
+                has_cancelled = True
+                total_cancelled += p.payment_amount
+            else:
+                total_paid += p.payment_amount
+
+        if filter_type == 'paid' and has_cancelled:
+            continue
+        if filter_type == 'cancelled' and not has_cancelled:
+            continue
+
+        # order_details는 str(list) 형식으로 저장됨 → ast.literal_eval로 파싱
+        order_items = []
+        try:
+            if tpl.order_details:
+                parsed = ast.literal_eval(tpl.order_details)
+                for item in parsed:
+                    order_items.append({
+                        'name': item.get('name', ''),
+                        'price': item.get('price', 0),
+                        'count': item.get('count', 1),
+                        'options': [
+                            {'name': o.get('name', ''), 'price': o.get('price', 0), 'count': o.get('count', 1)}
+                            for o in item.get('option', [])
+                        ],
+                    })
+        except Exception:
+            pass
+
+        try:
+            ph = json.loads(tpl.payment_history) if tpl.payment_history else {}
+        except Exception:
+            ph = {}
+
+        result.append({
+            'id': tpl.id,
+            'table_id': tpl.table_id,
+            'table_name': table_name or f'테이블 {tpl.table_id or "?"}',
+            'first_order_time': tpl.first_order_time.strftime('%H:%M') if tpl.first_order_time else '',
+            'payment_time': tpl.payment_time.strftime('%H:%M:%S') if tpl.payment_time else '',
+            'order_items': order_items,
+            'discount': tpl.discount or 0,
+            'extra_charge': tpl.extra_charge or 0,
+            'payment_history': ph,
+            'total_paid': total_paid,
+            'total_cancelled': total_cancelled,
+            'payments': payment_list,
+            'has_cancelled': has_cancelled,
+        })
+
+    if sort == 'amount_desc':
+        result.sort(key=lambda x: x['total_paid'], reverse=True)
+    elif sort == 'amount_asc':
+        result.sort(key=lambda x: x['total_paid'])
+
+    summary = {
+        'total_count': len(result),
+        'paid_count': sum(1 for r in result if not r['has_cancelled']),
+        'cancelled_count': sum(1 for r in result if r['has_cancelled']),
+        'total_paid': sum(r['total_paid'] for r in result),
+        'total_cancelled': sum(r['total_cancelled'] for r in result),
+    }
+
+    return jsonify({'list': result, 'summary': summary})
+
+
+@store_bp.route('/cancel_payment', methods=['POST'])
+@login_required
+def cancel_payment():
+    from app.models import TablePaymentList, Payment
+
+    data = request.get_json()
+    payment_list_id = data.get('payment_list_id')
+    if not payment_list_id:
+        return jsonify({'error': '잘못된 요청입니다.'}), 400
+
+    tpl = TablePaymentList.query.filter_by(id=payment_list_id, store_id=current_user.id).first()
+    if not tpl:
+        return jsonify({'error': '결제 내역을 찾을 수 없습니다.'}), 404
+
+    payments = Payment.query.filter_by(table_payment_list_id=payment_list_id).all()
+    has_card = False
+    for p in payments:
+        if p.payment_status != 2:
+            p.payment_status = 2
+            if p.payment_method_id == 2:  # 카드
+                has_card = True
+
+    db.session.commit()
+
+    msg = '결제가 취소 처리되었습니다.'
+    if has_card:
+        msg += '\n카드 승인 취소는 Toss 단말기에서 별도 처리가 필요합니다.'
+
+    return jsonify({'status': 'ok', 'needs_terminal_cancel': has_card, 'message': msg})
+
+
 @store_bp.route('/confirm_staff_call', methods=['POST'])
 @login_required
 def api_confirm_staff_call():

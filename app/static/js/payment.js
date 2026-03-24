@@ -3,6 +3,8 @@ let payment_history = undefined;
 
 // 현재 진행 중인 카드 결제 정보
 let _currentCardPayment = null; // { payment_id, store_id }
+// 승인 완료 후 확정 대기 중인 결제 정보
+let _pendingApproval = null; // { payment_id, table_id, result }
 
 // ─── Toss 단말기 소켓 이벤트 ──────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
@@ -24,20 +26,23 @@ window.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const paymentData = setPayment(2); // CARD
-    if (result.response) {
-      paymentData.payment.payment_history.toss_payment_key = result.response.paymentKey || '';
-      paymentData.payment.payment_history.toss_approval_no = result.response.card?.approvalNo || result.response.approvalNumber || '';
-      paymentData.payment.payment_history.toss_details = result.response;
-    }
+    // 승인 완료 — DB 저장 전 확정/취소 선택 모달 표시
+    _pendingApproval = { payment_id: data.payment_id, table_id: data.table_id, result };
+    _openApprovalModal(data.payment_id, result);
+  });
 
-    fetchData(`/pos/payment_history/${lastPath}`, 'POST', paymentData, (responseData) => {
-      if (responseData.is_finished) {
-        createCompletedPaymentModal({ preventDefault: () => {} }, 'CARD');
-      } else {
-        location.reload();
-      }
-    });
+  // 승인 취소 결과 수신
+  socket.on('toss_cancel_result', (data) => {
+    if (String(data.table_id) !== String(lastPath)) return;
+    _closeApprovalModal();
+    _pendingApproval = null;
+
+    const r = data.result || {};
+    if (r.type === 'SUCCESS' || r.type === 'CANCEL_SUCCESS') {
+      alert('승인 취소가 완료되었습니다.');
+    } else {
+      alert(`승인 취소 결과: ${r.type || '알 수 없음'}${r.error ? ' — ' + r.error : ''}`);
+    }
   });
 
   // 단말기 온라인/오프라인
@@ -87,6 +92,91 @@ function _openCardPaymentModal(paymentId, storeId) {
 
 function _closeCardPaymentModal() {
   document.querySelector('#card-payment-modal')?.remove();
+}
+
+function _openApprovalModal(paymentId, result) {
+  document.querySelector('#approval-modal')?.remove();
+
+  const resp = result.response || {};
+  const approvalNo = resp.card?.approvalNo || resp.approvalNumber || '-';
+  const amount = resp.totalAmount != null ? resp.totalAmount.toLocaleString() + '원' : '-';
+
+  const modal = document.createElement('div');
+  modal.id = 'approval-modal';
+  modal.innerHTML = `
+    <div class="card-modal-overlay">
+      <div class="card-modal-box">
+        <div class="card-modal-icon">✅</div>
+        <h2>카드 승인 완료</h2>
+        <p style="margin:8px 0;font-size:14px;color:#555;">승인번호: <b>${approvalNo}</b> / ${amount}</p>
+        <p class="terminal-status-msg" style="color:#888;font-size:13px;">결제를 확정하거나 승인 취소할 수 있습니다.</p>
+        <div style="display:flex;gap:10px;margin-top:16px;">
+          <button class="card-modal-cancel-btn" style="flex:1;background:#e74c3c;" onclick="cancelCardApproval()">승인 취소</button>
+          <button class="card-modal-cancel-btn" style="flex:1;background:#27ae60;" onclick="confirmCardPayment()">결제 확정</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+function _closeApprovalModal() {
+  document.querySelector('#approval-modal')?.remove();
+}
+
+async function confirmCardPayment() {
+  if (!_pendingApproval) return;
+  const { payment_id, table_id, result } = _pendingApproval;
+
+  // 서버에 확정 신호 전송
+  await fetch('/pos/toss/confirm_approval', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ payment_id }),
+  }).catch(() => {});
+
+  _closeApprovalModal();
+  _pendingApproval = null;
+
+  // DB 저장 + 완료 모달
+  const paymentData = setPayment(2); // CARD
+  if (result.response) {
+    paymentData.payment.payment_history.toss_payment_key = result.response.paymentKey || '';
+    paymentData.payment.payment_history.toss_approval_no = result.response.card?.approvalNo || result.response.approvalNumber || '';
+    paymentData.payment.payment_history.toss_details = result.response;
+  }
+
+  fetchData(`/pos/payment_history/${lastPath}`, 'POST', paymentData, (responseData) => {
+    if (responseData.is_finished) {
+      createCompletedPaymentModal({ preventDefault: () => {} }, 'CARD');
+    } else {
+      location.reload();
+    }
+  });
+}
+
+async function cancelCardApproval() {
+  if (!_pendingApproval) return;
+  const { payment_id } = _pendingApproval;
+
+  const btn = document.querySelector('#approval-modal .card-modal-box button[style*="e74c3c"]');
+  if (btn) { btn.disabled = true; btn.textContent = '취소 요청 중...'; }
+
+  const res = await fetch('/pos/toss/cancel_approval', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ payment_id }),
+  }).catch(() => null);
+
+  if (!res || !res.ok) {
+    alert('승인 취소 요청 실패. 다시 시도해주세요.');
+    if (btn) { btn.disabled = false; btn.textContent = '승인 취소'; }
+    return;
+  }
+
+  // 단말기가 requestPaymentCancel() 실행 → toss_cancel_result 소켓으로 결과 수신
+  const statusMsg = document.querySelector('#approval-modal .terminal-status-msg');
+  if (statusMsg) statusMsg.textContent = '단말기에서 승인 취소 처리 중...';
 }
 
 function clickCancelCardPayment() {

@@ -32,6 +32,8 @@ def pos_login(data):
 # 메모리 내 저장소 (서버 재시작과 무관한 단기 데이터만)
 _pending_payments = {}       # payment_id → payment data
 _terminal_ws = {}            # store_id → ws_address (단말기 WS 서버 주소)
+_socket_store_map = {}       # sid → store_id (단말기 연결 추적)
+_completed_payments = {}     # payment_id → 승인 완료 데이터 + 확정/취소 상태
 
 
 @pos_bp.route('/toss/auth/verify', methods=['GET'])
@@ -265,8 +267,80 @@ def submit_toss_result():
 
     print(f'[Toss] 결제 결과 수신: payment_id={payment_id}, type={result.get("type")}')
 
-    # POS에 결과 전송
+    # 결제 성공 시 승인 취소를 위한 데이터 보관
+    if result.get('type') == 'SUCCESS':
+        _completed_payments[payment_id] = {
+            'payment_id': payment_id,
+            'table_id': table_id,
+            'result': result,
+            'tax': data.get('tax'),
+            'supply_value': data.get('supply_value'),
+            'status': 'pending_confirmation',  # pending_confirmation / cancel_requested / confirmed
+        }
+
+    # POS에 결과 전송 (payment_id 포함 — 확정/취소 요청 시 필요)
     socketio.emit('toss_payment_result', {
+        'payment_id': payment_id,
+        'table_id': table_id,
+        'result': result,
+    }, to='pos_group')
+
+    return jsonify({'status': 'ok'})
+
+
+@pos_bp.route('/toss/approval_status', methods=['GET'])
+def get_toss_approval_status():
+    """단말기가 결제 승인 후 확정/취소 신호를 폴링"""
+    payment_id = request.args.get('payment_id')
+    if not payment_id:
+        return jsonify({'status': 'not_found'})
+    payment = _completed_payments.get(payment_id)
+    if not payment:
+        return jsonify({'status': 'not_found'})
+    return jsonify({'status': payment['status']})
+
+
+@pos_bp.route('/toss/cancel_approval', methods=['POST'])
+@login_required
+def cancel_toss_approval():
+    """POS에서 카드 승인 취소 요청 → 단말기가 폴링으로 감지 후 requestPaymentCancel() 호출"""
+    data = request.get_json()
+    payment_id = data.get('payment_id')
+    payment = _completed_payments.get(payment_id)
+    if not payment:
+        return jsonify({'error': '결제 정보를 찾을 수 없습니다.'}), 404
+    payment['status'] = 'cancel_requested'
+    print(f'[Toss] 승인 취소 요청: payment_id={payment_id}')
+    return jsonify({'status': 'ok'})
+
+
+@pos_bp.route('/toss/confirm_approval', methods=['POST'])
+@login_required
+def confirm_toss_approval():
+    """POS에서 카드 승인 확정 (취소 없이 결제 완료 처리)"""
+    data = request.get_json()
+    payment_id = data.get('payment_id')
+    payment = _completed_payments.get(payment_id)
+    if payment:
+        payment['status'] = 'confirmed'
+    print(f'[Toss] 승인 확정: payment_id={payment_id}')
+    return jsonify({'status': 'ok'})
+
+
+@pos_bp.route('/toss/cancel_result', methods=['POST'])
+def submit_toss_cancel_result():
+    """단말기가 requestPaymentCancel() 결과 전송 → POS에 socket emit"""
+    data = request.get_json()
+    payment_id = data.get('payment_id')
+    table_id = data.get('table_id')
+    result = data.get('result')
+
+    _completed_payments.pop(payment_id, None)
+
+    print(f'[Toss] 승인 취소 결과: payment_id={payment_id}, type={result.get("type") if result else "N/A"}')
+
+    socketio.emit('toss_cancel_result', {
+        'payment_id': payment_id,
         'table_id': table_id,
         'result': result,
     }, to='pos_group')
