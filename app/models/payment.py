@@ -191,7 +191,9 @@ def create_payment_database(store_id, data):
 
         return make_payment_history(store_id, table_id, paid, is_finished)
     except Exception as e:
-        print(e)
+        import traceback
+        print("[create_payment_database ERROR]", e)
+        traceback.print_exc()
         db.session.rollback()
         return jsonify({'status':'fail'}), 500
 
