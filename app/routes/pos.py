@@ -192,6 +192,7 @@ def create_toss_pending():
         'tax': data.get('tax'),
         'supply_value': data.get('supply_value'),
         'payment_key': data.get('payment_key'),
+        'payment_type': data.get('payment_type', 'card'),  # 'card' or 'cash'
         'status': 'pending',
     }
     _pending_payments[payment_id] = payment

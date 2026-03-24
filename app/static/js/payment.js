@@ -15,10 +15,13 @@ window.addEventListener('DOMContentLoaded', () => {
     if (String(data.table_id) !== String(lastPath)) return;
 
     _closeCardPaymentModal();
+    _closeCashPaymentModal();
     _currentCardPayment = null;
 
     const _cardBtn = document.querySelector('.card_btn');
     if (_cardBtn) { _cardBtn.disabled = false; _cardBtn.style.opacity = ''; }
+    const _cashBtn = document.querySelector('.cash_btn');
+    if (_cashBtn) { _cashBtn.disabled = false; _cashBtn.style.opacity = ''; }
 
     const result = data.result;
     if (result.type !== 'SUCCESS') {
@@ -26,9 +29,23 @@ window.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // 승인 완료 — DB 저장 전 확정/취소 선택 모달 표시
-    _pendingApproval = { payment_id: data.payment_id, table_id: data.table_id, result };
-    _openApprovalModal(data.payment_id, result);
+    const isCash = result.response?.paymentMethod === 'CASH';
+
+    if (isCash) {
+      // 현금 결제 — 확정/취소 모달 없이 바로 DB 저장
+      const paymentData = setPayment(1); // CASH
+      fetchData(`/pos/payment_history/${lastPath}`, 'POST', paymentData, (responseData) => {
+        if (responseData.is_finished) {
+          createCompletedPaymentModal({ preventDefault: () => {} }, 'CASH');
+        } else {
+          location.reload();
+        }
+      });
+    } else {
+      // 카드 결제 — 승인 확정/취소 선택 모달
+      _pendingApproval = { payment_id: data.payment_id, table_id: data.table_id, result };
+      _openApprovalModal(data.payment_id, result);
+    }
   });
 
   // 승인 취소 결과 수신
@@ -785,8 +802,106 @@ const clickPlusCountBtn = (event) => {
 
 }
 
+function _openCashPaymentModal(paymentId) {
+  _currentCardPayment = { payment_id: paymentId };
+  document.querySelector('#cash-payment-modal')?.remove();
+  const modal = document.createElement('div');
+  modal.id = 'cash-payment-modal';
+  modal.innerHTML = `
+    <div class="card-modal-overlay">
+      <div class="card-modal-box">
+        <div class="card-modal-icon">💵</div>
+        <h2>현금 결제 진행 중</h2>
+        <p class="terminal-status-msg">단말기에서 현금 결제를 진행해주세요.</p>
+        <button class="card-modal-cancel-btn" onclick="clickCancelCashPayment()">취소</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+function _closeCashPaymentModal() {
+  document.querySelector('#cash-payment-modal')?.remove();
+}
+
+function clickCancelCashPayment() {
+  if (!_currentCardPayment) return;
+  fetch('/pos/toss/cancel', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ payment_id: _currentCardPayment.payment_id }),
+  }).catch(() => {});
+  _closeCashPaymentModal();
+  _currentCardPayment = null;
+  const _cashBtn = document.querySelector('.cash_btn');
+  if (_cashBtn) { _cashBtn.disabled = false; _cashBtn.style.opacity = ''; }
+}
+
 // 현금 결제 클릭 시
-const clickCashPayment = (event) => {
+const clickCashPayment = async (event) => {
+  const isTerminalOnline = document.querySelector('.terminal-badge')?.classList.contains('online');
+
+  if (isTerminalOnline) {
+    // ── 단말기 경유 현금 결제 (Toss 권장 테스트 방식) ──
+    const _cashBtn = event.currentTarget;
+    _cashBtn.disabled = true;
+    _cashBtn.style.opacity = '0.5';
+
+    const totalPrice = payment_history.curPaymentPrice;
+    const tax = Math.round(totalPrice / 11);
+    const supplyValue = totalPrice - tax;
+
+    const orderItems = order_history.map(item => {
+      const entry = { label: item.name, value: item.price * item.count };
+      if (item.count > 1) entry.quantity = item.count;
+      if (item.options && item.options.length > 0) {
+        entry.options = item.options.map(opt => ({
+          type: 'option', label: opt.name, value: opt.price * opt.count,
+        }));
+      }
+      return entry;
+    });
+
+    const orderData = {
+      items: orderItems,
+      discounts: payment_history.discount > 0
+        ? [{ label: '할인', value: payment_history.discount }]
+        : [],
+      summary: { totalAmount: totalPrice, discountAmount: payment_history.discount || 0 },
+    };
+
+    try {
+      const response = await fetch('/pos/toss/pending', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          table_id: lastPath,
+          order: orderData,
+          tax: tax,
+          supply_value: supplyValue,
+          payment_key: `ORD_${Date.now()}_${lastPath}`,
+          payment_type: 'cash',
+        }),
+      });
+
+      const resData = await response.json();
+      if (!response.ok) {
+        alert(resData.msg || '현금 결제 요청 중 오류가 발생했습니다.');
+        _cashBtn.disabled = false;
+        _cashBtn.style.opacity = '';
+        return;
+      }
+
+      _openCashPaymentModal(resData.payment_id);
+    } catch (e) {
+      alert('현금 결제 요청 중 오류가 발생했습니다.');
+      _cashBtn.disabled = false;
+      _cashBtn.style.opacity = '';
+    }
+    return; // 단말기 결제 모드 → 기존 POS 모달 열지 않음
+  }
+
+  // ── 단말기 오프라인 → 기존 POS 자체 현금 결제 모달 ──
   openModalFun(event)
   const _modal = document.querySelector('.modal');
   const _modalTitle = document.querySelector('.modal-content h1');
