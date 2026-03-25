@@ -124,7 +124,7 @@ def create_payment_database(store_id, data):
                                     .filter(Order.table_id == table_id)\
                                     .scalar()
         
-        if data['total_price'] == p['price']+p['extra_charge']-p['discount']:     # 1. 일반결제
+        if data['total_price'] == p['price']:     # 1. 일반결제
             # TablePaymentList, Payment 생성하기
             table_payment_list_item = create_table_payment_list(store_id, table_id, first_ordered_time, str(data['order_list']), p['discount'], p['extra_charge'], p['payment_history'], payment_time)
             
