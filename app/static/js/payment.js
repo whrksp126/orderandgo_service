@@ -955,23 +955,23 @@ function _openTerminalCashModal(paymentId) {
         <button data-value="0">0</button>
         <button data-value="←">←</button>
       </div>
-      <div class="cash_receipt_section">
-        <label>
-          <input type="checkbox" id="cash-receipt-checkbox" />
-          현금영수증 발급
-        </label>
-        <div id="cash-receipt-detail" style="display:none;">
-          <div class="tab_btns">
-            <button class="cr-type-btn active" data-type="">단말기에서 입력</button>
-            <button class="cr-type-btn" data-type="CONSUMER">소득공제</button>
-            <button class="cr-type-btn" data-type="BUSINESS">지출증빙</button>
-          </div>
-          <div id="cr-number-area" style="display:none;margin-top:10px;">
-            <input id="cr-number-input" type="text" placeholder="휴대폰번호 또는 사업자번호 (숫자만)"
-              style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;box-sizing:border-box;" />
-          </div>
-          <p id="cr-hint" style="font-size:12px;color:#888;margin:6px 0 0;">미입력 시 단말기에서 고객이 직접 선택합니다.</p>
+    </div>
+    <div class="cash_receipt_section">
+      <label>
+        <input type="checkbox" id="cash-receipt-checkbox" />
+        현금영수증 발급
+      </label>
+      <div id="cash-receipt-detail" style="display:none;">
+        <div class="tab_btns">
+          <button class="cr-type-btn active" data-type="">단말기에서 입력</button>
+          <button class="cr-type-btn" data-type="CONSUMER">소득공제</button>
+          <button class="cr-type-btn" data-type="BUSINESS">지출증빙</button>
         </div>
+        <div id="cr-number-area" style="display:none;margin-top:10px;">
+          <input id="cr-number-input" type="text" placeholder="휴대폰번호 또는 사업자번호 (숫자만)"
+            style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;box-sizing:border-box;" />
+        </div>
+        <p id="cr-hint" style="font-size:12px;color:#888;margin:6px 0 0;">미입력 시 단말기에서 고객이 직접 선택합니다.</p>
       </div>
     </div>
     <div class="bottom">
