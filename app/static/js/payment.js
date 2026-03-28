@@ -16,7 +16,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
     _closeCardPaymentModal();
     _closeCashPaymentModal();
-    _closePaymentMethodModal(null); // 방식 선택 모달도 닫기
     _currentCardPayment = null;
 
     const _payBtn = document.querySelector('.pay_btn');
@@ -77,18 +76,6 @@ window.addEventListener('DOMContentLoaded', () => {
     if (el) el.textContent = msg;
   });
 
-  // 단말기에서 결제 방식 선택 → POS 방식 선택 모달 업데이트
-  socket.on('terminal_payment_type_changed', (data) => {
-    const modal = document.querySelector('#payment-method-modal');
-    if (!modal) return;
-
-    const statusEl = modal.querySelector('.pm-terminal-status');
-    const typeLabel = { card: '카드/간편결제', cash: '현금' };
-    if (statusEl) statusEl.textContent = `단말기에서 "${typeLabel[data.payment_type] || data.payment_type}" 선택됨`;
-
-    // 단말기가 선택한 방식으로 POS에서도 결제 진행
-    _proceedWithPaymentType(data.payment_type, data.payment_id);
-  });
 });
 
 // ─── 단말기 온라인 상태 HTTP 폴링 (socket.io 불가 → last_polled_at 기반) ──────
@@ -1363,177 +1350,15 @@ const clickCardPayment = async (event) => { // 카드 결제 클릭 시 (토스 
 }
 
 
-// ─── 결제하기 통합 버튼 ──────────────────────────────────────────────────────
+// ─── 결제하기 버튼 → 바로 카드 결제 진행 ───────────────────────────────────
 
 const clickPayment = async (event) => {
   if (!payment_history?.curPaymentPrice) {
     alert('결제할 금액이 없습니다.');
     return;
   }
-
-  const _payBtn = event.currentTarget;
-  _payBtn.disabled = true;
-  _payBtn.style.opacity = '0.5';
-
-  const isTerminalOnline = document.querySelector('.terminal-badge')?.classList.contains('online');
-
-  let paymentId = _displayPaymentId;
-
-  if (isTerminalOnline && !paymentId) {
-    try {
-      const { orderData, tax, supplyValue } = _buildTerminalOrderData();
-      const res = await fetch('/pos/toss/pending', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          table_id: lastPath,
-          order: orderData,
-          tax,
-          supply_value: supplyValue,
-          payment_key: `ORD_${Date.now()}_${lastPath}`,
-          payment_type: 'display',
-        }),
-      });
-      if (res.ok) {
-        const d = await res.json();
-        if (d.code === 422) {
-          alert(d.msg || '단말기 설정이 필요합니다.');
-          _payBtn.disabled = false;
-          _payBtn.style.opacity = '';
-          return;
-        }
-        paymentId = d.payment_id;
-        _displayPaymentId = paymentId;
-      } else {
-        const d = await res.json();
-        alert(d.msg || '단말기 연결 중 오류가 발생했습니다.');
-        _payBtn.disabled = false;
-        _payBtn.style.opacity = '';
-        return;
-      }
-    } catch (e) {
-      _payBtn.disabled = false;
-      _payBtn.style.opacity = '';
-      return;
-    }
-  }
-
-  _openPaymentMethodModal(paymentId, isTerminalOnline);
+  clickCardPayment(event);
 };
-
-function _openPaymentMethodModal(paymentId, isTerminalOnline) {
-  document.querySelector('#payment-method-modal')?.remove();
-
-  const terminalNote = isTerminalOnline
-    ? '<p class="pm-terminal-note pm-online"><i class="ph-bold ph-circle-fill"></i> 단말기 연결됨 — 모든 결제 방식 이용 가능</p>'
-    : '<p class="pm-terminal-note pm-offline"><i class="ph-bold ph-circle-fill"></i> 단말기 오프라인 — 현금 결제만 가능</p>';
-
-  const disabledAttr = isTerminalOnline ? '' : 'disabled';
-
-  const modal = document.createElement('div');
-  modal.id = 'payment-method-modal';
-  modal.className = 'modal show';
-  if (paymentId) modal.dataset.paymentId = paymentId;
-  modal.innerHTML = `
-    <div class="modal-content pm-modal-content">
-      <div class="modal-top">
-        <h1>결제 방식 선택</h1>
-        <i class="ph-bold ph-x pm-close-icon" onclick="_closePaymentMethodModal()"></i>
-      </div>
-      <div class="modal-body pm-modal-body">
-        ${terminalNote}
-        <p class="pm-terminal-status"></p>
-        <div class="pm-method-list">
-          <button class="pm-method-btn" onclick="_selectPaymentMethod('cash')">
-            <span class="pm-method-icon"><i class="ph-bold ph-money"></i></span>
-            <span class="pm-method-label">현금</span>
-            <i class="ph-bold ph-caret-right pm-method-arrow"></i>
-          </button>
-          <button class="pm-method-btn" onclick="_selectPaymentMethod('card')" ${disabledAttr}>
-            <span class="pm-method-icon"><i class="ph-bold ph-credit-card"></i></span>
-            <span class="pm-method-label">카드</span>
-            <i class="ph-bold ph-caret-right pm-method-arrow"></i>
-          </button>
-          <button class="pm-method-btn" onclick="_selectPaymentMethod('card')" ${disabledAttr}>
-            <span class="pm-method-icon"><i class="ph-bold ph-device-mobile"></i></span>
-            <span class="pm-method-label">삼성페이</span>
-            <i class="ph-bold ph-caret-right pm-method-arrow"></i>
-          </button>
-          <button class="pm-method-btn" onclick="_selectPaymentMethod('card')" ${disabledAttr}>
-            <span class="ph-bold ph-apple-logo pm-method-icon-apple"></span>
-            <span class="pm-method-label">애플페이</span>
-            <i class="ph-bold ph-caret-right pm-method-arrow"></i>
-          </button>
-          <button class="pm-method-btn" onclick="_selectPaymentMethod('card')" ${disabledAttr}>
-            <span class="pm-method-icon"><i class="ph-bold ph-qr-code"></i></span>
-            <span class="pm-method-label">QR코드</span>
-            <i class="ph-bold ph-caret-right pm-method-arrow"></i>
-          </button>
-        </div>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(modal);
-
-  // 배경 클릭 시 닫기
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) _closePaymentMethodModal();
-  });
-}
-
-function _closePaymentMethodModal(skipCancel) {
-  const modal = document.querySelector('#payment-method-modal');
-  if (!modal) return;
-  const paymentId = modal.dataset.paymentId;
-  modal.remove();
-
-  if (!skipCancel && paymentId) {
-    fetch('/pos/toss/cancel', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ payment_id: paymentId }),
-    }).catch(() => {});
-    if (_displayPaymentId === paymentId) _displayPaymentId = null;
-  }
-
-  const _payBtn = document.querySelector('.pay_btn');
-  if (_payBtn) { _payBtn.disabled = false; _payBtn.style.opacity = ''; }
-}
-
-async function _selectPaymentMethod(type) {
-  const modal = document.querySelector('#payment-method-modal');
-  const paymentId = modal?.dataset.paymentId || null;
-  // skipCancel=true: 방식 선택 후 진행이므로 pending 취소 안 함
-  if (modal) modal.remove();
-
-  const isTerminalOnline = document.querySelector('.terminal-badge')?.classList.contains('online');
-  const _payBtn = document.querySelector('.pay_btn');
-
-  if (type === 'cash') {
-    if (isTerminalOnline && paymentId) {
-      _displayPaymentId = paymentId;
-    }
-    clickCashPayment({ currentTarget: _payBtn || { disabled: false, style: {} } });
-  } else {
-    if (paymentId) {
-      _displayPaymentId = paymentId;
-    }
-    clickCardPayment({ currentTarget: _payBtn || { disabled: false, style: {} } });
-  }
-}
-
-// 단말기에서 결제 방식 선택 → POS 소켓 수신 후 해당 결제 진행
-async function _proceedWithPaymentType(type, paymentId) {
-  if (!paymentId) return;
-
-  if (type === 'cash') {
-    _currentCardPayment = { payment_id: paymentId };
-    _openTerminalCashModal(paymentId);
-  } else if (type === 'card') {
-    _openCardPaymentModal(paymentId, null);
-    _currentCardPayment = { payment_id: paymentId };
-  }
-}
 
 
 // 결제 성공 모달
