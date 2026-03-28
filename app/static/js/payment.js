@@ -252,7 +252,7 @@ function _buildTerminalOrderData() {
   });
   // 추가 금액이 있으면 items에 별도 항목으로 추가
   if (payment_history.extra_charge > 0) {
-    orderItems.push({ label: '추가 금액', value: payment_history.extra_charge });
+    orderItems.push({ label: '추가 금액', value: payment_history.extra_charge, quantity: 1 });
   }
   const orderData = {
     items: orderItems,
