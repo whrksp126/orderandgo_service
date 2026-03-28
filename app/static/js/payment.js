@@ -221,6 +221,101 @@ function clickCancelCardPayment() {
   const _cardBtn = document.querySelector('.card_btn');
   if (_cardBtn) { _cardBtn.disabled = false; _cardBtn.style.opacity = ''; }
 }
+// ─── Display Pending (결제 페이지 진입 시 단말기에 주문 자동 표시) ────────────
+let _displayPaymentId = null;
+
+function _buildTerminalOrderData() {
+  const totalPrice = payment_history.curPaymentPrice;
+  const tax = Math.round(totalPrice / 11);
+  const supplyValue = totalPrice - tax;
+  const orderItems = order_history.map(item => {
+    const entry = { label: item.name, value: item.price * item.count };
+    if (item.count > 1) entry.quantity = item.count;
+    if (item.options && item.options.length > 0) {
+      entry.options = item.options.map(opt => ({
+        type: 'option', label: opt.name, value: opt.price * opt.count,
+      }));
+    }
+    return entry;
+  });
+  const orderData = {
+    items: orderItems,
+    discounts: payment_history.discount > 0 ? [{ label: '할인', value: payment_history.discount }] : [],
+    summary: { totalAmount: totalPrice, discountAmount: payment_history.discount || 0 },
+  };
+  return { orderData, tax, supplyValue };
+}
+
+async function _initDisplayPending() {
+  if (_displayPaymentId) return;
+  const isOnline = document.querySelector('.terminal-badge')?.classList.contains('online');
+  if (!isOnline || !payment_history?.curPaymentPrice) return;
+  const { orderData, tax, supplyValue } = _buildTerminalOrderData();
+  try {
+    const res = await fetch('/pos/toss/pending', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        table_id: lastPath,
+        order: orderData,
+        tax,
+        supply_value: supplyValue,
+        payment_key: `ORD_${Date.now()}_${lastPath}`,
+        payment_type: 'display',
+      }),
+    });
+    if (res.ok) {
+      const d = await res.json();
+      _displayPaymentId = d.payment_id;
+      console.log('[Terminal] Display pending:', _displayPaymentId);
+    }
+  } catch (e) {}
+}
+
+function _updateDisplayPendingOrder() {
+  if (!_displayPaymentId || !payment_history?.curPaymentPrice) return;
+  const { orderData, tax, supplyValue } = _buildTerminalOrderData();
+  fetch('/pos/toss/update_pending', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ payment_id: _displayPaymentId, order: orderData, tax, supply_value: supplyValue }),
+  }).catch(() => {});
+}
+
+// 결제 페이지 이탈 시 display pending 취소 → 단말기 대기 화면 복귀
+window.addEventListener('pagehide', () => {
+  if (!_displayPaymentId) return;
+  const blob = new Blob([JSON.stringify({ payment_id: _displayPaymentId })], { type: 'application/json' });
+  navigator.sendBeacon('/pos/toss/cancel', blob);
+  _displayPaymentId = null;
+});
+
+// display pending을 카드/현금 결제용으로 전환 (기존 payment_id 반환 후 초기화)
+async function _activateDisplayPending(paymentType) {
+  if (!_displayPaymentId) return null;
+  const id = _displayPaymentId;
+  _displayPaymentId = null; // 먼저 초기화해서 pagehide 중복 취소 방지
+  const { orderData, tax, supplyValue } = _buildTerminalOrderData();
+  try {
+    const res = await fetch('/pos/toss/update_pending', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        payment_id: id,
+        payment_type: paymentType,
+        order: orderData,
+        tax,
+        supply_value: supplyValue,
+        payment_key: `ORD_${Date.now()}_${lastPath}`,
+      }),
+    });
+    if (!res.ok) return null;
+    return id;
+  } catch (e) {
+    return null;
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 // 테이블 주문 내역 가져오기
@@ -259,6 +354,8 @@ const paymentHtml = () => {
   }
 
   payment_history.orderTotalPrice = changeBasketHtml(setBasketData(order_history));
+  // 결제 페이지 진입 직후 단말기에 주문 내역 자동 표시
+  setTimeout(_initDisplayPending, 500);
 
   let totalPrice = payment_history.orderTotalPrice;
   // 할인 영역 처리
@@ -428,7 +525,8 @@ const setPaymentData = (curPaymentPrice = false) => {
   console.log(payment_history.payment_history.totalDutch)
   console.log(payment_history.payment_history.curDutch)
 
-
+  // 할인/추가금액 변경 시 단말기 display pending 금액 동기화
+  _updateDisplayPendingOrder();
 }
 
 
@@ -1073,57 +1171,40 @@ const clickCashPayment = async (event) => {
   const isTerminalOnline = document.querySelector('.terminal-badge')?.classList.contains('online');
 
   if (isTerminalOnline) {
-    // ── 단말기 경유 현금 결제 — 카드 결제와 동일하게 바로 전송 ──
+    // ── 단말기 경유 현금 결제 ──
     const _cashBtn = event.currentTarget;
     _cashBtn.disabled = true;
     _cashBtn.style.opacity = '0.5';
 
-    const totalPrice = payment_history.curPaymentPrice;
-    const tax = Math.round(totalPrice / 11);
-    const supplyValue = totalPrice - tax;
-
-    const orderItems = order_history.map(item => {
-      const entry = { label: item.name, value: item.price * item.count };
-      if (item.count > 1) entry.quantity = item.count;
-      if (item.options && item.options.length > 0) {
-        entry.options = item.options.map(opt => ({
-          type: 'option', label: opt.name, value: opt.price * opt.count,
-        }));
-      }
-      return entry;
-    });
-
-    const orderData = {
-      items: orderItems,
-      discounts: payment_history.discount > 0
-        ? [{ label: '할인', value: payment_history.discount }]
-        : [],
-      summary: { totalAmount: totalPrice, discountAmount: payment_history.discount || 0 },
-    };
-
     try {
-      const response = await fetch('/pos/toss/pending', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          table_id: lastPath,
-          order: orderData,
-          tax: tax,
-          supply_value: supplyValue,
-          payment_key: `ORD_${Date.now()}_${lastPath}`,
-          payment_type: 'cash',
-        }),
-      });
+      // display pending이 있으면 cash 타입으로 전환, 없으면 새로 생성
+      let paymentId = await _activateDisplayPending('cash');
 
-      const resData = await response.json();
-      if (!response.ok) {
-        alert(resData.msg || '현금 결제 요청 중 오류가 발생했습니다.');
-        _cashBtn.disabled = false;
-        _cashBtn.style.opacity = '';
-        return;
+      if (!paymentId) {
+        const { orderData, tax, supplyValue } = _buildTerminalOrderData();
+        const response = await fetch('/pos/toss/pending', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            table_id: lastPath,
+            order: orderData,
+            tax,
+            supply_value: supplyValue,
+            payment_key: `ORD_${Date.now()}_${lastPath}`,
+            payment_type: 'cash',
+          }),
+        });
+        const resData = await response.json();
+        if (!response.ok) {
+          alert(resData.msg || '현금 결제 요청 중 오류가 발생했습니다.');
+          _cashBtn.disabled = false;
+          _cashBtn.style.opacity = '';
+          return;
+        }
+        paymentId = resData.payment_id;
       }
 
-      _openTerminalCashModal(resData.payment_id);
+      _openTerminalCashModal(paymentId);
     } catch (e) {
       alert('현금 결제 요청 중 오류가 발생했습니다.');
       _cashBtn.disabled = false;
@@ -1222,67 +1303,42 @@ const clickCashPaymentCompleted = (event) => {
 }
 
 const clickCardPayment = async (event) => { // 카드 결제 클릭 시 (토스 단말기 연동)
-  const totalPrice = payment_history.curPaymentPrice;
-  const tax = Math.round(totalPrice / 11);
-  const supplyValue = totalPrice - tax;
-
-  // 버튼 비활성화 (중복 클릭 방지)
   const _cardBtn = event.currentTarget;
   _cardBtn.disabled = true;
   _cardBtn.style.opacity = '0.5';
 
-  // 단말기에 표시할 주문 데이터 구성 (sdk.template.renderOrderPage 포맷)
-  const orderItems = order_history.map(item => {
-    const entry = {
-      label: item.name,
-      value: item.price * item.count,
-    };
-    if (item.count > 1) entry.quantity = item.count;
-    if (item.options && item.options.length > 0) {
-      entry.options = item.options.map(opt => ({
-        type: 'option',
-        label: opt.name,
-        value: opt.price * opt.count,
-      }));
-    }
-    return entry;
-  });
-
-  const orderData = {
-    items: orderItems,
-    discounts: payment_history.discount > 0
-      ? [{ label: '할인', value: payment_history.discount }]
-      : [],
-    summary: {
-      totalAmount: totalPrice,
-      discountAmount: payment_history.discount || 0,
-    },
-  };
-
   try {
-    const response = await fetch('/pos/toss/pending', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        table_id: lastPath,
-        order: orderData,
-        tax: tax,
-        supply_value: supplyValue,
-        payment_key: `ORD_${Date.now()}_${lastPath}`,
-      }),
-    });
+    // display pending이 있으면 card 타입으로 전환, 없으면 새로 생성
+    let paymentId = await _activateDisplayPending('card');
 
-    const resData = await response.json();
-
-    if (!response.ok) {
-      alert(resData.msg || '결제 요청 중 오류가 발생했습니다.');
-      _cardBtn.disabled = false;
-      _cardBtn.style.opacity = '';
-      return;
+    if (!paymentId) {
+      const totalPrice = payment_history.curPaymentPrice;
+      const tax = Math.round(totalPrice / 11);
+      const supplyValue = totalPrice - tax;
+      const { orderData } = _buildTerminalOrderData();
+      const response = await fetch('/pos/toss/pending', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          table_id: lastPath,
+          order: orderData,
+          tax,
+          supply_value: supplyValue,
+          payment_key: `ORD_${Date.now()}_${lastPath}`,
+          payment_type: 'card',
+        }),
+      });
+      const resData = await response.json();
+      if (!response.ok) {
+        alert(resData.msg || '결제 요청 중 오류가 발생했습니다.');
+        _cardBtn.disabled = false;
+        _cardBtn.style.opacity = '';
+        return;
+      }
+      paymentId = resData.payment_id;
     }
 
-    // 결제 대기 모달 표시 (취소 버튼 포함)
-    _openCardPaymentModal(resData.payment_id, resData.store_id);
+    _openCardPaymentModal(paymentId, null);
   } catch (e) {
     alert('결제 요청 중 오류가 발생했습니다.');
     _cardBtn.disabled = false;
