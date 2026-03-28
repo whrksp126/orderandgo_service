@@ -772,8 +772,23 @@ const changePaymentAmount = (type, input) => {
   if (type == "percent") { }
   if (type == "cash") {
     const value = Number(input.value.replace(/,/g, ''));
-    document.querySelector('.cash_amount span').innerHTML = `${value.toLocaleString()}원`
-    document.querySelector('.change_amount span').innerHTML = `${(value - payment_history.curPaymentPrice).toLocaleString()}원`
+    const due = payment_history.curPaymentPrice;
+    const change = value - due;
+
+    document.querySelector('.cash_amount span').innerHTML = `${value.toLocaleString()}원`;
+
+    const changeEl = document.querySelector('.change_amount span');
+    if (change >= 0) {
+      changeEl.innerHTML = `${change.toLocaleString()}원`;
+      changeEl.style.color = '#27ae60';
+    } else {
+      changeEl.innerHTML = `부족 ${(-change).toLocaleString()}원`;
+      changeEl.style.color = '#e74c3c';
+    }
+
+    // 받은 금액이 결제 금액 이상일 때만 결제 완료 버튼 활성화
+    const completeBtn = document.querySelector('.modal .bottom button[onclick="clickCashPaymentCompleted(event)"]');
+    if (completeBtn) completeBtn.disabled = change < 0;
   }
   // 단위 위치 변경
   const _span = input.nextElementSibling;
@@ -996,33 +1011,34 @@ const clickCashPayment = async (event) => {
   console.log(totalPrice, payment_history.discount, dicountPercent)
 
   _modalTitle.innerHTML = '현금 결제'
+  const _curPrice = payment_history.curPaymentPrice;
   let html = `
     <div class="top ">
-      <div class="content cash" data-total="94000" data-type="cash">
+      <div class="content cash" data-total="${_curPrice}" data-type="cash">
         <div class="receive_amount">
           <h3>받을 금액</h3>
-          <span>${payment_history.curPaymentPrice.toLocaleString()}원</span>
+          <span>${_curPrice.toLocaleString()}원</span>
         </div>
         <div class="direct_content">
           <div class="payment_amount">
-            <h3>결제 금액</h3>
-            <input class="direct_input" type="text" oninput="updatePaymentAmount(event)"/>
-            <span class="direct_input">원</span>
-            <input class="percent_input" type="text" oninput="updatePaymentAmount(event)" />
-            <span class="percent_input">%</span>
-            <input class="won_input" type="text" oninput="updatePaymentAmount(event)" />
-            <span class="won_input">원</span>
+            <h3>받은 금액</h3>
+            <input class="direct_input" type="text" oninput="updatePaymentAmount(event)" style="display:none"/>
+            <span class="direct_input" style="display:none">원</span>
+            <input class="percent_input" type="text" oninput="updatePaymentAmount(event)" style="display:none"/>
+            <span class="percent_input" style="display:none">%</span>
+            <input class="won_input" type="text" oninput="updatePaymentAmount(event)" style="display:none"/>
+            <span class="won_input" style="display:none">원</span>
             <input class="cash_input" type="text" value="" oninput="updatePaymentAmount(event)" />
             <span class="cash_input">원</span>
           </div>
         </div>
-        <div class="cash_amount ">
-          <h3>현금 결제 금액</h3>
+        <div class="cash_amount">
+          <h3>받은 금액</h3>
           <span>0원</span>
         </div>
-        <div class="change_amount ">
-          <h3>거스름 돈</h3>
-          <span>0원</span>
+        <div class="change_amount">
+          <h3>거스름돈</h3>
+          <span style="color:#e74c3c;">부족 ${_curPrice.toLocaleString()}원</span>
         </div>
       </div>
       <div class="number_pad" onclick="clickNumberPad(event)">
@@ -1041,7 +1057,7 @@ const clickCashPayment = async (event) => {
       </div>
     </div>
     <div class="bottom">
-      <button onclick="clickCashPaymentCompleted(event)">결제 완료</button>
+      <button onclick="clickCashPaymentCompleted(event)" disabled>결제 완료</button>
     </div>
   `
   _modalBody.innerHTML = html;

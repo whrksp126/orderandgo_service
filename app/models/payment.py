@@ -161,7 +161,7 @@ def create_payment_database(store_id, data):
                                     .filter(Payment.payment_status == 1)\
                                     .scalar()
                 
-                if sum_payment+p['price'] != data['total_price']:  # 2-2. 분할결제중
+                if (sum_payment or 0)+p['price'] != data['total_price']:  # 2-2. 분할결제중
                     create_payment(check_table_payment_list.id, p['method'], 1, p['price'], payment_time)
 
                     # paid, is_finished

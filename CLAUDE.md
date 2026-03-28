@@ -48,6 +48,13 @@ orderandgo_service/
 
 ## 로컬 실행
 
+슬래시 커맨드로 자동화:
+```
+/local-setup
+```
+→ `../local-setup.sh` 실행. Docker 재시작 + cmux 레이아웃(app | mysql 로그) 자동 세팅.
+
+수동:
 ```bash
 docker compose -f docker-compose.local.yml up --build -d
 docker compose -f docker-compose.local.yml logs -f
@@ -56,10 +63,21 @@ docker compose -f docker-compose.local.yml down
 
 ## 서버 배포
 
+### dev 배포 (자동화)
+
+슬래시 커맨드로 자동화:
+```
+/dev-setup
+```
+→ `../dev-setup.sh` 실행. git push → deploy.sh dev → cmux 레이아웃(SSH 로그 tailing) 자동 세팅.
+
+### 수동 배포
+
 ```bash
-./deploy.sh dev    # dev 배포 (서버에서 git pull → build & up)
-./deploy.sh stg    # stg 배포 (서버에서 git pull → build & up)
-./deploy.sh prod   # prod 배포 (서버에서 git pull → build & up)
+git push                # 반드시 먼저 실행
+./deploy.sh dev         # dev 배포 (서버에서 git pull → build & up)
+./deploy.sh stg         # stg 배포
+./deploy.sh prod        # prod 배포
 ```
 
 > Docker Hub 불필요. 서버에서 직접 빌드.
