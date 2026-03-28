@@ -1811,58 +1811,116 @@ main section nav {
 .pay_btn .terminal-badge.offline { color: #aaa; }
 
 /* ─── 결제 방식 선택 모달 ────────────────────────────────────────── */
-.pm-box {
-  max-width: 400px;
+#payment-method-modal.modal {
+  z-index: 9000;
+}
+
+.pm-modal-content {
+  max-width: 420px;
   width: 90vw;
-  padding: 32px 28px;
+}
+
+.pm-close-icon {
+  font-size: 22px;
+  cursor: pointer;
+  color: #888;
+}
+
+.pm-close-icon:hover {
+  color: #333;
+}
+
+.pm-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 .pm-terminal-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
-  margin: 0 0 4px;
   font-weight: 600;
+  margin-bottom: 4px;
 }
 
-.pm-terminal-note.pm-online  { color: #27ae60; }
+.pm-terminal-note.pm-online  { color: #1FAA9C; }
 .pm-terminal-note.pm-offline { color: #aaa; }
 
 .pm-terminal-status {
   font-size: 13px;
-  color: #3498db;
+  color: #1FAA9C;
   min-height: 18px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
-.pm-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 4px;
-}
-
-.pm-btn {
+.pm-method-list {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 18px 8px;
-  border: none;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s;
-  color: #fff;
+  gap: 10px;
 }
 
-.pm-btn:hover:not(:disabled) { opacity: 0.88; transform: scale(0.98); }
-.pm-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.pm-method-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1.5px solid #E0E0E0;
+  border-radius: 10px;
+  background: #FFF;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: left;
+}
 
-.pm-icon { font-size: 26px; line-height: 1; }
+.pm-method-btn:hover:not(:disabled) {
+  border-color: #1FAA9C;
+  background: #F3FAFA;
+}
 
-.pm-cash    { background: #27ae60; }
-.pm-card    { background: #3498db; }
-.pm-samsung { background: #1428a0; }
-.pm-apple   { background: #333; }
-.pm-qr      { background: #e67e22; grid-column: span 2; flex-direction: row; gap: 10px; }
+.pm-method-btn:hover:not(:disabled) .pm-method-icon {
+  color: #1FAA9C;
+}
+
+.pm-method-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pm-method-icon {
+  font-size: 22px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  flex-shrink: 0;
+}
+
+.pm-method-icon-apple {
+  font-size: 22px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  flex-shrink: 0;
+}
+
+.pm-method-btn:hover:not(:disabled) .pm-method-icon-apple {
+  color: #1FAA9C;
+}
+
+.pm-method-label {
+  flex: 1;
+}
+
+.pm-method-arrow {
+  font-size: 14px;
+  color: #CCC;
+}

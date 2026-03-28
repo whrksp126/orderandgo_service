@@ -1425,48 +1425,60 @@ function _openPaymentMethodModal(paymentId, isTerminalOnline) {
   document.querySelector('#payment-method-modal')?.remove();
 
   const terminalNote = isTerminalOnline
-    ? '<p class="pm-terminal-note pm-online">● 단말기 연결됨 — 모든 결제 방식 이용 가능</p>'
-    : '<p class="pm-terminal-note pm-offline">● 단말기 오프라인 — 현금 결제만 가능</p>';
+    ? '<p class="pm-terminal-note pm-online"><i class="ph-bold ph-circle-fill"></i> 단말기 연결됨 — 모든 결제 방식 이용 가능</p>'
+    : '<p class="pm-terminal-note pm-offline"><i class="ph-bold ph-circle-fill"></i> 단말기 오프라인 — 현금 결제만 가능</p>';
 
   const disabledAttr = isTerminalOnline ? '' : 'disabled';
-  const idAttr = paymentId ? `data-payment-id="${paymentId}"` : '';
 
   const modal = document.createElement('div');
   modal.id = 'payment-method-modal';
+  modal.className = 'modal show';
   if (paymentId) modal.dataset.paymentId = paymentId;
   modal.innerHTML = `
-    <div class="card-modal-overlay">
-      <div class="card-modal-box pm-box">
-        <h2>결제 방식 선택</h2>
+    <div class="modal-content pm-modal-content">
+      <div class="modal-top">
+        <h1>결제 방식 선택</h1>
+        <i class="ph-bold ph-x pm-close-icon" onclick="_closePaymentMethodModal()"></i>
+      </div>
+      <div class="modal-body pm-modal-body">
         ${terminalNote}
         <p class="pm-terminal-status"></p>
-        <div class="pm-grid">
-          <button class="pm-btn pm-cash" onclick="_selectPaymentMethod('cash')">
-            <span class="pm-icon">💵</span>
-            <span>현금</span>
+        <div class="pm-method-list">
+          <button class="pm-method-btn" onclick="_selectPaymentMethod('cash')">
+            <span class="pm-method-icon"><i class="ph-bold ph-money"></i></span>
+            <span class="pm-method-label">현금</span>
+            <i class="ph-bold ph-caret-right pm-method-arrow"></i>
           </button>
-          <button class="pm-btn pm-card" onclick="_selectPaymentMethod('card')" ${disabledAttr}>
-            <span class="pm-icon">💳</span>
-            <span>카드</span>
+          <button class="pm-method-btn" onclick="_selectPaymentMethod('card')" ${disabledAttr}>
+            <span class="pm-method-icon"><i class="ph-bold ph-credit-card"></i></span>
+            <span class="pm-method-label">카드</span>
+            <i class="ph-bold ph-caret-right pm-method-arrow"></i>
           </button>
-          <button class="pm-btn pm-samsung" onclick="_selectPaymentMethod('card')" ${disabledAttr}>
-            <span class="pm-icon">📱</span>
-            <span>삼성페이</span>
+          <button class="pm-method-btn" onclick="_selectPaymentMethod('card')" ${disabledAttr}>
+            <span class="pm-method-icon"><i class="ph-bold ph-device-mobile"></i></span>
+            <span class="pm-method-label">삼성페이</span>
+            <i class="ph-bold ph-caret-right pm-method-arrow"></i>
           </button>
-          <button class="pm-btn pm-apple" onclick="_selectPaymentMethod('card')" ${disabledAttr}>
-            <span class="pm-icon">🍎</span>
-            <span>애플페이</span>
+          <button class="pm-method-btn" onclick="_selectPaymentMethod('card')" ${disabledAttr}>
+            <span class="ph-bold ph-apple-logo pm-method-icon-apple"></span>
+            <span class="pm-method-label">애플페이</span>
+            <i class="ph-bold ph-caret-right pm-method-arrow"></i>
           </button>
-          <button class="pm-btn pm-qr" onclick="_selectPaymentMethod('card')" ${disabledAttr}>
-            <span class="pm-icon">📷</span>
-            <span>QR코드</span>
+          <button class="pm-method-btn" onclick="_selectPaymentMethod('card')" ${disabledAttr}>
+            <span class="pm-method-icon"><i class="ph-bold ph-qr-code"></i></span>
+            <span class="pm-method-label">QR코드</span>
+            <i class="ph-bold ph-caret-right pm-method-arrow"></i>
           </button>
         </div>
-        <button class="card-modal-cancel-btn" style="margin-top:16px;" onclick="_closePaymentMethodModal()">취소</button>
       </div>
     </div>
   `;
   document.body.appendChild(modal);
+
+  // 배경 클릭 시 닫기
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) _closePaymentMethodModal();
+  });
 }
 
 function _closePaymentMethodModal(skipCancel) {
