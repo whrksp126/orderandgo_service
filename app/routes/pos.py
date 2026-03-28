@@ -306,12 +306,16 @@ def submit_toss_result():
     table_id = data.get('table_id')
     result = data.get('result')
 
+    # pop 전에 payment_type 추출 (현금/카드 구분)
+    pending = _pending_payments.get(payment_id)
+    payment_type = pending.get('payment_type', 'card') if pending else data.get('payment_type', 'card')
+
     _pending_payments.pop(payment_id, None)
 
-    print(f'[Toss] 결제 결과 수신: payment_id={payment_id}, type={result.get("type")}')
+    print(f'[Toss] 결제 결과 수신: payment_id={payment_id}, type={result.get("type")}, payment_type={payment_type}')
 
-    # 결제 성공 시 승인 취소를 위한 데이터 보관
-    if result.get('type') == 'SUCCESS':
+    # 결제 성공 시 승인 취소를 위한 데이터 보관 (카드만)
+    if result.get('type') == 'SUCCESS' and payment_type != 'cash':
         _completed_payments[payment_id] = {
             'payment_id': payment_id,
             'table_id': table_id,
@@ -321,11 +325,12 @@ def submit_toss_result():
             'status': 'pending_confirmation',  # pending_confirmation / cancel_requested / confirmed
         }
 
-    # POS에 결과 전송 (payment_id 포함 — 확정/취소 요청 시 필요)
+    # POS에 결과 전송 (payment_type 포함 — 현금/카드 구분용)
     socketio.emit('toss_payment_result', {
         'payment_id': payment_id,
         'table_id': table_id,
         'result': result,
+        'payment_type': payment_type,
     }, to='pos_group')
 
     return jsonify({'status': 'ok'})

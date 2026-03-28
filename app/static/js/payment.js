@@ -29,7 +29,7 @@ window.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const isCash = result.response?.paymentMethod === 'CASH';
+    const isCash = data.payment_type === 'cash' || result.response?.paymentMethod === 'CASH';
 
     if (isCash) {
       // 현금 결제 — 확정/취소 모달 없이 바로 DB 저장
