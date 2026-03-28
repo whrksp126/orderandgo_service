@@ -1798,11 +1798,71 @@ main section nav {
 }
 
 /* ─── 단말기 연결 상태 배지 ─────────────────────────────────────── */
-.card_btn .terminal-badge {
+.card_btn .terminal-badge,
+.pay_btn .terminal-badge {
   font-size: 10px;
   margin-left: 6px;
   vertical-align: middle;
 }
 
-.card_btn .terminal-badge.online  { color: #2ecc40; }
-.card_btn .terminal-badge.offline { color: #aaa; }
+.card_btn .terminal-badge.online,
+.pay_btn .terminal-badge.online  { color: #2ecc40; }
+.card_btn .terminal-badge.offline,
+.pay_btn .terminal-badge.offline { color: #aaa; }
+
+/* ─── 결제 방식 선택 모달 ────────────────────────────────────────── */
+.pm-box {
+  max-width: 400px;
+  width: 90vw;
+  padding: 32px 28px;
+}
+
+.pm-terminal-note {
+  font-size: 13px;
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+
+.pm-terminal-note.pm-online  { color: #27ae60; }
+.pm-terminal-note.pm-offline { color: #aaa; }
+
+.pm-terminal-status {
+  font-size: 13px;
+  color: #3498db;
+  min-height: 18px;
+  margin-bottom: 16px;
+}
+
+.pm-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.pm-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 18px 8px;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  color: #fff;
+}
+
+.pm-btn:hover:not(:disabled) { opacity: 0.88; transform: scale(0.98); }
+.pm-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.pm-icon { font-size: 26px; line-height: 1; }
+
+.pm-cash    { background: #27ae60; }
+.pm-card    { background: #3498db; }
+.pm-samsung { background: #1428a0; }
+.pm-apple   { background: #333; }
+.pm-qr      { background: #e67e22; grid-column: span 2; flex-direction: row; gap: 10px; }

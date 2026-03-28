@@ -320,6 +320,35 @@ def get_cash_ready_status():
     })
 
 
+@pos_bp.route('/toss/terminal_update_type', methods=['POST'])
+def terminal_update_type():
+    """단말기가 결제 방식 선택 시 payment_type 업데이트 → POS에 소켓 알림"""
+    from app.models import TerminalToken
+    data = request.get_json()
+    token = data.get('token')
+    payment_id = data.get('payment_id')
+    payment_type = data.get('payment_type')
+
+    if not token or not payment_id or not payment_type:
+        return jsonify({'error': 'missing_params'}), 400
+
+    record = TerminalToken.query.filter_by(token=token).first()
+    if not record:
+        return jsonify({'error': '인증 실패'}), 401
+
+    if payment_id not in _pending_payments:
+        return jsonify({'error': 'not_found'}), 404
+
+    _pending_payments[payment_id]['payment_type'] = payment_type
+
+    socketio.emit('terminal_payment_type_changed', {
+        'payment_id': payment_id,
+        'payment_type': payment_type,
+    }, to='pos_group')
+    print(f'[Terminal] 결제 방식 선택: payment_id={payment_id}, type={payment_type}')
+    return jsonify({'status': 'ok'})
+
+
 @pos_bp.route('/toss/cancel', methods=['POST'])
 def cancel_toss_pending():
     """POS에서 결제 취소 요청 → 단말기가 폴링으로 감지 (sendBeacon 포함)"""
