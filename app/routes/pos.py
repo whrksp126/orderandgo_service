@@ -196,6 +196,7 @@ def create_toss_pending():
         'identity_number': data.get('identity_number'),    # 현금영수증 번호 (휴대폰/사업자)
         'issuer_type': data.get('issuer_type'),            # 'CONSUMER' | 'BUSINESS'
         'status': 'pending',
+        'order_version': 1,                                # 주문 데이터 버전 (단말기 재렌더링 감지용)
     }
     _pending_payments[payment_id] = payment
 
@@ -242,14 +243,20 @@ def update_toss_pending():
     payment = _pending_payments[payment_id]
     if 'payment_type' in data and data['payment_type']:
         payment['payment_type'] = data['payment_type']
+    order_changed = False
     if 'order' in data and data['order']:
         payment['order'] = data['order']
+        order_changed = True
     if 'tax' in data:
         payment['tax'] = data['tax']
+        order_changed = True
     if 'supply_value' in data:
         payment['supply_value'] = data['supply_value']
+        order_changed = True
     if 'payment_key' in data and data['payment_key']:
         payment['payment_key'] = data['payment_key']
+    if order_changed:
+        payment['order_version'] = payment.get('order_version', 1) + 1
     return jsonify({'status': 'ok'})
 
 
@@ -276,6 +283,7 @@ def get_payment_type_status():
         'tax': payment.get('tax'),
         'supply_value': payment.get('supply_value'),
         'payment_key': payment.get('payment_key'),
+        'order_version': payment.get('order_version', 1),
         'cancelled': False,
     })
 
