@@ -125,9 +125,23 @@ def create_payment_database(store_id, data):
                                     .scalar()
         
         if data['total_price'] == p['price']:     # 1. 일반결제
-            # TablePaymentList, Payment 생성하기
-            table_payment_list_item = create_table_payment_list(store_id, table_id, first_ordered_time, str(data['order_list']), p['discount'], p['extra_charge'], p['payment_history'], payment_time)
-            
+            # 이전에 결제 시도 중단된 TablePaymentList가 있을 수 있으므로 먼저 조회
+            existing_payment_list = db.session.query(TablePaymentList)\
+                .filter(TablePaymentList.store_id == store_id)\
+                .filter(TablePaymentList.table_id == table_id)\
+                .filter(TablePaymentList.first_order_time == first_ordered_time)\
+                .first()
+
+            if existing_payment_list:
+                existing_payment_list.discount = p['discount']
+                existing_payment_list.extra_charge = p['extra_charge']
+                existing_payment_list.payment_history = json.dumps(p['payment_history'])
+                existing_payment_list.payment_time = payment_time
+                db.session.commit()
+                table_payment_list_item = existing_payment_list
+            else:
+                table_payment_list_item = create_table_payment_list(store_id, table_id, first_ordered_time, str(data['order_list']), p['discount'], p['extra_charge'], p['payment_history'], payment_time)
+
             create_payment(table_payment_list_item.id, p['method'], 1, p['price'], payment_time)
 
             # Table과 관련된 Order, TableOrderList 삭제하기

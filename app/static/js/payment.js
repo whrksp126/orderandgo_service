@@ -66,10 +66,6 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 단말기 온라인/오프라인
-  socket.on('terminal_online', () => _setTerminalBadge(true));
-  socket.on('terminal_offline', () => _setTerminalBadge(false));
-
   // 단말기 화면 상태 변경 → 모달 업데이트
   socket.on('terminal_status', (data) => {
     const statusMap = {
@@ -82,6 +78,18 @@ window.addEventListener('DOMContentLoaded', () => {
     if (el) el.textContent = msg;
   });
 });
+
+// ─── 단말기 온라인 상태 HTTP 폴링 (socket.io 불가 → last_polled_at 기반) ──────
+(function _startTerminalStatusPoll() {
+  const poll = () => {
+    fetch('/pos/toss/terminal_online')
+      .then(r => r.json())
+      .then(d => _setTerminalBadge(d.online))
+      .catch(() => _setTerminalBadge(false));
+  };
+  poll();
+  setInterval(poll, 3000);
+})();
 
 function _setTerminalBadge(online) {
   const badge = document.querySelector('.card_btn .terminal-badge');

@@ -350,6 +350,22 @@ def submit_toss_cancel_result():
 
     return jsonify({'status': 'ok'})
 
+@pos_bp.route('/toss/terminal_online', methods=['GET'])
+@login_required
+def check_terminal_online():
+    """단말기 폴링 기반 온라인 상태 확인 (POS에서 주기적으로 호출)"""
+    from app.models import Store, TerminalToken
+    from datetime import datetime, timedelta
+    store = Store.query.filter_by(user_id=current_user.id).first()
+    if not store:
+        return jsonify({'online': False})
+    record = TerminalToken.query.filter_by(store_id=store.id)\
+        .order_by(TerminalToken.created_at.desc()).first()
+    if not record or not record.last_polled_at:
+        return jsonify({'online': False})
+    is_online = (datetime.now() - record.last_polled_at).total_seconds() < 5
+    return jsonify({'online': is_online})
+
 # ─────────────────────────────────────────────────────────────────────────────
 
 
