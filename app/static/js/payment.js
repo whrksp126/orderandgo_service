@@ -250,6 +250,10 @@ function _buildTerminalOrderData() {
     }
     return entry;
   });
+  // 추가 금액이 있으면 items에 별도 항목으로 추가
+  if (payment_history.extra_charge > 0) {
+    orderItems.push({ label: '추가 금액', value: payment_history.extra_charge });
+  }
   const orderData = {
     items: orderItems,
     discounts: payment_history.discount > 0 ? [{ label: '할인', value: payment_history.discount }] : [],
