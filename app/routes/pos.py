@@ -231,6 +231,46 @@ def get_toss_pending():
             return jsonify({'pending': True, **payment})
     return jsonify({'pending': False})
 
+@pos_bp.route('/toss/cash_ready', methods=['POST'])
+@login_required
+def cash_payment_ready():
+    """POS에서 현금 금액 확인 + 영수증 정보 확정 → 단말기가 폴링으로 감지"""
+    data = request.get_json()
+    payment_id = data.get('payment_id')
+    if payment_id and payment_id in _pending_payments:
+        _pending_payments[payment_id]['cash_ready'] = True
+        _pending_payments[payment_id]['identity_number'] = data.get('identity_number')
+        _pending_payments[payment_id]['issuer_type'] = data.get('issuer_type')
+    return jsonify({'status': 'ok'})
+
+
+@pos_bp.route('/toss/cash_ready_status', methods=['GET'])
+def get_cash_ready_status():
+    """단말기가 현금 결제 POS 확정 여부 폴링"""
+    from app.models import TerminalToken
+    from datetime import datetime
+    token = request.args.get('token')
+    payment_id = request.args.get('payment_id')
+
+    if token:
+        record = TerminalToken.query.filter_by(token=token).first()
+        if record:
+            record.last_polled_at = datetime.now()
+            db.session.commit()
+
+    if not payment_id or payment_id not in _pending_payments:
+        return jsonify({'ready': False, 'cancelled': True})
+    payment = _pending_payments[payment_id]
+    if payment.get('status') == 'cancelled':
+        return jsonify({'ready': False, 'cancelled': True})
+    return jsonify({
+        'ready': payment.get('cash_ready', False),
+        'identity_number': payment.get('identity_number'),
+        'issuer_type': payment.get('issuer_type'),
+        'cancelled': False,
+    })
+
+
 @pos_bp.route('/toss/cancel', methods=['POST'])
 @login_required
 def cancel_toss_pending():

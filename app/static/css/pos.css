@@ -1242,6 +1242,51 @@ main section>aside .custom_btns button {
   font-weight: 700;
 }
 
+.payment .modal-content .modal-body .top .cash_receipt_section {
+  border-top: 1px solid #eee;
+  padding-top: 14px;
+  width: 100%;
+}
+
+.payment .modal-content .modal-body .top .cash_receipt_section label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.payment .modal-content .modal-body .top .cash_receipt_section label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.payment .modal-content .modal-body .top .cash_receipt_section #cash-receipt-detail {
+  margin-top: 12px;
+}
+
+.payment .modal-content .modal-body .top .cash_receipt_section .tab_btns {
+  display: flex;
+  gap: 8px;
+}
+
+.payment .modal-content .modal-body .top .cash_receipt_section .tab_btns button {
+  flex: 1;
+  padding: 8px;
+  border-radius: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid #CCC;
+}
+
+.payment .modal-content .modal-body .top .cash_receipt_section .tab_btns button.active {
+  color: #1FAA9C;
+  border: 1px solid #1FAA9C;
+  background: #F3FAFA;
+}
+
 .payment .modal-content .modal-body .bottom {
   display: flex;
   align-items: center;
