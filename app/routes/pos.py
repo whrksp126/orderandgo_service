@@ -193,6 +193,8 @@ def create_toss_pending():
         'supply_value': data.get('supply_value'),
         'payment_key': data.get('payment_key'),
         'payment_type': data.get('payment_type', 'card'),  # 'card' or 'cash'
+        'identity_number': data.get('identity_number'),    # 현금영수증 번호 (휴대폰/사업자)
+        'issuer_type': data.get('issuer_type'),            # 'CONSUMER' | 'BUSINESS'
         'status': 'pending',
     }
     _pending_payments[payment_id] = payment
@@ -726,7 +728,8 @@ def payment(table_id):
 
 # 테이블 결제 내역 조회
 @pos_bp.route('/payment_history/<table_id>', methods=['GET', 'POST'])
-def payment_history(table_id): 
+@login_required
+def payment_history(table_id):
 
     from app.models.payment import make_payment_history, create_payment_database
     store_id = current_user.id

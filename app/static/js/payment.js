@@ -34,6 +34,10 @@ window.addEventListener('DOMContentLoaded', () => {
     if (isCash) {
       // 현금 결제 — 확정/취소 모달 없이 바로 DB 저장
       const paymentData = setPayment(1); // CASH
+      // 현금영수증 결과 저장 (발급 여부 + 승인번호 등)
+      if (result.response?.cash) {
+        paymentData.payment.payment_history.toss_cash_receipt = result.response.cash;
+      }
       fetchData(`/pos/payment_history/${lastPath}`, 'POST', paymentData, (responseData) => {
         if (responseData.is_finished) {
           createCompletedPaymentModal({ preventDefault: () => {} }, 'CASH');
@@ -802,6 +806,72 @@ const clickPlusCountBtn = (event) => {
 
 }
 
+function _openCashReceiptQueryModal(onConfirm, onCancel) {
+  document.querySelector('#cash-receipt-query-modal')?.remove();
+  const modal = document.createElement('div');
+  modal.id = 'cash-receipt-query-modal';
+  modal.innerHTML = `
+    <div class="card-modal-overlay">
+      <div class="card-modal-box">
+        <h2 style="margin-bottom:12px;">현금영수증 발급</h2>
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button class="cr-type-btn" data-type="" style="flex:1;padding:8px 4px;border:1px solid #ddd;border-radius:6px;cursor:pointer;font-size:13px;background:#3182f6;color:white;">단말기 입력</button>
+          <button class="cr-type-btn" data-type="CONSUMER" style="flex:1;padding:8px 4px;border:1px solid #ddd;border-radius:6px;cursor:pointer;font-size:13px;background:#f5f5f5;">소득공제</button>
+          <button class="cr-type-btn" data-type="BUSINESS" style="flex:1;padding:8px 4px;border:1px solid #ddd;border-radius:6px;cursor:pointer;font-size:13px;background:#f5f5f5;">지출증빙</button>
+        </div>
+        <div id="cr-number-area" style="display:none;margin-bottom:12px;">
+          <input id="cr-number-input" type="text" placeholder="휴대폰번호 또는 사업자번호 (숫자만)"
+            style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;box-sizing:border-box;" />
+        </div>
+        <p id="cr-hint" style="font-size:12px;color:#888;margin:0 0 12px;">미입력 시 단말기에서 고객이 직접 선택합니다.</p>
+        <div style="display:flex;gap:10px;">
+          <button id="cr-cancel-btn" class="card-modal-cancel-btn" style="flex:1;background:#aaa;">취소</button>
+          <button id="cr-confirm-btn" class="card-modal-cancel-btn" style="flex:1;background:#3182f6;">결제 시작</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  let selectedType = '';
+
+  modal.querySelectorAll('.cr-type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      modal.querySelectorAll('.cr-type-btn').forEach(b => { b.style.background = '#f5f5f5'; b.style.color = '#333'; });
+      btn.style.background = '#3182f6';
+      btn.style.color = 'white';
+      selectedType = btn.dataset.type;
+      const numberArea = document.getElementById('cr-number-area');
+      const hint = document.getElementById('cr-hint');
+      if (selectedType) {
+        numberArea.style.display = 'block';
+        hint.style.display = 'none';
+        document.getElementById('cr-number-input').placeholder =
+          selectedType === 'CONSUMER' ? '휴대폰번호 (숫자만)' : '사업자번호 (숫자만)';
+      } else {
+        numberArea.style.display = 'none';
+        hint.style.display = 'block';
+        document.getElementById('cr-number-input').value = '';
+      }
+    });
+  });
+
+  document.getElementById('cr-cancel-btn').addEventListener('click', () => {
+    modal.remove();
+    onCancel();
+  });
+
+  document.getElementById('cr-confirm-btn').addEventListener('click', () => {
+    const identityNumber = document.getElementById('cr-number-input').value.trim().replace(/[^0-9]/g, '');
+    if (selectedType && !identityNumber) {
+      alert('현금영수증 번호를 입력해주세요.');
+      return;
+    }
+    modal.remove();
+    onConfirm(identityNumber || null, selectedType || null);
+  });
+}
+
 function _openCashPaymentModal(paymentId) {
   _currentCardPayment = { payment_id: paymentId };
   document.querySelector('#cash-payment-modal')?.remove();
@@ -842,62 +912,74 @@ const clickCashPayment = async (event) => {
   const isTerminalOnline = document.querySelector('.terminal-badge')?.classList.contains('online');
 
   if (isTerminalOnline) {
-    // ── 단말기 경유 현금 결제 (Toss 권장 테스트 방식) ──
+    // ── 단말기 경유 현금 결제 ──
     const _cashBtn = event.currentTarget;
     _cashBtn.disabled = true;
     _cashBtn.style.opacity = '0.5';
 
-    const totalPrice = payment_history.curPaymentPrice;
-    const tax = Math.round(totalPrice / 11);
-    const supplyValue = totalPrice - tax;
+    // 현금영수증 정보 먼저 수집 (선택)
+    _openCashReceiptQueryModal(async (identityNumber, issuerType) => {
+      const totalPrice = payment_history.curPaymentPrice;
+      const tax = Math.round(totalPrice / 11);
+      const supplyValue = totalPrice - tax;
 
-    const orderItems = order_history.map(item => {
-      const entry = { label: item.name, value: item.price * item.count };
-      if (item.count > 1) entry.quantity = item.count;
-      if (item.options && item.options.length > 0) {
-        entry.options = item.options.map(opt => ({
-          type: 'option', label: opt.name, value: opt.price * opt.count,
-        }));
-      }
-      return entry;
-    });
+      const orderItems = order_history.map(item => {
+        const entry = { label: item.name, value: item.price * item.count };
+        if (item.count > 1) entry.quantity = item.count;
+        if (item.options && item.options.length > 0) {
+          entry.options = item.options.map(opt => ({
+            type: 'option', label: opt.name, value: opt.price * opt.count,
+          }));
+        }
+        return entry;
+      });
 
-    const orderData = {
-      items: orderItems,
-      discounts: payment_history.discount > 0
-        ? [{ label: '할인', value: payment_history.discount }]
-        : [],
-      summary: { totalAmount: totalPrice, discountAmount: payment_history.discount || 0 },
-    };
+      const orderData = {
+        items: orderItems,
+        discounts: payment_history.discount > 0
+          ? [{ label: '할인', value: payment_history.discount }]
+          : [],
+        summary: { totalAmount: totalPrice, discountAmount: payment_history.discount || 0 },
+      };
 
-    try {
-      const response = await fetch('/pos/toss/pending', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      try {
+        const body = {
           table_id: lastPath,
           order: orderData,
           tax: tax,
           supply_value: supplyValue,
           payment_key: `ORD_${Date.now()}_${lastPath}`,
           payment_type: 'cash',
-        }),
-      });
+        };
+        if (identityNumber) body.identity_number = identityNumber;
+        if (issuerType) body.issuer_type = issuerType;
 
-      const resData = await response.json();
-      if (!response.ok) {
-        alert(resData.msg || '현금 결제 요청 중 오류가 발생했습니다.');
+        const response = await fetch('/pos/toss/pending', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+
+        const resData = await response.json();
+        if (!response.ok) {
+          alert(resData.msg || '현금 결제 요청 중 오류가 발생했습니다.');
+          _cashBtn.disabled = false;
+          _cashBtn.style.opacity = '';
+          return;
+        }
+
+        _openCashPaymentModal(resData.payment_id);
+      } catch (e) {
+        alert('현금 결제 요청 중 오류가 발생했습니다.');
         _cashBtn.disabled = false;
         _cashBtn.style.opacity = '';
-        return;
       }
-
-      _openCashPaymentModal(resData.payment_id);
-    } catch (e) {
-      alert('현금 결제 요청 중 오류가 발생했습니다.');
+    }, () => {
+      // 모달 취소
       _cashBtn.disabled = false;
       _cashBtn.style.opacity = '';
-    }
+    });
+
     return; // 단말기 결제 모드 → 기존 POS 모달 열지 않음
   }
 
