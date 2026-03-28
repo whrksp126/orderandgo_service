@@ -943,73 +943,62 @@ const clickCashPayment = async (event) => {
   const isTerminalOnline = document.querySelector('.terminal-badge')?.classList.contains('online');
 
   if (isTerminalOnline) {
-    // ── 단말기 경유 현금 결제 ──
+    // ── 단말기 경유 현금 결제 — 카드 결제와 동일하게 바로 전송 ──
     const _cashBtn = event.currentTarget;
     _cashBtn.disabled = true;
     _cashBtn.style.opacity = '0.5';
 
-    // 현금영수증 정보 먼저 수집 (선택)
-    _openCashReceiptQueryModal(async (identityNumber, issuerType) => {
-      const totalPrice = payment_history.curPaymentPrice;
-      const tax = Math.round(totalPrice / 11);
-      const supplyValue = totalPrice - tax;
+    const totalPrice = payment_history.curPaymentPrice;
+    const tax = Math.round(totalPrice / 11);
+    const supplyValue = totalPrice - tax;
 
-      const orderItems = order_history.map(item => {
-        const entry = { label: item.name, value: item.price * item.count };
-        if (item.count > 1) entry.quantity = item.count;
-        if (item.options && item.options.length > 0) {
-          entry.options = item.options.map(opt => ({
-            type: 'option', label: opt.name, value: opt.price * opt.count,
-          }));
-        }
-        return entry;
-      });
+    const orderItems = order_history.map(item => {
+      const entry = { label: item.name, value: item.price * item.count };
+      if (item.count > 1) entry.quantity = item.count;
+      if (item.options && item.options.length > 0) {
+        entry.options = item.options.map(opt => ({
+          type: 'option', label: opt.name, value: opt.price * opt.count,
+        }));
+      }
+      return entry;
+    });
 
-      const orderData = {
-        items: orderItems,
-        discounts: payment_history.discount > 0
-          ? [{ label: '할인', value: payment_history.discount }]
-          : [],
-        summary: { totalAmount: totalPrice, discountAmount: payment_history.discount || 0 },
-      };
+    const orderData = {
+      items: orderItems,
+      discounts: payment_history.discount > 0
+        ? [{ label: '할인', value: payment_history.discount }]
+        : [],
+      summary: { totalAmount: totalPrice, discountAmount: payment_history.discount || 0 },
+    };
 
-      try {
-        const body = {
+    try {
+      const response = await fetch('/pos/toss/pending', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           table_id: lastPath,
           order: orderData,
           tax: tax,
           supply_value: supplyValue,
           payment_key: `ORD_${Date.now()}_${lastPath}`,
           payment_type: 'cash',
-        };
-        if (identityNumber) body.identity_number = identityNumber;
-        if (issuerType) body.issuer_type = issuerType;
+        }),
+      });
 
-        const response = await fetch('/pos/toss/pending', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        });
-
-        const resData = await response.json();
-        if (!response.ok) {
-          alert(resData.msg || '현금 결제 요청 중 오류가 발생했습니다.');
-          _cashBtn.disabled = false;
-          _cashBtn.style.opacity = '';
-          return;
-        }
-
-        _openCashPaymentModal(resData.payment_id);
-      } catch (e) {
-        alert('현금 결제 요청 중 오류가 발생했습니다.');
+      const resData = await response.json();
+      if (!response.ok) {
+        alert(resData.msg || '현금 결제 요청 중 오류가 발생했습니다.');
         _cashBtn.disabled = false;
         _cashBtn.style.opacity = '';
+        return;
       }
-    }, () => {
-      // 모달 취소
+
+      _openCashPaymentModal(resData.payment_id);
+    } catch (e) {
+      alert('현금 결제 요청 중 오류가 발생했습니다.');
       _cashBtn.disabled = false;
       _cashBtn.style.opacity = '';
-    });
+    }
 
     return; // 단말기 결제 모드 → 기존 POS 모달 열지 않음
   }
