@@ -830,39 +830,41 @@ const clickPlusCountBtn = (event) => {
 }
 
 function _openCashReceiptQueryModal(onConfirm, onCancel) {
-  document.querySelector('#cash-receipt-query-modal')?.remove();
-  const modal = document.createElement('div');
-  modal.id = 'cash-receipt-query-modal';
-  modal.innerHTML = `
-    <div class="card-modal-overlay">
-      <div class="card-modal-box">
-        <h2 style="margin-bottom:12px;">현금영수증 발급</h2>
-        <div style="display:flex;gap:8px;margin-bottom:12px;">
-          <button class="cr-type-btn" data-type="" style="flex:1;padding:8px 4px;border:1px solid #ddd;border-radius:6px;cursor:pointer;font-size:13px;background:#3182f6;color:white;">단말기 입력</button>
-          <button class="cr-type-btn" data-type="CONSUMER" style="flex:1;padding:8px 4px;border:1px solid #ddd;border-radius:6px;cursor:pointer;font-size:13px;background:#f5f5f5;">소득공제</button>
-          <button class="cr-type-btn" data-type="BUSINESS" style="flex:1;padding:8px 4px;border:1px solid #ddd;border-radius:6px;cursor:pointer;font-size:13px;background:#f5f5f5;">지출증빙</button>
-        </div>
-        <div id="cr-number-area" style="display:none;margin-bottom:12px;">
-          <input id="cr-number-input" type="text" placeholder="휴대폰번호 또는 사업자번호 (숫자만)"
-            style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;box-sizing:border-box;" />
-        </div>
-        <p id="cr-hint" style="font-size:12px;color:#888;margin:0 0 12px;">미입력 시 단말기에서 고객이 직접 선택합니다.</p>
-        <div style="display:flex;gap:10px;">
-          <button id="cr-cancel-btn" class="card-modal-cancel-btn" style="flex:1;background:#aaa;">취소</button>
-          <button id="cr-confirm-btn" class="card-modal-cancel-btn" style="flex:1;background:#3182f6;">결제 시작</button>
-        </div>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(modal);
+  openModalFun({ preventDefault: () => {} });
+
+  const _modal = document.querySelector('.modal');
+  const _modalTitle = document.querySelector('.modal-content h1');
+  const _modalBody = document.querySelector('.modal-content .modal-body');
+
+  _modalTitle.innerHTML = '현금영수증 발급';
 
   let selectedType = '';
 
-  modal.querySelectorAll('.cr-type-btn').forEach(btn => {
+  _modalBody.innerHTML = `
+    <div class="top">
+      <div class="content" style="flex-direction:column;gap:15px;">
+        <div class="tab_btns">
+          <button class="cr-type-btn active" data-type="">단말기 입력</button>
+          <button class="cr-type-btn" data-type="CONSUMER">소득공제</button>
+          <button class="cr-type-btn" data-type="BUSINESS">지출증빙</button>
+        </div>
+        <div id="cr-number-area" style="display:none;">
+          <input id="cr-number-input" type="text" placeholder="휴대폰번호 또는 사업자번호 (숫자만)"
+            style="width:100%;padding:12px;border:1px solid #ddd;border-radius:6px;font-size:14px;box-sizing:border-box;" />
+        </div>
+        <p id="cr-hint" style="font-size:13px;color:#888;margin:0;">미입력 시 단말기에서 고객이 직접 선택합니다.</p>
+      </div>
+    </div>
+    <div class="bottom">
+      <button id="cr-confirm-btn">결제 시작</button>
+    </div>
+  `;
+
+  // 탭 버튼 스타일
+  _modalBody.querySelectorAll('.cr-type-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      modal.querySelectorAll('.cr-type-btn').forEach(b => { b.style.background = '#f5f5f5'; b.style.color = '#333'; });
-      btn.style.background = '#3182f6';
-      btn.style.color = 'white';
+      _modalBody.querySelectorAll('.cr-type-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
       selectedType = btn.dataset.type;
       const numberArea = document.getElementById('cr-number-area');
       const hint = document.getElementById('cr-hint');
@@ -879,18 +881,24 @@ function _openCashReceiptQueryModal(onConfirm, onCancel) {
     });
   });
 
-  document.getElementById('cr-cancel-btn').addEventListener('click', () => {
-    modal.remove();
+  // X 닫기 버튼 → cancel
+  _modal.querySelector('.close')?.addEventListener('click', () => {
+    _modal.remove();
     onCancel();
-  });
+  }, { once: true });
+
+  // 배경 클릭 → cancel
+  _modal.addEventListener('click', (e) => {
+    if (e.target === _modal) onCancel();
+  }, { once: true });
 
   document.getElementById('cr-confirm-btn').addEventListener('click', () => {
-    const identityNumber = document.getElementById('cr-number-input').value.trim().replace(/[^0-9]/g, '');
+    const identityNumber = document.getElementById('cr-number-input')?.value.trim().replace(/[^0-9]/g, '') || '';
     if (selectedType && !identityNumber) {
       alert('현금영수증 번호를 입력해주세요.');
       return;
     }
-    modal.remove();
+    _modal.remove();
     onConfirm(identityNumber || null, selectedType || null);
   });
 }
