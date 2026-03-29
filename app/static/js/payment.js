@@ -130,6 +130,7 @@ async function startCardPayment() {
       <div class="card-modal-icon">💳</div>
       <h2>카드 결제 진행 중</h2>
       <p class="terminal-status-msg">단말기에 카드를 삽입해주세요...</p>
+      <button class="card-modal-cancel-btn" onclick="clickCancelCardPayment()">결제 취소</button>
     `;
   }
   await fetch('/pos/toss/update_pending', {
