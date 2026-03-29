@@ -222,7 +222,7 @@ function clickCancelCardPayment() {
   if (_cardBtn2) { _cardBtn2.disabled = false; _cardBtn2.style.opacity = ''; }
 
   // 단말기 화면을 주문 내역 표시로 복귀
-  _buildDisplayPending();
+  _initDisplayPending();
 }
 // ─── Display Pending (결제 페이지 진입 시 단말기에 주문 자동 표시) ────────────
 let _displayPaymentId = null;
