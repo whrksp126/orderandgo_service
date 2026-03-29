@@ -936,7 +936,7 @@ main section>aside .custom_btns button {
 
 .payment main section article .payment_btns button.cash_btn {
   border-radius: 10px;
-  border: 1px solid #1FAA9C;
+  border: 2px solid #1FAA9C;
   background: #FFF;
   color: #1FAA9C;
   font-size: 24px;
@@ -1795,6 +1795,63 @@ main section nav {
 
 .card-modal-cancel-btn:hover {
   background: #ececec;
+}
+
+/* ─── 현금영수증 모달 ─────────────────────────────────────────────── */
+.cash-receipt-content {
+  width: 360px;
+  max-width: 95vw;
+}
+
+.cash-receipt-body {
+  padding: 16px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cr-desc {
+  font-size: 15px;
+  color: #555;
+  margin: 0;
+}
+
+.cr-type-btns {
+  display: flex;
+  gap: 8px;
+}
+
+.cr-type-btn {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 8px;
+  border: 1px solid #D1D5DB;
+  background: #F9FAFB;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cr-type-btn.active {
+  border-color: #1FAA9C;
+  background: #E8F7F6;
+  color: #1FAA9C;
+}
+
+.cr-number-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #D1D5DB;
+  border-radius: 8px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.cr-close-icon {
+  cursor: pointer;
+  font-size: 18px;
+  color: #6B7280;
 }
 
 /* ─── 단말기 연결 상태 배지 ─────────────────────────────────────── */
