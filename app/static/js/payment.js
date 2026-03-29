@@ -102,7 +102,6 @@ function _setTerminalBadge(online) {
 function _openCardPaymentModal(paymentId, storeId) {
   _currentCardPayment = { payment_id: paymentId, store_id: storeId };
 
-  // 기존 모달이 있으면 제거
   document.querySelector('#card-payment-modal')?.remove();
 
   const modal = document.createElement('div');
@@ -111,13 +110,33 @@ function _openCardPaymentModal(paymentId, storeId) {
     <div class="card-modal-overlay">
       <div class="card-modal-box">
         <div class="card-modal-icon">💳</div>
-        <h2>카드 결제 진행 중</h2>
-        <p class="terminal-status-msg">단말기에 주문 전송 중...</p>
-        <button class="card-modal-cancel-btn" onclick="clickCancelCardPayment()">결제 취소</button>
+        <h2>카드 결제</h2>
+        <p class="terminal-status-msg">단말기에 주문 내역이 표시되었습니다.</p>
+        <div style="display:flex;gap:10px;margin-top:16px;">
+          <button class="card-modal-cancel-btn" onclick="clickCancelCardPayment()">결제 취소</button>
+          <button class="card-modal-cancel-btn" style="background:#1FAA9C;color:#fff;" onclick="startCardPayment()">결제 시작</button>
+        </div>
       </div>
     </div>
   `;
   document.body.appendChild(modal);
+}
+
+async function startCardPayment() {
+  if (!_currentCardPayment) return;
+  const box = document.querySelector('#card-payment-modal .card-modal-box');
+  if (box) {
+    box.innerHTML = `
+      <div class="card-modal-icon">💳</div>
+      <h2>카드 결제 진행 중</h2>
+      <p class="terminal-status-msg">단말기에 카드를 삽입해주세요...</p>
+    `;
+  }
+  await fetch('/pos/toss/update_pending', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ payment_id: _currentCardPayment.payment_id, payment_type: 'card_go' }),
+  }).catch(() => {});
 }
 
 function _closeCardPaymentModal() {
