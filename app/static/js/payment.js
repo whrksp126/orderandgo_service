@@ -110,34 +110,13 @@ function _openCardPaymentModal(paymentId, storeId) {
     <div class="card-modal-overlay">
       <div class="card-modal-box">
         <div class="card-modal-icon">💳</div>
-        <h2>카드 결제</h2>
-        <p class="terminal-status-msg">단말기에 주문 내역이 표시되었습니다.</p>
-        <div style="display:flex;gap:10px;margin-top:16px;">
-          <button class="card-modal-cancel-btn" onclick="clickCancelCardPayment()">결제 취소</button>
-          <button class="card-modal-cancel-btn" style="background:#1FAA9C;color:#fff;" onclick="startCardPayment()">결제 시작</button>
-        </div>
+        <h2>카드 결제 진행 중</h2>
+        <p class="terminal-status-msg">단말기에 카드를 삽입해주세요...</p>
+        <button class="card-modal-cancel-btn" onclick="clickCancelCardPayment()">결제 취소</button>
       </div>
     </div>
   `;
   document.body.appendChild(modal);
-}
-
-async function startCardPayment() {
-  if (!_currentCardPayment) return;
-  const box = document.querySelector('#card-payment-modal .card-modal-box');
-  if (box) {
-    box.innerHTML = `
-      <div class="card-modal-icon">💳</div>
-      <h2>카드 결제 진행 중</h2>
-      <p class="terminal-status-msg">단말기에 카드를 삽입해주세요...</p>
-      <button class="card-modal-cancel-btn" onclick="clickCancelCardPayment()">결제 취소</button>
-    `;
-  }
-  await fetch('/pos/toss/update_pending', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ payment_id: _currentCardPayment.payment_id, payment_type: 'card_go' }),
-  }).catch(() => {});
 }
 
 function _closeCardPaymentModal() {
@@ -1224,8 +1203,8 @@ const clickCardPayment = async (event) => { // 카드 결제 클릭 시 (토스 
   _cardBtn.style.opacity = '0.5';
 
   try {
-    // display pending이 있으면 card 타입으로 전환, 없으면 새로 생성
-    let paymentId = await _activateDisplayPending('card');
+    // display pending이 있으면 card_go 타입으로 전환, 없으면 새로 생성
+    let paymentId = await _activateDisplayPending('card_go');
 
     if (!paymentId) {
       const totalPrice = payment_history.curPaymentPrice;
@@ -1241,7 +1220,7 @@ const clickCardPayment = async (event) => { // 카드 결제 클릭 시 (토스 
           tax,
           supply_value: supplyValue,
           payment_key: `ORD_${Date.now()}_${lastPath}`,
-          payment_type: 'card',
+          payment_type: 'card_go',
         }),
       });
       const resData = await response.json();
