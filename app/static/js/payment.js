@@ -85,45 +85,66 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // ─── 단말기 온라인 상태 HTTP 폴링 (socket.io 불가 → last_polled_at 기반) ──────
+let _terminalOnline = false;
+
 (function _startTerminalStatusPoll() {
   const poll = () => {
     fetch('/pos/toss/terminal_online')
       .then(r => r.json())
-      .then(d => _setTerminalBadge(d.online))
-      .catch(() => _setTerminalBadge(false));
+      .then(d => { _terminalOnline = !!d.online; })
+      .catch(() => { _terminalOnline = false; });
   };
   poll();
   setInterval(poll, 3000);
 })();
 
-function _setTerminalBadge(online) {
-  const badge = document.querySelector('.card_btn .terminal-badge');
-  if (!badge) return;
-  badge.className = `terminal-badge ${online ? 'online' : 'offline'}`;
-  badge.title = online ? '단말기 연결됨' : '단말기 연결 안됨';
-}
+let _cardPaymentTimer = null;
+const _CARD_TIMEOUT_SEC = 15;
 
 function _openCardPaymentModal(paymentId, storeId) {
   _currentCardPayment = { payment_id: paymentId, store_id: storeId };
-
   document.querySelector('#card-payment-modal')?.remove();
+  clearInterval(_cardPaymentTimer);
+
+  const circumference = 2 * Math.PI * 40; // 251.33
 
   const modal = document.createElement('div');
   modal.id = 'card-payment-modal';
   modal.innerHTML = `
     <div class="card-modal-overlay">
       <div class="card-modal-box">
-        <div class="card-modal-icon">💳</div>
+        <div class="card-timer-wrap">
+          <svg class="card-timer-svg" viewBox="0 0 100 100">
+            <circle class="card-timer-track" cx="50" cy="50" r="40"/>
+            <circle class="card-timer-progress" cx="50" cy="50" r="40"
+              style="stroke-dasharray:${circumference};stroke-dashoffset:0"/>
+          </svg>
+          <span class="card-timer-count">${_CARD_TIMEOUT_SEC}</span>
+        </div>
         <h2>카드 결제 진행 중</h2>
-        <p class="terminal-status-msg">단말기에 카드를 삽입해주세요...</p>
-        <button class="card-modal-cancel-btn" onclick="clickCancelCardPayment()">결제 취소</button>
+        <p class="terminal-status-msg">단말기에 카드를 삽입해주세요</p>
+        <p class="card-modal-hint">결제를 취소하려면 단말기에서 직접 뒤로가기를 눌러주세요</p>
       </div>
     </div>
   `;
   document.body.appendChild(modal);
+
+  let remaining = _CARD_TIMEOUT_SEC;
+  const progressEl = modal.querySelector('.card-timer-progress');
+  const countEl = modal.querySelector('.card-timer-count');
+
+  _cardPaymentTimer = setInterval(() => {
+    if (!document.querySelector('#card-payment-modal')) { clearInterval(_cardPaymentTimer); return; }
+    remaining--;
+    if (remaining < 0) { clearInterval(_cardPaymentTimer); return; }
+    countEl.textContent = remaining;
+    progressEl.style.strokeDashoffset = circumference * (1 - remaining / _CARD_TIMEOUT_SEC);
+  }, 1000);
 }
 
 function _closeCardPaymentModal() {
+  clearInterval(_cardPaymentTimer);
+  _cardPaymentTimer = null;
   document.querySelector('#card-payment-modal')?.remove();
 }
 
@@ -259,8 +280,7 @@ function _buildTerminalOrderData() {
 
 async function _initDisplayPending() {
   if (_displayPaymentId) return;
-  const isOnline = document.querySelector('.terminal-badge')?.classList.contains('online');
-  if (!isOnline || !payment_history?.curPaymentPrice) return;
+  if (!_terminalOnline || !payment_history?.curPaymentPrice) return;
   const { orderData, tax, supplyValue } = _buildTerminalOrderData();
   try {
     const res = await fetch('/pos/toss/pending', {
@@ -1139,7 +1159,7 @@ function _cancelCashPayment() {
 
 // 현금 결제 실행 (단말기 경유 or 직접 DB 저장)
 async function _processCashPayment(issuerType, identityNumber) {
-  const isTerminalOnline = document.querySelector('.terminal-badge')?.classList.contains('online');
+  const isTerminalOnline = _terminalOnline;
 
   if (isTerminalOnline) {
     try {

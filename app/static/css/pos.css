@@ -1763,9 +1763,45 @@ main section nav {
   box-shadow: 0 8px 32px rgba(0,0,0,0.18);
 }
 
-.card-modal-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
+/* ─── 카드 결제 타이머 ─── */
+.card-timer-wrap {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  margin: 0 auto 20px;
+}
+.card-timer-svg {
+  transform: rotate(-90deg);
+  width: 88px;
+  height: 88px;
+  display: block;
+}
+.card-timer-track {
+  fill: none;
+  stroke: #f0f0f0;
+  stroke-width: 6;
+}
+.card-timer-progress {
+  fill: none;
+  stroke: #3182f6;
+  stroke-width: 6;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s linear;
+}
+.card-timer-count {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 22px;
+  font-weight: 700;
+  color: #111;
+}
+.card-modal-hint {
+  font-size: 12px;
+  color: #aaa;
+  margin-top: 4px;
+  line-height: 1.6;
 }
 
 .card-modal-box h2 {
@@ -1854,16 +1890,4 @@ main section nav {
   color: #6B7280;
 }
 
-/* ─── 단말기 연결 상태 배지 ─────────────────────────────────────── */
-.card_btn .terminal-badge,
-.pay_btn .terminal-badge {
-  font-size: 10px;
-  margin-left: 6px;
-  vertical-align: middle;
-}
-
-.card_btn .terminal-badge.online,
-.pay_btn .terminal-badge.online  { color: #2ecc40; }
-.card_btn .terminal-badge.offline,
-.pay_btn .terminal-badge.offline { color: #aaa; }
 
