@@ -25,6 +25,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
     const result = data.result;
     if (result.type !== 'SUCCESS') {
+      // 취소/타임아웃 → 단말기가 display 모드로 복귀 중이므로 displayPaymentId 복원
+      if (data.payment_id) {
+        _displayPaymentId = data.payment_id;
+      }
       alert(`결제가 완료되지 않았습니다. (${result.type}${result.error ? ': ' + result.error : ''})`);
       return;
     }

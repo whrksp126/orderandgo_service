@@ -383,7 +383,7 @@ def get_toss_status():
     payment = _pending_payments.get(payment_id)
     if not payment:
         return jsonify({'status': 'not_found'})
-    status = payment['status']
+    status = payment.get('status', 'processing')
     if status == 'cancelled':
         _pending_payments.pop(payment_id, None)
     return jsonify({'status': status})
@@ -405,7 +405,8 @@ def submit_toss_result():
     if result_type in ('CANCELED', 'TIMEOUT') and pending:
         # 고객 취소/타임아웃 → pending을 display 상태로 복귀 (단말기가 주문 내역 재표시)
         _pending_payments[payment_id]['payment_type'] = 'display'
-        _pending_payments[payment_id].pop('status', None)
+        _pending_payments[payment_id]['status'] = 'pending'   # pop 대신 pending 복귀 (KeyError 방지)
+        _pending_payments[payment_id].pop('cash_ready', None)  # 현금 재시도 가능하도록 초기화
     else:
         _pending_payments.pop(payment_id, None)
 
