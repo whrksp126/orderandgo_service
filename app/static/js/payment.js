@@ -954,48 +954,7 @@ const clickCashPayment = async (event) => {
   _cashBtn.disabled = true;
   _cashBtn.style.opacity = '0.5';
 
-  const isTerminalOnline = document.querySelector('.terminal-badge')?.classList.contains('online');
-
-  if (isTerminalOnline) {
-    try {
-      let paymentId = await _activateDisplayPending('cash');
-      if (!paymentId) {
-        const { orderData, tax, supplyValue } = _buildTerminalOrderData();
-        const res = await fetch('/pos/toss/pending', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            table_id: lastPath,
-            order: orderData,
-            tax,
-            supply_value: supplyValue,
-            payment_key: `ORD_${Date.now()}_${lastPath}`,
-            payment_type: 'cash',
-          }),
-        });
-        const d = await res.json();
-        if (!res.ok) {
-          alert(d.msg || '현금 결제 요청 중 오류가 발생했습니다.');
-          _cashBtn.disabled = false;
-          _cashBtn.style.opacity = '';
-          return;
-        }
-        paymentId = d.payment_id;
-      }
-      _cashPaymentId = paymentId;
-      // 테스트: 모달 없이 바로 requestCashPayment 발생
-      _processCashPayment(paymentId, null, null);
-      return;
-    } catch (e) {
-      alert('현금 결제 요청 중 오류가 발생했습니다.');
-      _cashBtn.disabled = false;
-      _cashBtn.style.opacity = '';
-      return;
-    }
-  } else {
-    _cashPaymentId = null;
-  }
-
+  _cashPaymentId = null;
   _openCashAmountModal();
 };
 
@@ -1126,7 +1085,7 @@ function _openCashReceiptModal() {
       return;
     }
     modal.remove();
-    _processCashPayment(_cashPaymentId, issuerType, identityNumber);
+    _processCashPayment(issuerType, identityNumber);
   });
 }
 
@@ -1147,16 +1106,44 @@ function _cancelCashPayment() {
 }
 
 // 현금 결제 실행 (단말기 경유 or 직접 DB 저장)
-async function _processCashPayment(paymentId, issuerType, identityNumber) {
-  if (paymentId) {
-    // 단말기 경유 현금 결제
-    _currentCardPayment = { payment_id: paymentId };
+async function _processCashPayment(issuerType, identityNumber) {
+  const isTerminalOnline = document.querySelector('.terminal-badge')?.classList.contains('online');
+
+  if (isTerminalOnline) {
     try {
+      let paymentId = await _activateDisplayPending('cash');
+      if (!paymentId) {
+        const { orderData, tax, supplyValue } = _buildTerminalOrderData();
+        const res = await fetch('/pos/toss/pending', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            table_id: lastPath,
+            order: orderData,
+            tax,
+            supply_value: supplyValue,
+            payment_key: `ORD_${Date.now()}_${lastPath}`,
+            payment_type: 'cash',
+          }),
+        });
+        const d = await res.json();
+        if (!res.ok) {
+          alert(d.msg || '현금 결제 요청 중 오류가 발생했습니다.');
+          const cashBtn = document.querySelector('.cash_btn');
+          if (cashBtn) { cashBtn.disabled = false; cashBtn.style.opacity = ''; }
+          return;
+        }
+        paymentId = d.payment_id;
+      }
+      _cashPaymentId = paymentId;
+      _currentCardPayment = { payment_id: paymentId };
+
       await fetch('/pos/toss/cash_ready', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ payment_id: paymentId, identity_number: identityNumber, issuer_type: issuerType }),
       });
+
       // 단말기 처리 대기 모달
       document.querySelector('#cash-wait-modal')?.remove();
       const waitModal = document.createElement('div');
