@@ -26,7 +26,6 @@ window.addEventListener('DOMContentLoaded', () => {
     const result = data.result;
     if (result.type !== 'SUCCESS') {
       alert(`결제가 완료되지 않았습니다. (${result.type}${result.error ? ': ' + result.error : ''})`);
-      _initDisplayPending(); // 단말기에 주문 내역 재표시
       return;
     }
 

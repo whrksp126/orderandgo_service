@@ -401,7 +401,13 @@ def submit_toss_result():
     pending = _pending_payments.get(payment_id)
     payment_type = pending.get('payment_type', 'card') if pending else data.get('payment_type', 'card')
 
-    _pending_payments.pop(payment_id, None)
+    result_type = result.get('type') if result else None
+    if result_type in ('CANCELED', 'TIMEOUT') and pending:
+        # 고객 취소/타임아웃 → pending을 display 상태로 복귀 (단말기가 주문 내역 재표시)
+        _pending_payments[payment_id]['payment_type'] = 'display'
+        _pending_payments[payment_id].pop('status', None)
+    else:
+        _pending_payments.pop(payment_id, None)
 
     print(f'[Toss] 결제 결과 수신: payment_id={payment_id}, type={result.get("type")}, payment_type={payment_type}')
 
