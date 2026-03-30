@@ -293,13 +293,41 @@ function _updateDisplayPendingOrder() {
   }).catch(() => {});
 }
 
-// 결제 페이지 이탈 시 display pending 취소 → 단말기 대기 화면 복귀
-window.addEventListener('pagehide', () => {
+// Display pending heartbeat — 5초마다 서버에 alive 신호 (TTL 갱신)
+setInterval(() => {
   if (!_displayPaymentId) return;
-  const blob = new Blob([JSON.stringify({ payment_id: _displayPaymentId })], { type: 'application/json' });
-  navigator.sendBeacon('/pos/toss/cancel', blob);
+  fetch('/pos/toss/update_pending', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ payment_id: _displayPaymentId }),
+  }).catch(() => {});
+}, 5000);
+
+// 결제 페이지 이탈 시 모든 활성 pending 취소 → 단말기 대기 화면 복귀
+let _unloadCancelDone = false;
+function _cancelAllOnUnload() {
+  if (_unloadCancelDone) return;
+  const ids = [
+    _displayPaymentId,
+    _currentCardPayment?.payment_id,
+    _cashPaymentId,
+  ].filter(Boolean);
+  if (ids.length === 0) return;
+  _unloadCancelDone = true;
   _displayPaymentId = null;
-});
+  _currentCardPayment = null;
+  _cashPaymentId = null;
+  ids.forEach(id => {
+    fetch('/pos/toss/cancel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payment_id: id }),
+      keepalive: true,
+    }).catch(() => {});
+  });
+}
+window.addEventListener('pagehide', _cancelAllOnUnload);
+window.addEventListener('beforeunload', _cancelAllOnUnload);
 
 // display pending을 카드/현금 결제용으로 전환 (기존 payment_id 반환 후 초기화)
 async function _activateDisplayPending(paymentType) {

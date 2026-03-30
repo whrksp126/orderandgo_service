@@ -1,6 +1,7 @@
 from flask import render_template, jsonify, request
 import json
 import uuid
+import time
 from app.models.menu import select_main_category, select_sub_category, select_menu_all, select_menu, select_menu_option, select_menu_option_all, select_menu_all_to_main_category
 from app.models.order import find_order_list, get_orders_by_store_id
 from flask_login import login_required, current_user
@@ -197,6 +198,7 @@ def create_toss_pending():
         'issuer_type': data.get('issuer_type'),            # 'CONSUMER' | 'BUSINESS'
         'status': 'pending',
         'order_version': 1,                                # 주문 데이터 버전 (단말기 재렌더링 감지용)
+        'last_active_at': time.time(),                     # POS heartbeat 타임스탬프 (TTL용)
     }
     _pending_payments[payment_id] = payment
 
@@ -257,6 +259,7 @@ def update_toss_pending():
         payment['payment_key'] = data['payment_key']
     if order_changed:
         payment['order_version'] = payment.get('order_version', 1) + 1
+    payment['last_active_at'] = time.time()   # heartbeat 갱신
     return jsonify({'status': 'ok'})
 
 
@@ -277,6 +280,12 @@ def get_payment_type_status():
     payment = _pending_payments[payment_id]
     if payment.get('status') == 'cancelled':
         return jsonify({'cancelled': True})
+    # display 모드에서 POS heartbeat가 20초 이상 없으면 자동 취소 (POS가 페이지를 이탈한 경우)
+    if payment.get('payment_type') == 'display':
+        last_active = payment.get('last_active_at', time.time())
+        if time.time() - last_active > 20:
+            _pending_payments.pop(payment_id, None)
+            return jsonify({'cancelled': True})
     return jsonify({
         'payment_type': payment.get('payment_type', 'display'),
         'order': payment.get('order'),
