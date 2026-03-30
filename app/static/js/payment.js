@@ -29,7 +29,7 @@ window.addEventListener('DOMContentLoaded', () => {
       if (data.payment_id) {
         _displayPaymentId = data.payment_id;
       }
-      alert(`결제가 완료되지 않았습니다. (${result.type}${result.error ? ': ' + result.error : ''})`);
+      showToast(`결제가 취소되었습니다.${result.error ? ' (' + result.error + ')' : ''}`, 'info');
       return;
     }
 
