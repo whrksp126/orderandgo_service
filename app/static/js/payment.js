@@ -26,6 +26,7 @@ window.addEventListener('DOMContentLoaded', () => {
     const result = data.result;
     if (result.type !== 'SUCCESS') {
       alert(`결제가 완료되지 않았습니다. (${result.type}${result.error ? ': ' + result.error : ''})`);
+      _initDisplayPending(); // 단말기에 주문 내역 재표시
       return;
     }
 
@@ -983,6 +984,9 @@ const clickCashPayment = async (event) => {
         paymentId = d.payment_id;
       }
       _cashPaymentId = paymentId;
+      // 테스트: 모달 없이 바로 requestCashPayment 발생
+      _processCashPayment(paymentId, null, null);
+      return;
     } catch (e) {
       alert('현금 결제 요청 중 오류가 발생했습니다.');
       _cashBtn.disabled = false;
