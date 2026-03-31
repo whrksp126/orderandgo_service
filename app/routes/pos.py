@@ -894,6 +894,27 @@ def payment(table_id):
 
     return render_template('/pos/payment.html')
 
+# 현금 결제 후 영수증 정보 업데이트
+@pos_bp.route('/payment/update_cash_receipt', methods=['PATCH'])
+@login_required
+def update_cash_receipt():
+    from app.models import TablePaymentList
+    data = request.get_json()
+    tpl_id = data.get('table_payment_list_id')
+    cash_receipt = data.get('cash_receipt')
+    if not tpl_id:
+        return jsonify({'error': 'table_payment_list_id required'}), 400
+    store_id = current_user.id
+    item = db.session.query(TablePaymentList).filter_by(id=tpl_id, store_id=store_id).first()
+    if not item:
+        return jsonify({'error': 'not found'}), 404
+    ph = json.loads(item.payment_history) if item.payment_history else {}
+    ph['toss_cash_receipt'] = cash_receipt
+    item.payment_history = json.dumps(ph)
+    db.session.commit()
+    return jsonify({'status': 'ok'})
+
+
 # 테이블 결제 내역 조회
 @pos_bp.route('/payment_history/<table_id>', methods=['GET', 'POST'])
 @login_required

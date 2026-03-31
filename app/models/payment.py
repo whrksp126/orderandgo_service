@@ -54,7 +54,7 @@ def delete_order_tableorderlist(store_id, table_id):
 
 
 # 결제 통신 json
-def make_payment_history(store_id, table_id, paid, is_finished):
+def make_payment_history(store_id, table_id, paid, is_finished, tpl_id=None):
     first_order_time = db.session.query(func.min(Order.ordered_at))\
                                 .filter(Order.table_id == table_id)\
                                 .scalar()
@@ -96,7 +96,8 @@ def make_payment_history(store_id, table_id, paid, is_finished):
         'discount': check_table_payment_list.discount if check_table_payment_list is not None else 0,
         'extra_charge': check_table_payment_list.extra_charge if check_table_payment_list is not None else 0,
         'payment_history': payment_history,
-        'payment': payment
+        'payment': payment,
+        'table_payment_list_id': tpl_id or (check_table_payment_list.id if check_table_payment_list is not None else None),
     }
 
     print('@@@table_payment_data@@@', table_payment_data)
@@ -119,11 +120,12 @@ def create_payment_database(store_id, data):
         payment_time = datetime.now()
         p = data['payment']
         o = data['order_list']
-        
+        tpl_id = None  # table_payment_list_id for response
+
         first_ordered_time = db.session.query(func.min(Order.ordered_at))\
                                     .filter(Order.table_id == table_id)\
                                     .scalar()
-        
+
         if data['total_price'] == p['price']:     # 1. 일반결제
             # 이전에 결제 시도 중단된 TablePaymentList가 있을 수 있으므로 먼저 조회
             existing_payment_list = db.session.query(TablePaymentList)\
@@ -142,6 +144,7 @@ def create_payment_database(store_id, data):
             else:
                 table_payment_list_item = create_table_payment_list(store_id, table_id, first_ordered_time, str(data['order_list']), p['discount'], p['extra_charge'], p['payment_history'], payment_time)
 
+            tpl_id = table_payment_list_item.id
             create_payment(table_payment_list_item.id, p['method'], 1, p['price'], payment_time)
 
             # Table과 관련된 Order, TableOrderList 삭제하기
@@ -163,18 +166,20 @@ def create_payment_database(store_id, data):
                 if p['payment_history']['isDutch'] :
                     p['payment_history']['curDutch'] = p['payment_history']['curDutch'] + 1
                 table_payment_list_item = create_table_payment_list(store_id, table_id, first_ordered_time, str(data['order_list']), p['discount'], p['extra_charge'], p['payment_history'], payment_time)
+                tpl_id = table_payment_list_item.id
                 create_payment(table_payment_list_item.id, p['method'], 1, p['price'], payment_time)
-            
+
                 # paid, is_finished
                 paid = True
                 is_finished = False
-            
+
             else:
+                tpl_id = check_table_payment_list.id
                 sum_payment = db.session.query(func.sum(Payment.payment_amount))\
                                     .filter(Payment.table_payment_list_id == check_table_payment_list.id)\
                                     .filter(Payment.payment_status == 1)\
                                     .scalar()
-                
+
                 if (sum_payment or 0)+p['price'] != data['total_price']:  # 2-2. 분할결제중
                     create_payment(check_table_payment_list.id, p['method'], 1, p['price'], payment_time)
 
@@ -189,7 +194,7 @@ def create_payment_database(store_id, data):
                     # paid, is_finished
                     paid = True
                     is_finished = True
-                
+
                 # TablePaymentList payment_history 업데이트
                 if p['payment_history']['isDutch'] :
                       p['payment_history']['curDutch'] = p['payment_history']['curDutch'] + 1
@@ -203,7 +208,7 @@ def create_payment_database(store_id, data):
             # POS 그룹에도 알림 (필요 시)
             # socketio.emit('payment_finished_pos', {'table_id': table_id}, room='pos_group')
 
-        return make_payment_history(store_id, table_id, paid, is_finished)
+        return make_payment_history(store_id, table_id, paid, is_finished, tpl_id=tpl_id)
     except Exception as e:
         import traceback
         print("[create_payment_database ERROR]", e)
