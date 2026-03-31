@@ -43,18 +43,27 @@ window.addEventListener('DOMContentLoaded', () => {
 
     if (isCash) {
       if (_cashTablePaymentListId) {
-        // 영수증 전용 모드: 결제는 이미 저장됨 → 영수증 정보만 업데이트
+        // 영수증 전용 모드: 결제는 이미 저장됨 → 영수증 정보 업데이트
         if (result.response?.cash) {
+          const resp = result.response || {};
           fetch('/pos/payment/update_cash_receipt', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               table_payment_list_id: _cashTablePaymentListId,
-              cash_receipt: result.response.cash,
+              cash_receipt: resp.cash,
+              payment_key: resp.paymentKey || '',
+              tax: data.tax || 0,
+              supply_value: data.supply_value || 0,
+              timestamp: resp.timestamp || '',
+              payment_id: data.payment_id,
             }),
           }).catch(() => {});
+          // 영수증 발급 성공 → 취소 가능 모달 표시
+          _openCashReceiptCancelModal(data.payment_id);
+        } else {
+          _closeCashReceiptModal();
         }
-        _closeCashReceiptModal();
       } else {
         // 기존 경로 (사전 저장 없이 terminal 결과로 DB 저장)
         const paymentData = setPayment(1);
@@ -77,17 +86,44 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 
   // 승인 취소 결과 수신
-  socket.on('toss_cancel_result', (data) => {
+  socket.on('toss_cancel_result', async (data) => {
     if (String(data.table_id) !== String(lastPath)) return;
+    const tplId = _pendingApproval?.table_payment_list_id;
     _closeApprovalModal();
     _pendingApproval = null;
 
     const r = data.result || {};
     if (r.type === 'SUCCESS' || r.type === 'CANCEL_SUCCESS') {
-      alert('승인 취소가 완료되었습니다.');
+      if (tplId) {
+        await fetch('/pos/payment/save_refund_result', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ table_payment_list_id: tplId, cancel_result: r }),
+        }).catch(() => {});
+      }
+      showToast('환불이 완료되었습니다.', 'success');
+      location.reload();
     } else {
-      alert(`승인 취소 결과: ${r.type || '알 수 없음'}${r.error ? ' — ' + r.error : ''}`);
+      showToast('환불 처리 실패. 관리자에게 문의하세요.', 'error');
     }
+  });
+
+  // 현금영수증 취소 결과 수신
+  socket.on('toss_cash_receipt_cancel_result', (data) => {
+    if (String(data.table_id) !== String(lastPath)) return;
+    clearInterval(_cashReceiptCancelTimer);
+    _cashReceiptCancelPaymentId = null;
+    document.querySelector('#cash-receipt-cancel-modal')?.remove();
+
+    const r = data.result || {};
+    if (r.type === 'SUCCESS' || r.type === 'CANCEL_SUCCESS') {
+      showToast('현금영수증이 취소되었습니다.', 'success');
+    } else {
+      showToast('현금영수증 취소 실패. 관리자에게 문의하세요.', 'error');
+    }
+    _cashTablePaymentListId = null;
+    _cashReceiptIsFinished = false;
+    location.reload();
   });
 
   // 단말기 화면 상태 변경 → 모달 업데이트
@@ -233,11 +269,26 @@ async function confirmCardPayment() {
 
 async function cancelCardApproval() {
   if (!_pendingApproval) return;
-  const { payment_id } = _pendingApproval;
+  const { payment_id, result } = _pendingApproval;
 
   const btn = document.querySelector('#approval-modal .card-modal-box button[style*="e74c3c"]');
   if (btn) { btn.disabled = true; btn.textContent = '취소 요청 중...'; }
 
+  // ① 결제 성공 DB 저장
+  const paymentData = setPayment(2);
+  if (result.response) {
+    paymentData.payment.payment_history.toss_payment_key = result.response.paymentKey || '';
+    paymentData.payment.payment_history.toss_approval_no = result.response.card?.approvalNo || result.response.approvalNumber || '';
+    paymentData.payment.payment_history.toss_details = result.response;
+  }
+  const saveRes = await fetch(`/pos/payment_history/${lastPath}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(paymentData),
+  }).then(r => r.json()).catch(() => null);
+  _pendingApproval.table_payment_list_id = saveRes?.table_payment_list_id || null;
+
+  // ② 환불 요청
   const res = await fetch('/pos/toss/cancel_approval', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1204,6 +1255,89 @@ function _cancelCashPayment() {
   }
   const cashBtn = document.querySelector('.cash_btn');
   if (cashBtn) { cashBtn.disabled = false; cashBtn.style.opacity = ''; }
+}
+
+// ─── 현금영수증 취소 모달 ────────────────────────────────────────────────────
+let _cashReceiptCancelPaymentId = null;
+let _cashReceiptCancelTimer = null;
+
+function _openCashReceiptCancelModal(paymentId) {
+  _cashReceiptCancelPaymentId = paymentId;
+  document.querySelector('#cash-receipt-cancel-modal')?.remove();
+  clearInterval(_cashReceiptCancelTimer);
+
+  let remaining = 60;
+  const modal = document.createElement('div');
+  modal.id = 'cash-receipt-cancel-modal';
+  modal.innerHTML = `
+    <div class="card-modal-overlay">
+      <div class="card-modal-box">
+        <div class="card-modal-icon">🧾</div>
+        <h2>현금영수증 발급 완료</h2>
+        <p class="terminal-status-msg" style="color:#888;font-size:13px;">
+          영수증이 발급되었습니다. (<span id="cr-cancel-countdown">60</span>초 내 취소 가능)
+        </p>
+        <div style="display:flex;gap:10px;margin-top:16px;">
+          <button class="card-modal-cancel-btn" style="flex:1;background:#e74c3c;" onclick="_requestCashReceiptCancel()">영수증 취소</button>
+          <button class="card-modal-cancel-btn" style="flex:1;background:#27ae60;" onclick="_closeCashReceiptCancelModal()">확인</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  _cashReceiptCancelTimer = setInterval(() => {
+    remaining--;
+    const el = document.querySelector('#cr-cancel-countdown');
+    if (el) el.textContent = remaining;
+    if (remaining <= 0) {
+      clearInterval(_cashReceiptCancelTimer);
+      _cashReceiptCancelPaymentId = null;
+      document.querySelector('#cash-receipt-cancel-modal')?.remove();
+      _doCloseCashReceiptFlow();
+    }
+  }, 1000);
+}
+
+function _closeCashReceiptCancelModal() {
+  clearInterval(_cashReceiptCancelTimer);
+  _cashReceiptCancelPaymentId = null;
+  document.querySelector('#cash-receipt-cancel-modal')?.remove();
+  _doCloseCashReceiptFlow();
+}
+
+function _doCloseCashReceiptFlow() {
+  const isFinished = _cashReceiptIsFinished;
+  _cashTablePaymentListId = null;
+  _cashReceiptIsFinished = false;
+  if (isFinished) {
+    createCompletedPaymentModal({ preventDefault: () => {} }, 'CASH');
+  } else {
+    location.reload();
+  }
+}
+
+async function _requestCashReceiptCancel() {
+  const paymentId = _cashReceiptCancelPaymentId;
+  if (!paymentId) return;
+
+  const btn = document.querySelector('#cash-receipt-cancel-modal .card-modal-box button[style*="e74c3c"]');
+  if (btn) { btn.disabled = true; btn.textContent = '취소 요청 중...'; }
+
+  const res = await fetch('/pos/toss/cash_receipt_cancel', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ payment_id: paymentId }),
+  }).catch(() => null);
+
+  if (!res || !res.ok) {
+    showToast('취소 요청 실패. 다시 시도해주세요.', 'error');
+    if (btn) { btn.disabled = false; btn.textContent = '영수증 취소'; }
+    return;
+  }
+
+  const statusMsg = document.querySelector('#cash-receipt-cancel-modal .terminal-status-msg');
+  if (statusMsg) statusMsg.textContent = '단말기에서 취소 처리 중...';
 }
 
 // 현금 결제 실행 (단말기 경유 or 직접 DB 저장)

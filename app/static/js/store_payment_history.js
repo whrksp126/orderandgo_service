@@ -9,6 +9,23 @@ window.addEventListener('DOMContentLoaded', () => {
   document.querySelector('#date-picker').value = `${yyyy}-${mm}-${dd}`;
 
   fetchPaymentHistory();
+
+  // 단말기 취소 결과 수신
+  if (typeof socket !== 'undefined') {
+    socket.on('toss_history_cancel_result', (data) => {
+      const r = data.result || {};
+      const terminalBtn = document.querySelector('#detail-terminal-cancel-btn');
+      if (r.type === 'SUCCESS') {
+        if (terminalBtn) { terminalBtn.disabled = true; terminalBtn.textContent = '취소 완료'; }
+        alert('단말기 취소가 완료되었습니다.');
+        closeDetailModal();
+        fetchPaymentHistory();
+      } else {
+        if (terminalBtn) { terminalBtn.disabled = false; terminalBtn.textContent = '단말기 취소'; }
+        alert(`단말기 취소 실패: ${r.type || '알 수 없음'}${r.error ? ' — ' + r.error : ''}`);
+      }
+    });
+  }
 });
 
 // ─── 결제 내역 조회 ────────────────────────────────────────────────────────────
@@ -167,6 +184,57 @@ function _openDetailModal(item, date) {
   const allCancelled = item.payments.length > 0 && item.payments.every(p => p.status === 2);
   cancelBtn.disabled = allCancelled;
   cancelBtn.textContent = allCancelled ? '취소 완료' : '결제 취소';
+
+  // Toss 결제 상세 정보 표시
+  const ph = item.payment_history || {};
+  const hasTossCard = !!ph.toss_details;
+  const hasTossCash = !!(ph.toss_payment_key && ph.toss_cash_receipt);
+  const hasRefund = !!ph.toss_cancel_result;
+
+  const existingTossSection = document.querySelector('#detail-toss-section');
+  if (existingTossSection) existingTossSection.remove();
+
+  if (hasTossCard || hasTossCash) {
+    const tossSection = document.createElement('div');
+    tossSection.id = 'detail-toss-section';
+    tossSection.className = 'detail-section';
+
+    let tossHtml = '<h3>단말기 결제 정보</h3>';
+    if (hasTossCard) {
+      const card = ph.toss_details?.card || {};
+      tossHtml += `
+        <div class="info-row"><span class="info-label">승인번호</span><span class="info-value">${ph.toss_approval_no || '-'}</span></div>
+        ${card.number ? `<div class="info-row"><span class="info-label">카드번호</span><span class="info-value">${card.number}</span></div>` : ''}
+      `;
+    }
+    if (hasTossCash) {
+      const receipt = ph.toss_cash_receipt || {};
+      tossHtml += `<div class="info-row"><span class="info-label">영수증 승인번호</span><span class="info-value">${receipt.approvalNumber || '-'}</span></div>`;
+    }
+    if (hasRefund) {
+      tossHtml += `
+        <div class="info-row"><span class="info-label">환불 시각</span><span class="info-value cancel-color">${ph.toss_cancel_time ? ph.toss_cancel_time.slice(0, 19).replace('T', ' ') : '-'}</span></div>
+      `;
+    }
+    tossSection.innerHTML = tossHtml;
+
+    const modalActions = document.querySelector('.modal-actions');
+    modalActions.parentNode.insertBefore(tossSection, modalActions);
+  }
+
+  // 단말기 취소 버튼 (Toss 결제이고 아직 취소 안 된 경우)
+  const existingTerminalBtn = document.querySelector('#detail-terminal-cancel-btn');
+  if (existingTerminalBtn) existingTerminalBtn.remove();
+
+  if ((hasTossCard || hasTossCash) && !allCancelled && !hasRefund) {
+    const terminalBtn = document.createElement('button');
+    terminalBtn.id = 'detail-terminal-cancel-btn';
+    terminalBtn.className = 'btn-cancel';
+    terminalBtn.style.background = '#e74c3c';
+    terminalBtn.textContent = '단말기 취소';
+    terminalBtn.onclick = cancelTossPayment;
+    document.querySelector('.modal-actions').appendChild(terminalBtn);
+  }
 }
 
 function closeDetailModal() {
@@ -175,6 +243,36 @@ function closeDetailModal() {
 }
 
 // ─── 결제 취소 ─────────────────────────────────────────────────────────────────
+
+async function cancelTossPayment() {
+  if (!_currentItem) return;
+
+  if (!confirm('단말기에서 취소를 진행하시겠습니까?\n단말기가 온라인 상태여야 합니다.')) return;
+
+  const terminalBtn = document.querySelector('#detail-terminal-cancel-btn');
+  if (terminalBtn) { terminalBtn.disabled = true; terminalBtn.textContent = '단말기 대기 중...'; }
+
+  try {
+    const res = await fetch('/store/cancel_toss_payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ table_payment_list_id: _currentItem.id }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.error || '단말기 취소 요청에 실패했습니다.');
+      if (terminalBtn) { terminalBtn.disabled = false; terminalBtn.textContent = '단말기 취소'; }
+      return;
+    }
+
+    // 단말기가 결제를 처리하면 socket 이벤트로 결과 수신 (toss_history_cancel_result)
+    alert('단말기에서 취소를 진행해주세요.\n결과를 기다리는 중입니다...');
+  } catch (e) {
+    alert('네트워크 오류가 발생했습니다.');
+    if (terminalBtn) { terminalBtn.disabled = false; terminalBtn.textContent = '단말기 취소'; }
+  }
+}
 
 async function cancelPayment() {
   if (!_currentItem) return;

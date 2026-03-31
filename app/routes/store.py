@@ -932,6 +932,71 @@ def cancel_payment():
     return jsonify({'status': 'ok', 'needs_terminal_cancel': has_card, 'message': msg})
 
 
+@store_bp.route('/cancel_toss_payment', methods=['POST'])
+@login_required
+def cancel_toss_payment():
+    """결제 이력 페이지에서 뒤늦은 단말기 취소 요청"""
+    import uuid as _uuid
+    import time as _time
+    from app.models import TablePaymentList
+    from app.routes.pos import _pending_payments
+
+    data = request.get_json()
+    tpl_id = data.get('table_payment_list_id')
+    if not tpl_id:
+        return jsonify({'error': '잘못된 요청입니다.'}), 400
+
+    tpl = TablePaymentList.query.filter_by(id=tpl_id, store_id=current_user.id).first()
+    if not tpl:
+        return jsonify({'error': '결제 내역을 찾을 수 없습니다.'}), 404
+
+    ph = json.loads(tpl.payment_history) if tpl.payment_history else {}
+
+    cancel_data = None
+    if ph.get('toss_details'):
+        # 카드 결제
+        details = ph['toss_details']
+        cancel_data = {
+            'paymentKey': details.get('paymentKey') or ph.get('toss_payment_key', ''),
+            'paymentMethod': details.get('paymentMethod', 'CARD'),
+            'timestamp': details.get('timestamp') or ph.get('toss_timestamp', ''),
+            'approvalNumber': (details.get('card') or {}).get('approvalNo') or ph.get('toss_approval_no', ''),
+            'tax': ph.get('toss_tax') or round((details.get('totalAmount') or 0) / 11),
+            'supplyValue': ph.get('toss_supply_value') or round((details.get('totalAmount') or 0) * 10 / 11),
+            'tip': 0,
+        }
+    elif ph.get('toss_payment_key') and ph.get('toss_cash_receipt'):
+        # 현금 영수증 결제
+        cancel_data = {
+            'paymentKey': ph.get('toss_payment_key', ''),
+            'paymentMethod': 'CASH',
+            'timestamp': ph.get('toss_timestamp', ''),
+            'approvalNumber': (ph.get('toss_cash_receipt') or {}).get('approvalNumber', ''),
+            'tax': ph.get('toss_tax', 0),
+            'supplyValue': ph.get('toss_supply_value', 0),
+            'tip': 0,
+            'isSelfIssuance': (ph.get('toss_cash_receipt') or {}).get('isSelfIssuance', False),
+        }
+
+    if not cancel_data:
+        return jsonify({'error': 'Toss 결제 정보가 없어 단말기 취소를 진행할 수 없습니다.'}), 400
+
+    payment_id = str(_uuid.uuid4())[:8]
+    _pending_payments[payment_id] = {
+        'payment_id': payment_id,
+        'store_id': current_user.id,
+        'table_id': tpl.table_id,
+        'order': None,
+        'payment_type': 'cancel',
+        'cancel_data': cancel_data,
+        'table_payment_list_id': tpl_id,
+        'status': 'pending',
+        'last_active_at': _time.time(),
+    }
+
+    return jsonify({'payment_id': payment_id, 'status': 'ok'})
+
+
 @store_bp.route('/confirm_staff_call', methods=['POST'])
 @login_required
 def api_confirm_staff_call():

@@ -35,6 +35,7 @@ _pending_payments = {}       # payment_id → payment data
 _terminal_ws = {}            # store_id → ws_address (단말기 WS 서버 주소)
 _socket_store_map = {}       # sid → store_id (단말기 연결 추적)
 _completed_payments = {}     # payment_id → 승인 완료 데이터 + 확정/취소 상태
+_cash_receipt_cancels = {}   # payment_id → 현금영수증 취소 대기 데이터
 
 
 @pos_bp.route('/toss/auth/verify', methods=['GET'])
@@ -405,10 +406,37 @@ def submit_toss_result():
     payment_id = data.get('payment_id')
     table_id = data.get('table_id')
     result = data.get('result')
+    tax = data.get('tax')
+    supply_value = data.get('supply_value')
 
     # pop 전에 payment_type 추출 (현금/카드 구분)
     pending = _pending_payments.get(payment_id)
     payment_type = pending.get('payment_type', 'card') if pending else data.get('payment_type', 'card')
+
+    # ── payment_type == 'cancel': 이력 페이지 뒤늦은 취소 처리 ──────────────
+    if payment_type == 'cancel':
+        _pending_payments.pop(payment_id, None)
+        tpl_id = pending.get('table_payment_list_id') if pending else None
+        if result and result.get('type') == 'SUCCESS' and tpl_id:
+            from app.models import TablePaymentList, Payment
+            from datetime import datetime as dt
+            tpl = db.session.query(TablePaymentList).filter_by(id=tpl_id).first()
+            if tpl:
+                for p in Payment.query.filter_by(table_payment_list_id=tpl_id).all():
+                    if p.payment_status != 2:
+                        p.payment_status = 2
+                ph = json.loads(tpl.payment_history) if tpl.payment_history else {}
+                ph['toss_cancel_result'] = result
+                ph['toss_cancel_time'] = dt.now().isoformat()
+                tpl.payment_history = json.dumps(ph)
+                db.session.commit()
+        print(f'[Toss] 이력 취소 결과: payment_id={payment_id}, type={result.get("type") if result else "N/A"}')
+        socketio.emit('toss_history_cancel_result', {
+            'payment_id': payment_id,
+            'table_id': table_id,
+            'result': result,
+        }, to='pos_group')
+        return jsonify({'status': 'ok'})
 
     result_type = result.get('type') if result else None
     if result_type in ('CANCELED', 'TIMEOUT') and pending:
@@ -427,10 +455,20 @@ def submit_toss_result():
             'payment_id': payment_id,
             'table_id': table_id,
             'result': result,
-            'tax': data.get('tax'),
-            'supply_value': data.get('supply_value'),
+            'tax': tax,
+            'supply_value': supply_value,
             'status': 'pending_confirmation',  # pending_confirmation / cancel_requested / confirmed
         }
+
+    # 현금영수증 발급 성공 시 취소 대기 등록
+    if result.get('type') == 'SUCCESS' and payment_type == 'cash':
+        resp = result.get('response') or {}
+        if resp.get('cash'):
+            _cash_receipt_cancels[payment_id] = {
+                'status': 'pending',
+                'table_id': table_id,
+                'table_payment_list_id': None,
+            }
 
     # POS에 결과 전송 (payment_type 포함 — 현금/카드 구분용)
     socketio.emit('toss_payment_result', {
@@ -438,6 +476,8 @@ def submit_toss_result():
         'table_id': table_id,
         'result': result,
         'payment_type': payment_type,
+        'tax': tax,
+        'supply_value': supply_value,
     }, to='pos_group')
 
     return jsonify({'status': 'ok'})
@@ -909,9 +949,113 @@ def update_cash_receipt():
     if not item:
         return jsonify({'error': 'not found'}), 404
     ph = json.loads(item.payment_history) if item.payment_history else {}
-    ph['toss_cash_receipt'] = cash_receipt
+    if cash_receipt:
+        ph['toss_cash_receipt'] = cash_receipt
+    if data.get('payment_key'):
+        ph['toss_payment_key'] = data['payment_key']
+    if data.get('tax') is not None:
+        ph['toss_tax'] = data['tax']
+    if data.get('supply_value') is not None:
+        ph['toss_supply_value'] = data['supply_value']
+    if data.get('timestamp'):
+        ph['toss_timestamp'] = data['timestamp']
     item.payment_history = json.dumps(ph)
     db.session.commit()
+    # 현금영수증 취소 대기에 tpl_id 연결
+    payment_id = data.get('payment_id')
+    if payment_id and payment_id in _cash_receipt_cancels:
+        _cash_receipt_cancels[payment_id]['table_payment_list_id'] = tpl_id
+    return jsonify({'status': 'ok'})
+
+
+@pos_bp.route('/payment/save_refund_result', methods=['PATCH'])
+@login_required
+def save_refund_result():
+    """환불 성공 결과 DB 저장 — payment_status=2, toss_cancel_result 기록"""
+    from app.models import TablePaymentList, Payment
+    from datetime import datetime as dt
+    data = request.get_json()
+    tpl_id = data.get('table_payment_list_id')
+    cancel_result = data.get('cancel_result')
+    if not tpl_id:
+        return jsonify({'error': 'table_payment_list_id required'}), 400
+    store_id = current_user.id
+    tpl = db.session.query(TablePaymentList).filter_by(id=tpl_id, store_id=store_id).first()
+    if not tpl:
+        return jsonify({'error': 'not found'}), 404
+    for p in Payment.query.filter_by(table_payment_list_id=tpl_id).all():
+        if p.payment_status != 2:
+            p.payment_status = 2
+    ph = json.loads(tpl.payment_history) if tpl.payment_history else {}
+    if cancel_result:
+        ph['toss_cancel_result'] = cancel_result
+    ph['toss_cancel_time'] = dt.now().isoformat()
+    tpl.payment_history = json.dumps(ph)
+    db.session.commit()
+    return jsonify({'status': 'ok'})
+
+
+@pos_bp.route('/toss/cash_receipt_cancel', methods=['POST'])
+@login_required
+def cash_receipt_cancel():
+    """POS에서 현금영수증 취소 요청 → 단말기 폴링으로 감지"""
+    data = request.get_json()
+    payment_id = data.get('payment_id')
+    if not payment_id or payment_id not in _cash_receipt_cancels:
+        return jsonify({'error': '취소 정보를 찾을 수 없습니다.'}), 404
+    _cash_receipt_cancels[payment_id]['status'] = 'cancel_requested'
+    print(f'[Toss] 현금영수증 취소 요청: payment_id={payment_id}')
+    return jsonify({'status': 'ok'})
+
+
+@pos_bp.route('/toss/cash_receipt_cancel_status', methods=['GET'])
+def get_cash_receipt_cancel_status():
+    """단말기가 현금영수증 취소 여부 폴링"""
+    from app.models import TerminalToken
+    from datetime import datetime
+    token = request.args.get('token')
+    payment_id = request.args.get('payment_id')
+    if token:
+        record = TerminalToken.query.filter_by(token=token).first()
+        if record:
+            record.last_polled_at = datetime.now()
+            db.session.commit()
+    if not payment_id or payment_id not in _cash_receipt_cancels:
+        return jsonify({'status': 'expired'})
+    return jsonify({'status': _cash_receipt_cancels[payment_id].get('status', 'pending')})
+
+
+@pos_bp.route('/toss/cash_receipt_cancel_result', methods=['POST'])
+def submit_cash_receipt_cancel_result():
+    """단말기가 현금영수증 취소 결과 전송 → DB 저장 + POS emit"""
+    from app.models import TablePaymentList, Payment
+    from datetime import datetime as dt
+    data = request.get_json()
+    payment_id = data.get('payment_id')
+    table_id = data.get('table_id')
+    result = data.get('result')
+
+    cancel_info = _cash_receipt_cancels.pop(payment_id, None)
+    tpl_id = cancel_info.get('table_payment_list_id') if cancel_info else None
+
+    if result and result.get('type') == 'SUCCESS' and tpl_id:
+        tpl = db.session.query(TablePaymentList).filter_by(id=tpl_id).first()
+        if tpl:
+            for p in Payment.query.filter_by(table_payment_list_id=tpl_id).all():
+                if p.payment_status != 2:
+                    p.payment_status = 2
+            ph = json.loads(tpl.payment_history) if tpl.payment_history else {}
+            ph['toss_cancel_result'] = result
+            ph['toss_cancel_time'] = dt.now().isoformat()
+            tpl.payment_history = json.dumps(ph)
+            db.session.commit()
+
+    print(f'[Toss] 현금영수증 취소 결과: payment_id={payment_id}, type={result.get("type") if result else "N/A"}')
+    socketio.emit('toss_cash_receipt_cancel_result', {
+        'payment_id': payment_id,
+        'table_id': table_id,
+        'result': result,
+    }, to='pos_group')
     return jsonify({'status': 'ok'})
 
 
