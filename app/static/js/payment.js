@@ -1098,6 +1098,7 @@ function _openCashReceiptModal() {
         <button id="cr-issue-btn" class="cr-btn cr-btn-issue">발급 신청</button>
         <div class="cr-divider"></div>
         <button id="cr-direct-btn" class="cr-btn cr-btn-direct">단말기에서 직접 입력</button>
+        <div class="cr-or">or</div>
         <button id="cr-no-receipt-btn" class="cr-btn cr-btn-no-receipt">발급 안함</button>
       </div>
     </div>

@@ -1858,9 +1858,9 @@ main section nav {
   border: 1px solid #E5E7EB;
 }
 .cr-btn-direct {
-  background: #E8F7F6;
-  color: #1FAA9C;
-  border: 1px solid #1FAA9C;
+  background: #F9FAFB;
+  color: #374151;
+  border: 1px solid #D1D5DB;
 }
 .cr-btn-issue {
   background: #1FAA9C;
@@ -1891,6 +1891,14 @@ main section nav {
   border-color: #1FAA9C;
   background: #E8F7F6;
   color: #1FAA9C;
+}
+
+/* or 구분 */
+.cr-or {
+  text-align: center;
+  color: #9CA3AF;
+  font-size: 13px;
+  margin: -2px 0;
 }
 
 /* 번호 입력 */
