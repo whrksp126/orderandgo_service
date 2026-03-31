@@ -1088,17 +1088,17 @@ function _openCashReceiptModal() {
         <i class="ph-bold ph-x cr-close-icon" onclick="_cancelCashPayment()"></i>
       </div>
       <div class="modal-body cash-receipt-body">
-        <button id="cr-no-receipt-btn" class="cr-btn cr-btn-no-receipt">발급 안함</button>
-        <button id="cr-direct-btn" class="cr-btn cr-btn-direct">단말기에서 직접 입력</button>
-        <div class="cr-divider"><span>직접 발급</span></div>
         <div class="cr-type-btns">
-          <button class="cr-type-btn" data-type="CONSUMER">소득공제</button>
-          <button class="cr-type-btn" data-type="BUSINESS">지출증빙</button>
+          <button class="cr-type-btn active" data-type="CONSUMER">개인</button>
+          <button class="cr-type-btn" data-type="BUSINESS">사업자</button>
         </div>
         <input id="cr-number-input" type="text" inputmode="numeric"
-          placeholder="전화번호 또는 사업자번호 (숫자만)"
+          placeholder="전화번호 (숫자만)"
           class="cr-number-input" />
         <button id="cr-issue-btn" class="cr-btn cr-btn-issue">발급 신청</button>
+        <div class="cr-divider"></div>
+        <button id="cr-direct-btn" class="cr-btn cr-btn-direct">단말기에서 직접 입력</button>
+        <button id="cr-no-receipt-btn" class="cr-btn cr-btn-no-receipt">발급 안함</button>
       </div>
     </div>
   `;
@@ -1148,7 +1148,7 @@ function _openCashReceiptModal() {
     const activeBtn = modal.querySelector('.cr-type-btn.active');
     const issuerType = activeBtn?.dataset.type || null;
     const identityNumber = document.getElementById('cr-number-input')?.value.trim().replace(/[^0-9]/g, '') || null;
-    if (!issuerType) { showToast('소득공제 또는 지출증빙을 선택해주세요.', 'info'); return; }
+    if (!issuerType) { showToast('개인 또는 사업자를 선택해주세요.', 'info'); return; }
     if (!identityNumber) { showToast('현금영수증 번호를 입력해주세요.', 'info'); return; }
     modal.remove();
     _processCashPayment(issuerType, identityNumber);

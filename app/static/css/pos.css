@@ -1837,7 +1837,6 @@ main section nav {
 .cash-receipt-content { width: 380px; max-width: 95vw; }
 
 .cash-receipt-body {
-  padding: 16px 20px 20px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -1870,18 +1869,9 @@ main section nav {
 
 /* 구분선 */
 .cr-divider {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #9CA3AF;
-  font-size: 13px;
-  margin: 4px 0;
-}
-.cr-divider::before, .cr-divider::after {
-  content: '';
-  flex: 1;
   height: 1px;
   background: #E5E7EB;
+  margin: 4px 0;
 }
 
 /* 타입 버튼 */
