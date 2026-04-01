@@ -851,11 +851,82 @@ const clickSearchMenuData = async (event) => {
   allMenuData = result;
   createMenuTable(result);
 }
+// ===== 커스텀 드롭다운 컨트롤러 =====
+
+// hover / keyboard-focus 스타일 주입 (CSS 파일 미수정)
+(() => {
+  const style = document.createElement('style');
+  style.textContent = `
+    section ul li .dropdown-box .dropdown-list li:hover { background: #f5f5f5; }
+    section ul li .dropdown-box .dropdown-list li.focused { background: #e8f5f3; color: #1FAA9C; }
+    section ul li .dropdown-box .btn-dropdown:focus { outline: 2px solid #1FAA9C; outline-offset: 1px; }
+    section ul li .dropdown-box .btn-dropdown:active { opacity: 0.8; }
+  `;
+  document.head.appendChild(style);
+})();
+
+// section 드롭다운 전체 닫기
+const closeAllSectionDropdowns = () => {
+  document.querySelectorAll('section .dropdown-list.active').forEach(list => {
+    list.classList.remove('active');
+    list.querySelectorAll('li.focused').forEach(li => li.classList.remove('focused'));
+  });
+};
+
+// 키보드 포커스 항목 설정
+const setDropdownFocusedItem = (items, idx) => {
+  items.forEach(li => li.classList.remove('focused'));
+  items[idx].classList.add('focused');
+  items[idx].scrollIntoView({ block: 'nearest' });
+};
+
+// 외부 클릭 시 section 드롭다운 닫기
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('section .dropdown-box')) closeAllSectionDropdowns();
+});
+
+// 키보드 컨트롤 (방향키 / Enter / Esc)
+document.addEventListener('keydown', (e) => {
+  const openList = document.querySelector('section .dropdown-list.active');
+  if (!openList) return;
+
+  const items = Array.from(openList.querySelectorAll('li'));
+  const focusedIdx = items.findIndex(li => li.classList.contains('focused'));
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    setDropdownFocusedItem(items, focusedIdx < items.length - 1 ? focusedIdx + 1 : 0);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    setDropdownFocusedItem(items, focusedIdx > 0 ? focusedIdx - 1 : items.length - 1);
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (focusedIdx >= 0) items[focusedIdx].click();
+  } else if (e.key === 'Escape') {
+    closeAllSectionDropdowns();
+    openList.closest('.dropdown-box')?.querySelector('.btn-dropdown')?.focus();
+  }
+});
+
+// ===== 커스텀 드롭다운 컨트롤러 끝 =====
+
 // 조회 구분 드롭다운 토글
 const clickDropDownBtn = (event) => {
   const _dropDownBtn = event.currentTarget;
   const _dropDownList = _dropDownBtn.nextElementSibling;
-  _dropDownList.classList.toggle('active');
+  const isOpening = !_dropDownList.classList.contains('active');
+
+  // 다른 section 드롭다운 닫기
+  closeAllSectionDropdowns();
+
+  if (isOpening) {
+    _dropDownList.classList.add('active');
+    // 현재 선택된 항목에 focused 표시
+    const currentId = _dropDownBtn.dataset.id;
+    const items = Array.from(_dropDownList.querySelectorAll('li'));
+    const currentIdx = items.findIndex(li => li.dataset.id == currentId);
+    if (currentIdx >= 0) setDropdownFocusedItem(items, currentIdx);
+  }
 }
 
 // 조회 구분 드롭다운 항목 선택
