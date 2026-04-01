@@ -265,7 +265,7 @@ async function _processTossRefund() {
     const data = await res.json();
 
     if (!res.ok) {
-      alert(data.error || '환불 요청에 실패했습니다.');
+      showToast(data.error || '환불 요청에 실패했습니다.', 'error');
       if (btn) { btn.disabled = false; btn.textContent = '환불 처리'; }
       return;
     }

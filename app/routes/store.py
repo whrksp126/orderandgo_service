@@ -979,6 +979,15 @@ def cancel_toss_payment():
     if not cancel_data:
         return jsonify({'error': 'Toss 결제 정보가 없어 단말기 취소를 진행할 수 없습니다.'}), 400
 
+    # 필수 필드 유효성 검사
+    missing = []
+    if not cancel_data.get('paymentKey'):
+        missing.append('결제 키')
+    if not cancel_data.get('approvalNumber'):
+        missing.append('승인번호')
+    if missing:
+        return jsonify({'error': f'환불에 필요한 정보({", ".join(missing)})가 저장되어 있지 않습니다.\n해당 결제는 단말기 직접 취소가 필요합니다.'}), 400
+
     payment_id = str(_uuid.uuid4())[:8]
     _pending_payments[payment_id] = {
         'payment_id': payment_id,
