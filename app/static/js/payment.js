@@ -24,7 +24,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (_cardBtn) { _cardBtn.disabled = false; _cardBtn.style.opacity = ''; }
 
     const result = data.result;
-    const isCash = data.payment_type === 'cash' || result.response?.paymentMethod === 'CASH';
+    const isCash = data.payment_type === 'cash' || (result.response || result)?.paymentMethod === 'CASH';
 
     if (result.type !== 'SUCCESS') {
       // 취소/타임아웃 → 단말기가 display 모드로 복귀 중이므로 displayPaymentId 복원
@@ -42,10 +42,10 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     if (isCash) {
+      const resp = result.response || result || {};
       if (_cashTablePaymentListId) {
         // 영수증 전용 모드: 결제는 이미 저장됨 → 영수증 정보 업데이트
-        if (result.response?.cash) {
-          const resp = result.response || {};
+        if (resp.cash) {
           fetch('/pos/payment/update_cash_receipt', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
@@ -67,8 +67,8 @@ window.addEventListener('DOMContentLoaded', () => {
       } else {
         // 기존 경로 (사전 저장 없이 terminal 결과로 DB 저장)
         const paymentData = setPayment(1);
-        if (result.response?.cash) {
-          paymentData.payment.payment_history.toss_cash_receipt = result.response.cash;
+        if (resp.cash) {
+          paymentData.payment.payment_history.toss_cash_receipt = resp.cash;
         }
         fetchData(`/pos/payment_history/${lastPath}`, 'POST', paymentData, (responseData) => {
           if (responseData.is_finished) {
@@ -219,7 +219,7 @@ function _closeCardPaymentModal() {
 function _openApprovalModal(paymentId, result) {
   document.querySelector('#approval-modal')?.remove();
 
-  const resp = result.response || {};
+  const resp = result.response || result || {};
   const approvalNo = resp.card?.approvalNo || resp.approvalNumber || '-';
   const amount = resp.totalAmount != null ? resp.totalAmount.toLocaleString() + '원' : '-';
 
@@ -262,11 +262,10 @@ async function confirmCardPayment() {
 
   // DB 저장 + 완료 모달
   const paymentData = setPayment(2); // CARD
-  if (result.response) {
-    paymentData.payment.payment_history.toss_payment_key = result.response.paymentKey || origPaymentKey || '';
-    paymentData.payment.payment_history.toss_approval_no = result.response.card?.approvalNo || result.response.approvalNumber || '';
-    paymentData.payment.payment_history.toss_details = result.response;
-  }
+  const respC = result.response || result || {};
+  paymentData.payment.payment_history.toss_payment_key = respC.paymentKey || origPaymentKey || '';
+  paymentData.payment.payment_history.toss_approval_no = respC.card?.approvalNo || respC.approvalNumber || '';
+  paymentData.payment.payment_history.toss_details = respC;
 
   fetchData(`/pos/payment_history/${lastPath}`, 'POST', paymentData, (responseData) => {
     if (responseData.is_finished) {
@@ -286,11 +285,10 @@ async function cancelCardApproval() {
 
   // ① 결제 성공 DB 저장
   const paymentData = setPayment(2);
-  if (result.response) {
-    paymentData.payment.payment_history.toss_payment_key = result.response.paymentKey || origPaymentKey || '';
-    paymentData.payment.payment_history.toss_approval_no = result.response.card?.approvalNo || result.response.approvalNumber || '';
-    paymentData.payment.payment_history.toss_details = result.response;
-  }
+  const respA = result.response || result || {};
+  paymentData.payment.payment_history.toss_payment_key = respA.paymentKey || origPaymentKey || '';
+  paymentData.payment.payment_history.toss_approval_no = respA.card?.approvalNo || respA.approvalNumber || '';
+  paymentData.payment.payment_history.toss_details = respA;
   const saveRes = await fetch(`/pos/payment_history/${lastPath}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
