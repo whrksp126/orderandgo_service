@@ -519,14 +519,13 @@ const clickAddOptionGroupBtn = (event) => {
 }
 
 // 메뉴 옵션 그룹 HTML 만들기
-// 메뉴 옵션 그룹 HTML 만들기
 const createMenuOptionGroupHtml = ({ id, name, option_type, options, show_price }) => {
-  const groupId = id || `new_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   const isShowPrice = show_price !== false;
 
   return `
     <div class="option_group" data-type="group" data-id="${id || ''}">
       <div class="group_header">
+        <span class="group_label">옵션 그룹명</span>
         <div class="group_meta">
           <div class="option_type_btn" onclick="toggleOptionTypeDropdown(event)">
             <span>${getOptionTypeLabel(option_type)}</span>
@@ -548,13 +547,13 @@ const createMenuOptionGroupHtml = ({ id, name, option_type, options, show_price 
             <input type="checkbox" data-title="show_price" ${isShowPrice ? 'checked' : ''}>
           </div>
         </div>
-        <div class="group_top">
-          <i class="ph ph-dots-six-vertical group_drag_btn"></i>
-          <input type="text" data-title="group_name" placeholder="그룹명 (예: 맵기 선택)" value="${name}">
-          <button class="delete_group_btn" onclick="this.closest('.option_group').remove()">
-            <i class="ph ph-trash"></i>
-          </button>
-        </div>
+      </div>
+      <div class="group_name_row">
+        <i class="ph ph-dots-six-vertical group_drag_btn"></i>
+        <input type="text" data-title="group_name" placeholder="그룹명 (예: 맵기 선택)" value="${name}">
+        <button class="delete_group_btn" onclick="this.closest('.option_group').remove()">
+          <i class="ph ph-trash"></i>
+        </button>
       </div>
       <div class="menu_options">
         ${createMenuOptionHtml(options, isShowPrice)}

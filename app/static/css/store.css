@@ -796,32 +796,40 @@ section ul li .submit_btn {
 .menu_option_groups {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0;
 }
 
 .option_group {
-  border: 1px solid #E8E8E8;
-  border-radius: 8px;
-  background: #FAFAFA;
-  /* overflow: hidden; */
+  border-bottom: 1px solid #F0F0F0;
+  padding-bottom: 4px;
+}
+
+.option_group:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
 }
 
 .option_group .group_header {
-  background: #F5F5F5;
-  padding: 10px 12px;
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  border-bottom: 1px solid #EBEBEB;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0 4px;
 }
 
-.option_group .group_top {
+.option_group .group_header .group_label {
+  font-size: 12px;
+  color: #AAAAAA;
+  font-weight: 500;
+}
+
+.option_group .group_name_row {
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 4px 0;
 }
 
-.option_group .group_top .group_drag_btn {
+.option_group .group_name_row .group_drag_btn {
   font-size: 20px;
   color: #BBB;
   cursor: grab;
@@ -829,11 +837,11 @@ section ul li .submit_btn {
   line-height: 1;
 }
 
-.option_group .group_top .group_drag_btn:active {
+.option_group .group_name_row .group_drag_btn:active {
   cursor: grabbing;
 }
 
-.option_group .group_top input {
+.option_group .group_name_row input {
   flex: 1;
   height: 36px;
   border: 1px solid #DDD;
@@ -843,7 +851,7 @@ section ul li .submit_btn {
   background: #FFF;
 }
 
-.option_group .group_top input:focus {
+.option_group .group_name_row input:focus {
   border-color: #1FAA9C;
   outline: none;
 }
@@ -851,7 +859,6 @@ section ul li .submit_btn {
 .option_group .group_meta {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
   gap: 12px;
 }
 
@@ -990,7 +997,7 @@ section ul li .submit_btn {
 .option_group .menu_options {
   display: flex;
   flex-direction: column;
-  padding: 0 12px;
+  padding: 0;
 }
 
 .option_item {
