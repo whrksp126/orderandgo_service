@@ -986,6 +986,8 @@ def cancel_toss_payment():
     if not cancel_data:
         return jsonify({'error': 'Toss 결제 정보가 없어 단말기 취소를 진행할 수 없습니다.'}), 400
 
+    print(f'[cancel_toss_payment][DEBUG] tpl_id={tpl_id}, ph_keys={list(ph.keys())}, cancel_data={json.dumps(cancel_data, ensure_ascii=False, default=str)}')
+
     # paymentKey만 필수 검증 (approvalNumber는 단말기 SDK가 판단)
     if not cancel_data.get('paymentKey'):
         return jsonify({'error': '환불에 필요한 정보(결제 키)가 저장되어 있지 않습니다.\n해당 결제는 단말기 직접 취소가 필요합니다.'}), 400

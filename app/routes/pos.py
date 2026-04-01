@@ -448,6 +448,8 @@ def submit_toss_result():
         _pending_payments.pop(payment_id, None)
 
     print(f'[Toss] 결제 결과 수신: payment_id={payment_id}, type={result.get("type")}, payment_type={payment_type}')
+    if result.get('type') == 'SUCCESS' and payment_type != 'cash':
+        print(f'[Toss][DEBUG] 카드 결제 결과 전체: {json.dumps(result, ensure_ascii=False, default=str)}')
 
     # 결제 성공 시 승인 취소를 위한 데이터 보관 (카드만)
     if result.get('type') == 'SUCCESS' and payment_type != 'cash':
