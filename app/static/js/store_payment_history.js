@@ -37,8 +37,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
 function fetchPaymentHistory() {
   const date = document.querySelector('#date-picker').value;
-  const filter = document.querySelector('#filter-select').value;
-  const sort = document.querySelector('#sort-select').value;
+  const filter = document.querySelector('#filter-select .btn-dropdown')?.dataset.id ?? 'all';
+  const sort = document.querySelector('#sort-select .btn-dropdown')?.dataset.id ?? 'time_desc';
 
   _showLoading(true);
 

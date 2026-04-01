@@ -43,20 +43,32 @@
         </li>
         <li>
           <h2>구분</h2>
-          <select id="filter-select" class="input_box ph-select">
-            <option value="all">전체</option>
-            <option value="paid">결제 내역</option>
-            <option value="cancelled">취소 내역</option>
-          </select>
+          <div class="dropdown-box" id="filter-select">
+            <button class="input_box btn-dropdown" data-id="all" data-name="전체" onclick="clickDropDownBtn(event)">
+              <span>전체</span>
+              <i class="ph ph-caret-down"></i>
+            </button>
+            <ul class="dropdown-list">
+              <li onclick="clickCategory(event)" data-id="all" data-name="전체">전체</li>
+              <li onclick="clickCategory(event)" data-id="paid" data-name="결제 내역">결제 내역</li>
+              <li onclick="clickCategory(event)" data-id="cancelled" data-name="취소 내역">취소 내역</li>
+            </ul>
+          </div>
         </li>
         <li>
           <h2>정렬</h2>
-          <select id="sort-select" class="input_box ph-select">
-            <option value="time_desc">시간 (최신순)</option>
-            <option value="time_asc">시간 (오래된순)</option>
-            <option value="amount_desc">금액 (높은순)</option>
-            <option value="amount_asc">금액 (낮은순)</option>
-          </select>
+          <div class="dropdown-box" id="sort-select">
+            <button class="input_box btn-dropdown" data-id="time_desc" data-name="시간 (최신순)" onclick="clickDropDownBtn(event)">
+              <span>시간 (최신순)</span>
+              <i class="ph ph-caret-down"></i>
+            </button>
+            <ul class="dropdown-list">
+              <li onclick="clickCategory(event)" data-id="time_desc" data-name="시간 (최신순)">시간 (최신순)</li>
+              <li onclick="clickCategory(event)" data-id="time_asc" data-name="시간 (오래된순)">시간 (오래된순)</li>
+              <li onclick="clickCategory(event)" data-id="amount_desc" data-name="금액 (높은순)">금액 (높은순)</li>
+              <li onclick="clickCategory(event)" data-id="amount_asc" data-name="금액 (낮은순)">금액 (낮은순)</li>
+            </ul>
+          </div>
         </li>
         <li class="btn-li">
           <button class="submit_btn" onclick="fetchPaymentHistory()">조회</button>
@@ -169,8 +181,8 @@
   <!-- socket.io -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
   <script>const STORE_ID = {{ store_id | tojson }};</script>
-  <script src="/static/js/common.js"></script>
-  <script src="/static/js/store_payment_history.js?v=6"></script>
+  <script src="/static/js/common.js?v=2"></script>
+  <script src="/static/js/store_payment_history.js?v=7"></script>
 </body>
 
 </html>

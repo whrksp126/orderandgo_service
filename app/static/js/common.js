@@ -1083,3 +1083,116 @@ const tableOverlay = new TableOverlay();
 const showOverlay = (options) => {
   tableOverlay.show(options);
 };
+
+// ===== 공통 커스텀 드롭다운 컨트롤러 =====
+
+// hover / keyboard-focus 스타일 주입
+(() => {
+  const style = document.createElement('style');
+  style.textContent = `
+    section ul li .dropdown-box .dropdown-list li:hover { background: #f5f5f5; }
+    section ul li .dropdown-box .dropdown-list li.focused { background: #e8f5f3; color: #1FAA9C; }
+    section ul li .dropdown-box .btn-dropdown:focus { outline: none; border-color: #1FAA9C; }
+    section ul li .dropdown-box .btn-dropdown:active { opacity: 0.8; }
+  `;
+  document.head.appendChild(style);
+})();
+
+// section 드롭다운 전체 닫기
+function closeAllSectionDropdowns() {
+  document.querySelectorAll('section .dropdown-list.active').forEach(list => {
+    list.classList.remove('active');
+    list.querySelectorAll('li.focused').forEach(li => li.classList.remove('focused'));
+  });
+}
+
+// 키보드 포커스 항목 설정
+function setDropdownFocusedItem(items, idx) {
+  items.forEach(li => li.classList.remove('focused'));
+  items[idx].classList.add('focused');
+  items[idx].scrollIntoView({ block: 'nearest' });
+}
+
+// 드롭다운 버튼 클릭 토글
+function clickDropDownBtn(event) {
+  const _dropDownBtn = event.currentTarget;
+  const _dropDownList = _dropDownBtn.nextElementSibling;
+  const isOpening = !_dropDownList.classList.contains('active');
+
+  closeAllSectionDropdowns();
+
+  if (isOpening) {
+    _dropDownList.classList.add('active');
+    const currentId = _dropDownBtn.dataset.id;
+    const items = Array.from(_dropDownList.querySelectorAll('li'));
+    const currentIdx = items.findIndex(li => li.dataset.id == currentId);
+    if (currentIdx >= 0) setDropdownFocusedItem(items, currentIdx);
+  }
+}
+
+// 드롭다운 항목 선택
+function clickCategory(event) {
+  const _target = event.currentTarget;
+  const _dropDownList = _target.closest('.dropdown-list');
+  const _dropDownBox = _dropDownList.closest('.dropdown-box');
+  const _dropDownBtn = _dropDownBox.querySelector('.btn-dropdown');
+  _dropDownBtn.querySelector('span').textContent = _target.dataset.name;
+  _dropDownBtn.dataset.id = _target.dataset.id;
+  _dropDownBtn.dataset.name = _target.dataset.name;
+  _dropDownList.classList.remove('active');
+}
+
+// 외부 클릭 시 닫기
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('section .dropdown-box')) closeAllSectionDropdowns();
+});
+
+let _sectionDropdownTabbing = false;
+
+// 키보드 컨트롤 (방향키 / Enter / Esc / Tab)
+document.addEventListener('keydown', (e) => {
+  const openList = document.querySelector('section .dropdown-list.active');
+
+  if (e.key === 'Tab') {
+    if (openList) {
+      closeAllSectionDropdowns();
+      _sectionDropdownTabbing = true;
+    }
+    return;
+  }
+
+  if (!openList) return;
+
+  const items = Array.from(openList.querySelectorAll('li'));
+  const focusedIdx = items.findIndex(li => li.classList.contains('focused'));
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    setDropdownFocusedItem(items, focusedIdx < items.length - 1 ? focusedIdx + 1 : 0);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    setDropdownFocusedItem(items, focusedIdx > 0 ? focusedIdx - 1 : items.length - 1);
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (focusedIdx >= 0) items[focusedIdx].click();
+  } else if (e.key === 'Escape') {
+    closeAllSectionDropdowns();
+    openList.closest('.dropdown-box')?.querySelector('.btn-dropdown')?.focus();
+  }
+});
+
+// Tab 이동 후 다음 포커스가 btn-dropdown이면 드롭다운 열기
+document.addEventListener('focusin', (e) => {
+  if (!_sectionDropdownTabbing) return;
+  _sectionDropdownTabbing = false;
+  if (e.target.classList.contains('btn-dropdown') && e.target.closest('section')) {
+    const _dropDownList = e.target.nextElementSibling;
+    if (!_dropDownList) return;
+    _dropDownList.classList.add('active');
+    const items = Array.from(_dropDownList.querySelectorAll('li'));
+    const currentIdx = items.findIndex(li => li.dataset.id == e.target.dataset.id);
+    if (currentIdx >= 0) setDropdownFocusedItem(items, currentIdx);
+  }
+});
+
+// ===== 공통 커스텀 드롭다운 컨트롤러 끝 =====
