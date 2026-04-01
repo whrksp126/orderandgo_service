@@ -823,26 +823,11 @@ section ul li .submit_btn {
 }
 
 .option_group .group_name_row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   padding: 4px 0;
 }
 
-.option_group .group_name_row .group_drag_btn {
-  font-size: 20px;
-  color: #BBB;
-  cursor: grab;
-  flex-shrink: 0;
-  line-height: 1;
-}
-
-.option_group .group_name_row .group_drag_btn:active {
-  cursor: grabbing;
-}
-
 .option_group .group_name_row input {
-  flex: 1;
+  width: 100%;
   height: 36px;
   border: 1px solid #DDD;
   border-radius: 5px;
@@ -854,6 +839,19 @@ section ul li .submit_btn {
 .option_group .group_name_row input:focus {
   border-color: #1FAA9C;
   outline: none;
+}
+
+.option_group .options_header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0 4px;
+}
+
+.option_group .options_header .options_label {
+  color: #000;
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .option_group .group_meta {
@@ -932,7 +930,7 @@ section ul li .submit_btn {
   color: #F43E25;
 }
 
-.option_group .group_header .is_show_price_toggle {
+.option_group .options_header .is_show_price_toggle {
   display: flex;
   align-items: center;
   gap: 2px;
@@ -940,7 +938,7 @@ section ul li .submit_btn {
   color: #888;
 }
 
-.option_group .group_header .is_show_price_toggle button {
+.option_group .options_header .is_show_price_toggle button {
   position: relative;
   width: 36px;
   height: 18px;
@@ -951,11 +949,11 @@ section ul li .submit_btn {
   border: none;
 }
 
-.option_group .group_header .is_show_price_toggle button[data-active="true"] {
+.option_group .options_header .is_show_price_toggle button[data-active="true"] {
   background: #1FAA9C;
 }
 
-.option_group .group_header .is_show_price_toggle button .ball {
+.option_group .options_header .is_show_price_toggle button .ball {
   width: 14px;
   height: 14px;
   border-radius: 50%;
@@ -964,11 +962,11 @@ section ul li .submit_btn {
   transform: translateX(0);
 }
 
-.option_group .group_header .is_show_price_toggle button[data-active="true"] .ball {
+.option_group .options_header .is_show_price_toggle button[data-active="true"] .ball {
   transform: translateX(18px);
 }
 
-.option_group .group_header .is_show_price_toggle input[type="checkbox"] {
+.option_group .options_header .is_show_price_toggle input[type="checkbox"] {
   display: none;
 }
 
@@ -1009,18 +1007,6 @@ section ul li .submit_btn {
 
 .option_item:last-child {
   border-bottom: none;
-}
-
-.option_item .drag_btn {
-  font-size: 18px;
-  color: #BBB;
-  cursor: grab;
-  flex-shrink: 0;
-  line-height: 1;
-}
-
-.option_item .drag_btn:active {
-  cursor: grabbing;
 }
 
 .option_item input[data-title="option_name"] {

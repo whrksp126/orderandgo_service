@@ -474,28 +474,7 @@ const clickCallMenuData = (event) => {
   fetchData(`/store/get_menu`, 'GET', { menu_id }, onSuccess)
 }
 
-const setMenuOptionDrag = () => {
-  // 1. 옵션 그룹 드래그 (그룹 간 순서 변경)
-  const groupContainer = document.querySelector('.menu_option_groups');
-  if (groupContainer) {
-    Sortable.create(groupContainer, {
-      animation: 150,
-      handle: ".group_drag_btn",
-      group: "option_groups" // 그룹끼리만 이동 가능하게
-    });
-  }
-
-  // 2. 옵션 드래그 (그룹 내 옵션 순서 변경)
-  // 모든 .menu_options 컨테이너에 대해 Sortable 적용
-  const optionContainers = document.querySelectorAll('.menu_options');
-  optionContainers.forEach(el => {
-    Sortable.create(el, {
-      animation: 150,
-      handle: ".drag_btn",
-      group: "options" // 옵션끼리만 이동 가능하게 (다른 그룹으로 이동 가능하게 하려면 같은 그룹명 사용)
-    });
-  });
-}
+const setMenuOptionDrag = () => {}
 
 // 메뉴 추가 버튼 클릭 시
 const clickAddMenuBtn = (event) => {
@@ -517,7 +496,6 @@ const clickAddOptionGroupBtn = (event) => {
   const _groupsEl = document.querySelector('.menu_option_groups');
   const html = createMenuOptionGroupHtml({ name: '', option_type: 'REQUIRED_SINGLE', options: [] });
   _groupsEl.insertAdjacentHTML('beforeend', html);
-  setMenuOptionDrag(); // 드래그 핸들러 다시 초기화 (새로 추가된 요소 적용)
 }
 
 // 메뉴 옵션 그룹 HTML 만들기
@@ -528,6 +506,15 @@ const createMenuOptionGroupHtml = ({ id, name, option_type, options, show_price 
     <div class="option_group" data-type="group" data-id="${id || ''}">
       <div class="group_header">
         <span class="group_label">옵션 그룹명</span>
+        <button class="delete_group_btn" onclick="this.closest('.option_group').remove()">
+          <i class="ph ph-trash"></i>
+        </button>
+      </div>
+      <div class="group_name_row">
+        <input type="text" data-title="group_name" placeholder="그룹명 (예: 맵기 선택)" value="${name}">
+      </div>
+      <div class="options_header">
+        <span class="options_label">옵션</span>
         <div class="group_meta">
           <div class="option_type_btn" onclick="toggleOptionTypeDropdown(event)">
             <span>${getOptionTypeLabel(option_type)}</span>
@@ -549,13 +536,6 @@ const createMenuOptionGroupHtml = ({ id, name, option_type, options, show_price 
             <input type="checkbox" data-title="show_price" ${isShowPrice ? 'checked' : ''}>
           </div>
         </div>
-      </div>
-      <div class="group_name_row">
-        <i class="ph ph-dots-six-vertical group_drag_btn"></i>
-        <input type="text" data-title="group_name" placeholder="그룹명 (예: 맵기 선택)" value="${name}">
-        <button class="delete_group_btn" onclick="this.closest('.option_group').remove()">
-          <i class="ph ph-trash"></i>
-        </button>
       </div>
       <div class="menu_options">
         ${createMenuOptionHtml(options, isShowPrice)}
@@ -583,7 +563,6 @@ const clickAddOptionBtn = (event) => {
 const createMenuOptionHtml = (optionsData, showPrice = true) => {
   return optionsData.map(({ name, price }) => `
     <div class="option_item">
-      <i class="ph ph-dots-six-vertical drag_btn"></i>
       <input data-title="option_name" data-type="form" type="text" value="${name}" placeholder="옵션명">
       <input data-title="option_price" data-type="form" type="text" value="${price}" placeholder="가격" style="${showPrice ? '' : 'display:none'}">
       <button class="delete_btn" onclick="clickDeleteOptionBtn(event)">
