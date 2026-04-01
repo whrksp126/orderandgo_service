@@ -474,7 +474,7 @@ button.red {
 }
 
 .custom-select__item {
-  padding: 10px 12px;
+  padding: 6px 12px;
   cursor: pointer;
   font-size: inherit;
   transition: background 0.1s;
