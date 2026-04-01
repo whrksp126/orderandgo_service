@@ -45,6 +45,14 @@ button.red {
   border-radius: 6px;
 }
 
+input:focus,
+select:focus,
+textarea:focus,
+.input_box:focus {
+  outline: none;
+  border-color: var(--border-color-1fa);
+}
+
 .ellipsis {
   white-space: nowrap;
   /* 텍스트가 한 줄로 표시되도록 설정합니다. */

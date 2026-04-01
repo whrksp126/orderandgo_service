@@ -859,7 +859,7 @@ const clickSearchMenuData = async (event) => {
   style.textContent = `
     section ul li .dropdown-box .dropdown-list li:hover { background: #f5f5f5; }
     section ul li .dropdown-box .dropdown-list li.focused { background: #e8f5f3; color: #1FAA9C; }
-    section ul li .dropdown-box .btn-dropdown:focus { outline: 2px solid #1FAA9C; outline-offset: 1px; }
+    section ul li .dropdown-box .btn-dropdown:focus { outline: none; border-color: #1FAA9C; }
     section ul li .dropdown-box .btn-dropdown:active { opacity: 0.8; }
   `;
   document.head.appendChild(style);
