@@ -403,9 +403,11 @@ const setMenuHtml = ({ id, imgList, name, price, description, category, option_g
 
       <div class="row option_row">
         <label for="" class="set_menu_options">
+        <!--
           <div class="option_header">
             <span>옵션 그룹</span>
           </div>
+        -->
           <div class="menu_option_groups">
             ${option_groups.map((group) => createMenuOptionGroupHtml(group)).join("")}
           </div>

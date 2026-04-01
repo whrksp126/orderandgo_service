@@ -817,9 +817,9 @@ section ul li .submit_btn {
 }
 
 .option_group .group_header .group_label {
-  font-size: 12px;
-  color: #AAAAAA;
-  font-weight: 500;
+  color: #000;
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .option_group .group_name_row {
@@ -859,7 +859,7 @@ section ul li .submit_btn {
 .option_group .group_meta {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
 }
 
 .option_group .group_meta .option_type_btn {
@@ -935,7 +935,7 @@ section ul li .submit_btn {
 .option_group .group_header .is_show_price_toggle {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 2px;
   font-size: 12px;
   color: #888;
 }
@@ -1005,7 +1005,6 @@ section ul li .submit_btn {
   align-items: center;
   gap: 8px;
   padding: 8px 0;
-  border-bottom: 1px solid #F0F0F0;
 }
 
 .option_item:last-child {
