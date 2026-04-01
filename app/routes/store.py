@@ -954,10 +954,11 @@ def cancel_toss_payment():
     if ph.get('toss_details'):
         # 카드 결제
         details = ph['toss_details']
+        ts = details.get('timestamp') or ph.get('toss_timestamp')
         cancel_data = {
             'paymentKey': details.get('paymentKey') or ph.get('toss_payment_key', ''),
             'paymentMethod': details.get('paymentMethod', 'CARD'),
-            'timestamp': details.get('timestamp') or ph.get('toss_timestamp', ''),
+            'timestamp': ts if isinstance(ts, (int, float)) else 0,
             'approvalNumber': (
                 (details.get('card') or {}).get('approvalNo')
                 or details.get('approvalNumber', '')
@@ -970,10 +971,11 @@ def cancel_toss_payment():
         }
     elif ph.get('toss_payment_key') and ph.get('toss_cash_receipt'):
         # 현금 영수증 결제
+        cash_ts = ph.get('toss_timestamp')
         cancel_data = {
             'paymentKey': ph.get('toss_payment_key', ''),
             'paymentMethod': 'CASH',
-            'timestamp': ph.get('toss_timestamp', ''),
+            'timestamp': cash_ts if isinstance(cash_ts, (int, float)) else 0,
             'approvalNumber': (ph.get('toss_cash_receipt') or {}).get('approvalNumber', ''),
             'tax': ph.get('toss_tax', 0),
             'supplyValue': ph.get('toss_supply_value', 0),

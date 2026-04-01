@@ -87,7 +87,7 @@ window.addEventListener('DOMContentLoaded', () => {
       _pData.payment.payment_history.toss_details = _r;
       _pData.payment.payment_history.toss_tax = data.tax || 0;
       _pData.payment.payment_history.toss_supply_value = data.supply_value || 0;
-      _pData.payment.payment_history.toss_timestamp = _r.timestamp || '';
+      _pData.payment.payment_history.toss_timestamp = (typeof _r.timestamp === 'number') ? _r.timestamp : 0;
       const _saved = await fetch(`/pos/payment_history/${lastPath}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
