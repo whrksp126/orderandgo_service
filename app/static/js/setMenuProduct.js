@@ -885,9 +885,20 @@ document.addEventListener('click', (e) => {
   if (!e.target.closest('section .dropdown-box')) closeAllSectionDropdowns();
 });
 
-// 키보드 컨트롤 (방향키 / Enter / Esc)
+let _tabbing = false;
+
+// 키보드 컨트롤 (방향키 / Enter / Esc / Tab)
 document.addEventListener('keydown', (e) => {
   const openList = document.querySelector('section .dropdown-list.active');
+
+  if (e.key === 'Tab') {
+    if (openList) {
+      closeAllSectionDropdowns();
+      _tabbing = true;
+    }
+    return;
+  }
+
   if (!openList) return;
 
   const items = Array.from(openList.querySelectorAll('li'));
@@ -905,6 +916,20 @@ document.addEventListener('keydown', (e) => {
   } else if (e.key === 'Escape') {
     closeAllSectionDropdowns();
     openList.closest('.dropdown-box')?.querySelector('.btn-dropdown')?.focus();
+  }
+});
+
+// Tab 이동 후 다음 포커스 대상이 btn-dropdown이면 드롭다운 열기
+document.addEventListener('focusin', (e) => {
+  if (!_tabbing) return;
+  _tabbing = false;
+  if (e.target.classList.contains('btn-dropdown') && e.target.closest('section')) {
+    const _dropDownList = e.target.nextElementSibling;
+    if (!_dropDownList) return;
+    _dropDownList.classList.add('active');
+    const items = Array.from(_dropDownList.querySelectorAll('li'));
+    const currentIdx = items.findIndex(li => li.dataset.id == e.target.dataset.id);
+    if (currentIdx >= 0) setDropdownFocusedItem(items, currentIdx);
   }
 });
 
