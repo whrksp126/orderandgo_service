@@ -803,7 +803,7 @@ section ul li .submit_btn {
   border: 1px solid #E8E8E8;
   border-radius: 8px;
   background: #FAFAFA;
-  overflow: hidden;
+  /* overflow: hidden; */
 }
 
 .option_group .group_header {
@@ -1735,6 +1735,7 @@ section ul li .submit_btn {
   background: #FFF;
   cursor: pointer;
   min-width: 160px;
+  padding: 0 12px;
 }
 
 .payment_history_page main {
@@ -1864,8 +1865,13 @@ section ul li .submit_btn {
 }
 
 @keyframes ph-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .spin-icon {

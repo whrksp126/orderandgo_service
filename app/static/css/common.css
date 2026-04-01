@@ -407,7 +407,7 @@ button.red {
   visibility: visible;
   max-height: 250px;
   height: initial;
-  overflow: scroll;
+  overflow: auto;
   opacity: 1;
 }
 

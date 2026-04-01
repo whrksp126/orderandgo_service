@@ -41,7 +41,7 @@ def create_menu_option_group(option_groups, menu_id):
             menu_option = MenuOption(
                 group_id=group.id,
                 name=opt['name'],
-                price=opt['price'],
+                price=int(opt['price']) if opt.get('price') not in (None, '', '-') else 0,
                 position=opt_index + 1
             )
             db.session.add(menu_option)
