@@ -778,7 +778,10 @@ def api_update_terminal_info():
 @store_bp.route('/payment_history', methods=['GET'])
 @login_required
 def payment_history_page():
-    return render_template('store_payment_history.html')
+    from app.models import Store
+    store = Store.query.filter_by(user_id=current_user.id).first()
+    store_id = store.id if store else None
+    return render_template('store_payment_history.html', store_id=store_id)
 
 
 @store_bp.route('/get_payment_history', methods=['GET'])

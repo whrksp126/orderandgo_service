@@ -168,8 +168,9 @@
 
   <!-- socket.io -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+  <script>const STORE_ID = {{ store_id | tojson }};</script>
   <script src="/static/js/common.js"></script>
-  <script src="/static/js/store_payment_history.js?v=5"></script>
+  <script src="/static/js/store_payment_history.js?v=6"></script>
 </body>
 
 </html>

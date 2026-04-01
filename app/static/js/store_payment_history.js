@@ -10,8 +10,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
   fetchPaymentHistory();
 
-  // 단말기 환불 결과 수신
-  if (typeof socket !== 'undefined') {
+  // 결제 이력 페이지 전용 소켓 룸 참여 + 환불 결과 수신
+  if (typeof socket !== 'undefined' && typeof STORE_ID !== 'undefined' && STORE_ID) {
+    socket.emit('store_history_login', { store_id: STORE_ID });
+
     socket.on('toss_history_cancel_result', (data) => {
       const r = data.result || {};
       const btn = document.querySelector('#detail-refund-btn');

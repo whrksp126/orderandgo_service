@@ -28,6 +28,15 @@ def pos_login(data):
         return {'msg': '로그인이 성공하여 POS 그룹에 추가되었습니다.'}
 
 
+@socketio.on('store_history_login')
+def store_history_login(data):
+    """결제 이력 페이지 소켓 룸 참여 (환불 결과 수신용)"""
+    store_id = data.get('store_id')
+    if store_id:
+        join_room(f'store_history_{store_id}')
+        emit('store_history_login_response', {'status': 'ok'})
+
+
 # ─── Toss Front Plugin ────────────────────────────────────────────────────────
 
 # 메모리 내 저장소 (서버 재시작과 무관한 단기 데이터만)
@@ -431,11 +440,15 @@ def submit_toss_result():
                 tpl.payment_history = json.dumps(ph)
                 db.session.commit()
         print(f'[Toss] 이력 취소 결과: payment_id={payment_id}, type={result.get("type") if result else "N/A"}')
-        socketio.emit('toss_history_cancel_result', {
+        cancel_store_id = pending.get('store_id') if pending else None
+        event_data = {
             'payment_id': payment_id,
             'table_id': table_id,
             'result': result,
-        }, to='pos_group')
+        }
+        socketio.emit('toss_history_cancel_result', event_data, to='pos_group')
+        if cancel_store_id:
+            socketio.emit('toss_history_cancel_result', event_data, to=f'store_history_{cancel_store_id}')
         return jsonify({'status': 'ok'})
 
     result_type = result.get('type') if result else None
