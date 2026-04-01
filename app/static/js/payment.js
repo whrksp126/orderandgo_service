@@ -83,8 +83,11 @@ window.addEventListener('DOMContentLoaded', () => {
       const _pData = setPayment(2);
       const _r = result.response || result || {};
       _pData.payment.payment_history.toss_payment_key = _r.paymentKey || data.payment_key || '';
-      _pData.payment.payment_history.toss_approval_no = _r.card?.approvalNo || _r.approvalNumber || '';
+      _pData.payment.payment_history.toss_approval_no = _r.card?.approvalNo || _r.approvalNumber || _r.approvalNo || '';
       _pData.payment.payment_history.toss_details = _r;
+      _pData.payment.payment_history.toss_tax = data.tax || 0;
+      _pData.payment.payment_history.toss_supply_value = data.supply_value || 0;
+      _pData.payment.payment_history.toss_timestamp = _r.timestamp || '';
       const _saved = await fetch(`/pos/payment_history/${lastPath}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
