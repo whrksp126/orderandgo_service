@@ -954,15 +954,16 @@ def cancel_toss_payment():
     if ph.get('toss_details'):
         # 카드 결제
         details = ph['toss_details']
-        ts = details.get('timestamp') or ph.get('toss_timestamp')
+        card = details.get('card') or {}
+        ts = card.get('timestamp') or details.get('timestamp') or ph.get('toss_timestamp')
         cancel_data = {
             'paymentKey': details.get('paymentKey') or ph.get('toss_payment_key', ''),
             'paymentMethod': details.get('paymentMethod', 'CARD'),
             'timestamp': ts if isinstance(ts, (int, float)) else 0,
             'approvalNumber': (
-                (details.get('card') or {}).get('approvalNo')
+                card.get('approvalNumber')
+                or card.get('approvalNo')
                 or details.get('approvalNumber', '')
-                or details.get('approvalNo', '')
                 or ph.get('toss_approval_no', '')
             ),
             'tax': ph.get('toss_tax') or round((details.get('totalAmount') or 0) / 11),
