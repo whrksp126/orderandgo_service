@@ -88,27 +88,46 @@ const createMenuTable = (data) => {
 // 셀렉트 박스 html 만들기
 const createSeleteBox = (category, fun, target, type, ko_category) => {
   const checkedCategorys = category[type].filter(({ checked }) => checked);
-  const selectedId = checkedCategorys.length > 0 ? checkedCategorys[0].id : '';
+  const selectedId = checkedCategorys.length > 0 ? checkedCategorys[0].id : 0;
+  const selectedName = checkedCategorys.length > 0 ? checkedCategorys[0].name : '';
   const isEmpty = category[type].length === 0;
   const defaultLabel = isEmpty ? '카테고리 없음' : ko_category;
+  const displayName = selectedName || defaultLabel;
 
   const html = `
-    <select class="input_box" onchange="${fun}(event)" ${isEmpty ? 'disabled' : ''}>
-      <option value="0" ${selectedId == '' || selectedId == 0 ? 'selected' : ''}>${defaultLabel}</option>
+    <button class="input_box btn-dropdown" data-id="${selectedId}" data-name="${displayName}" onclick="clickDropDownBtn(event)" ${isEmpty ? 'disabled' : ''}>
+      <span>${displayName}</span>
+      <i class="ph ph-caret-down"></i>
+    </button>
+    <ul class="dropdown-list">
+      <li onclick="clickCategoryItem(event, '${fun}')" data-id="0" data-name="${ko_category}">${ko_category}</li>
       ${category[type].map(({ id, name }) => `
-        <option value="${id}" ${id == selectedId ? 'selected' : ''}>${name}</option>
+        <li onclick="clickCategoryItem(event, '${fun}')" data-id="${id}" data-name="${name}">${name}</li>
       `).join('')}
-    </select>
-  `
+    </ul>
+  `;
   const _selectBox = document.querySelector(target);
   _selectBox.innerHTML = html;
 }
 
+// 카테고리 커스텀 드롭다운 항목 선택
+const clickCategoryItem = (event, fun) => {
+  const _target = event.currentTarget;
+  const _dropDownList = _target.closest('.dropdown-list');
+  const _dropDownBox = _dropDownList.closest('.dropdown-box');
+  const _dropDownBtn = _dropDownBox.querySelector('.btn-dropdown');
+  _dropDownBtn.querySelector('span').textContent = _target.dataset.name;
+  _dropDownBtn.dataset.id = _target.dataset.id;
+  _dropDownBtn.dataset.name = _target.dataset.name;
+  _dropDownList.classList.remove('active');
+  if (fun) window[fun](event);
+}
+
 // 메인 카테고리 셀렉트 박스에서 현재 메인 카테고리 변경 시
 const changeCategory = (event) => {
-  const target = event.target;
-  if (target.closest(".seletebox_main_category") == undefined) return;
-  const category_id = target.value;
+  const _target = event.currentTarget;
+  if (_target.closest(".seletebox_main_category") == undefined) return;
+  const category_id = _target.dataset.id;
   callSubCategoryList(category_id)
 }
 
@@ -815,10 +834,10 @@ const toggleSoldOut = (event) => {
 
 // 메뉴 조회 페이지 상단 조회 클릭 시
 const clickSearchMenuData = async (event) => {
-  let main_category_id = document.querySelector('.seletebox_main_category select').value;
-  main_category_id = main_category_id == '' || main_category_id == 0 ? null : Number(main_category_id);
-  let sub_category_id = document.querySelector('.seletebox_sub_category select').value;
-  sub_category_id = sub_category_id == '' || sub_category_id == 0 ? null : Number(sub_category_id);
+  let main_category_id = document.querySelector('.seletebox_main_category .btn-dropdown')?.dataset.id;
+  main_category_id = main_category_id == '' || main_category_id == 0 || main_category_id == undefined ? null : Number(main_category_id);
+  let sub_category_id = document.querySelector('.seletebox_sub_category .btn-dropdown')?.dataset.id;
+  sub_category_id = sub_category_id == '' || sub_category_id == 0 || sub_category_id == undefined ? null : Number(sub_category_id);
   const is_name = 0; // 이 부분은 일단 0으로 고정하거나 필요시 수정 (원본 코드 참조)
   const search = document.querySelector('.search_box').value ?? null;
 
