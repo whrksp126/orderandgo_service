@@ -3,8 +3,6 @@ let payment_history = undefined;
 
 // 현재 진행 중인 카드 결제 정보
 let _currentCardPayment = null; // { payment_id, store_id }
-// 승인 완료 후 확정 대기 중인 결제 정보
-let _pendingApproval = null; // { payment_id, table_id, result }
 // 현금 결제 단말기 payment_id (null = 오프라인)
 let _cashPaymentId = null;
 
@@ -95,44 +93,31 @@ window.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify(_pData),
       }).then(r => r.ok ? r.json() : null).catch(() => null);
 
-      _pendingApproval = {
-        payment_id: data.payment_id,
-        table_id: data.table_id,
-        result,
-        payment_key: data.payment_key || '',
-        table_payment_list_id: _saved?.table_payment_list_id || null,
-        is_finished: _saved?.is_finished || false,
-        db_save_failed: !_saved?.table_payment_list_id,
-      };
-      if (_pendingApproval.db_save_failed) {
+      if (!_saved?.table_payment_list_id) {
         showToast('결제 정보 저장 실패. 관리자에게 문의하세요.', 'error');
       }
-      _openApprovalModal(data.payment_id, result);
+
+      // 단말기 폴링 종료용 confirm_approval 전송 (승인 모달 없이 바로 완료)
+      await fetch('/pos/toss/confirm_approval', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payment_id: data.payment_id }),
+      }).catch(() => {});
+
+      if (_saved?.is_finished) {
+        createCompletedPaymentModal({ preventDefault: () => {} }, 'CARD');
+      } else {
+        location.reload();
+      }
     }
   });
 
-  // 승인 취소 결과 수신
+  // 승인 취소 결과 수신 (현재 결제 직후 환불은 store/payment_history에서 처리)
   socket.on('toss_cancel_result', async (data) => {
     if (String(data.table_id) !== String(lastPath)) return;
-    const tplId = _pendingApproval?.table_payment_list_id;
-    const dbSaveFailed = _pendingApproval?.db_save_failed;
-    _closeApprovalModal();
-    _pendingApproval = null;
-
     const r = data.result || {};
     if (r.type === 'SUCCESS' || r.type === 'CANCEL_SUCCESS') {
-      if (tplId) {
-        await fetch('/pos/payment/save_refund_result', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ table_payment_list_id: tplId, cancel_result: r }),
-        }).catch(() => {});
-        showToast('환불이 완료되었습니다.', 'success');
-      } else if (dbSaveFailed) {
-        alert('⚠️ 환불은 단말기에서 완료되었습니다.\n단, 결제 기록 저장에 실패했습니다.\n관리자에게 수동 확인을 요청하세요.');
-      } else {
-        showToast('환불이 완료되었습니다.', 'success');
-      }
+      showToast('환불이 완료되었습니다.', 'success');
       location.reload();
     } else {
       showToast('환불 처리 실패. 관리자에게 문의하세요.', 'error');
@@ -237,83 +222,6 @@ function _closeCardPaymentModal() {
   document.querySelector('#card-payment-modal')?.remove();
 }
 
-function _openApprovalModal(paymentId, result) {
-  document.querySelector('#approval-modal')?.remove();
-
-  const resp = result.response || result || {};
-  const approvalNo = resp.card?.approvalNo || resp.approvalNumber || '-';
-  const amount = resp.totalAmount != null ? resp.totalAmount.toLocaleString() + '원' : '-';
-
-  const modal = document.createElement('div');
-  modal.id = 'approval-modal';
-  modal.innerHTML = `
-    <div class="card-modal-overlay">
-      <div class="card-modal-box" style="position:relative;">
-        <button onclick="closeApprovalAndFinish()" style="position:absolute;top:8px;right:8px;background:none;border:none;font-size:20px;cursor:pointer;color:#999;line-height:1;">✕</button>
-        <div class="card-modal-icon">✅</div>
-        <h2>카드 승인 완료</h2>
-        <p style="margin:8px 0;font-size:14px;color:#555;">승인번호: <b>${approvalNo}</b> / ${amount}</p>
-        <p class="terminal-status-msg" style="color:#888;font-size:13px;">결제가 완료되었습니다.</p>
-        <div style="display:flex;gap:10px;margin-top:16px;">
-          <button class="card-modal-cancel-btn" style="flex:1;background:#e74c3c;" onclick="cancelCardApproval()">환불 요청</button>
-        </div>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(modal);
-}
-
-function _closeApprovalModal() {
-  document.querySelector('#approval-modal')?.remove();
-}
-
-async function closeApprovalAndFinish() {
-  if (!_pendingApproval) { _closeApprovalModal(); return; }
-  const { payment_id, is_finished } = _pendingApproval;
-
-  await fetch('/pos/toss/confirm_approval', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ payment_id }),
-  }).catch(() => {});
-
-  _closeApprovalModal();
-  _pendingApproval = null;
-
-  if (is_finished) {
-    createCompletedPaymentModal({ preventDefault: () => {} }, 'CARD');
-  } else {
-    location.reload();
-  }
-}
-
-async function confirmCardPayment() {
-  await closeApprovalAndFinish();
-}
-
-async function cancelCardApproval() {
-  if (!_pendingApproval) return;
-  const { payment_id } = _pendingApproval;
-
-  const btn = document.querySelector('#approval-modal .card-modal-cancel-btn');
-  if (btn) { btn.disabled = true; btn.textContent = '환불 요청 중...'; }
-
-  const res = await fetch('/pos/toss/cancel_approval', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ payment_id }),
-  }).catch(() => null);
-
-  if (!res || !res.ok) {
-    alert('환불 요청 실패. 다시 시도해주세요.');
-    if (btn) { btn.disabled = false; btn.textContent = '환불 요청'; }
-    return;
-  }
-
-  // 단말기가 requestPaymentCancel() 실행 → toss_cancel_result 소켓으로 결과 수신
-  const statusMsg = document.querySelector('#approval-modal .terminal-status-msg');
-  if (statusMsg) statusMsg.textContent = '단말기에서 환불 처리 중...';
-}
 
 function clickCancelCardPayment() {
   if (!_currentCardPayment) return;
