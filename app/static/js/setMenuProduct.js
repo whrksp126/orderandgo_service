@@ -819,7 +819,7 @@ const clickSearchMenuData = async (event) => {
   main_category_id = main_category_id == '' || main_category_id == 0 ? null : Number(main_category_id);
   let sub_category_id = document.querySelector('.seletebox_sub_category select').value;
   sub_category_id = sub_category_id == '' || sub_category_id == 0 ? null : Number(sub_category_id);
-  const is_name = window._searchTypeSelect ? Number(window._searchTypeSelect.getValue()) : 0;
+  const is_name = 0; // 이 부분은 일단 0으로 고정하거나 필요시 수정 (원본 코드 참조)
   const search = document.querySelector('.search_box').value ?? null;
 
   const fetchData = {};
@@ -832,17 +832,24 @@ const clickSearchMenuData = async (event) => {
   allMenuData = result;
   createMenuTable(result);
 }
-// 조회 구분 커스텀 셀렉트 초기화
-window._searchTypeSelect = new CustomSelect(
-  document.querySelector('.seletebox_menu'),
-  {
-    items: [
-      { value: '0', label: '전체' },
-      { value: '1', label: '메뉴명' }
-    ],
-    value: '0'
-  }
-);
+// 조회 구분 드롭다운 토글
+const clickDropDownBtn = (event) => {
+  const _dropDownBtn = event.currentTarget;
+  const _dropDownList = _dropDownBtn.nextElementSibling;
+  _dropDownList.classList.toggle('active');
+}
+
+// 조회 구분 드롭다운 항목 선택
+const clickCategory = (event) => {
+  const _target = event.currentTarget;
+  const _dropDownList = _target.closest('.dropdown-list');
+  const _dropDownBox = _dropDownList.closest('.dropdown-box');
+  const _dropDownBtn = _dropDownBox.querySelector('.btn-dropdown');
+  _dropDownBtn.querySelector('span').textContent = _target.dataset.name;
+  _dropDownBtn.dataset.id = _target.dataset.id;
+  _dropDownBtn.dataset.name = _target.dataset.name;
+  _dropDownList.classList.remove('active');
+}
 
 
 // ===== 인라인 카테고리 매니저 =====
