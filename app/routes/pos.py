@@ -471,6 +471,8 @@ def submit_toss_result():
             }
 
     # POS에 결과 전송 (payment_type 포함 — 현금/카드 구분용)
+    # pending은 이미 pop됐어도 변수에 참조가 남아있음
+    orig_payment_key = pending.get('payment_key', '') if pending else ''
     socketio.emit('toss_payment_result', {
         'payment_id': payment_id,
         'table_id': table_id,
@@ -478,6 +480,7 @@ def submit_toss_result():
         'payment_type': payment_type,
         'tax': tax,
         'supply_value': supply_value,
+        'payment_key': orig_payment_key,
     }, to='pos_group')
 
     return jsonify({'status': 'ok'})

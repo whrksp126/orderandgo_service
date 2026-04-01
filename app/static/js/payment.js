@@ -80,7 +80,12 @@ window.addEventListener('DOMContentLoaded', () => {
       }
     } else {
       // 카드 결제 — 승인 확정/취소 선택 모달
-      _pendingApproval = { payment_id: data.payment_id, table_id: data.table_id, result };
+      _pendingApproval = {
+        payment_id: data.payment_id,
+        table_id: data.table_id,
+        result,
+        payment_key: data.payment_key || '',
+      };
       _openApprovalModal(data.payment_id, result);
     }
   });
@@ -243,7 +248,7 @@ function _closeApprovalModal() {
 
 async function confirmCardPayment() {
   if (!_pendingApproval) return;
-  const { payment_id, table_id, result } = _pendingApproval;
+  const { payment_id, table_id, result, payment_key: origPaymentKey } = _pendingApproval;
 
   // 서버에 확정 신호 전송
   await fetch('/pos/toss/confirm_approval', {
@@ -258,7 +263,7 @@ async function confirmCardPayment() {
   // DB 저장 + 완료 모달
   const paymentData = setPayment(2); // CARD
   if (result.response) {
-    paymentData.payment.payment_history.toss_payment_key = result.response.paymentKey || '';
+    paymentData.payment.payment_history.toss_payment_key = result.response.paymentKey || origPaymentKey || '';
     paymentData.payment.payment_history.toss_approval_no = result.response.card?.approvalNo || result.response.approvalNumber || '';
     paymentData.payment.payment_history.toss_details = result.response;
   }
@@ -274,7 +279,7 @@ async function confirmCardPayment() {
 
 async function cancelCardApproval() {
   if (!_pendingApproval) return;
-  const { payment_id, result } = _pendingApproval;
+  const { payment_id, result, payment_key: origPaymentKey } = _pendingApproval;
 
   const btn = document.querySelector('#approval-modal .card-modal-box button[style*="e74c3c"]');
   if (btn) { btn.disabled = true; btn.textContent = '취소 요청 중...'; }
@@ -282,7 +287,7 @@ async function cancelCardApproval() {
   // ① 결제 성공 DB 저장
   const paymentData = setPayment(2);
   if (result.response) {
-    paymentData.payment.payment_history.toss_payment_key = result.response.paymentKey || '';
+    paymentData.payment.payment_history.toss_payment_key = result.response.paymentKey || origPaymentKey || '';
     paymentData.payment.payment_history.toss_approval_no = result.response.card?.approvalNo || result.response.approvalNumber || '';
     paymentData.payment.payment_history.toss_details = result.response;
   }
