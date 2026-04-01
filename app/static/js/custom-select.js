@@ -139,8 +139,46 @@ class CustomSelect {
     this._el.classList.add('open');
     this._el.setAttribute('aria-expanded', 'true');
 
+    this._positionList();
+
     const selectedIndex = this._items.findIndex(i => String(i.value) === String(this._value));
     this._setHighlight(selectedIndex >= 0 ? selectedIndex : 0);
+  }
+
+  _positionList() {
+    const list = this._list;
+    // 일단 max-height/position 초기화 후 실제 크기 측정
+    list.style.maxHeight = '';
+    list.style.top = '';
+    list.style.bottom = '';
+
+    const MARGIN = 6;
+    const triggerRect = this._trigger.getBoundingClientRect();
+    const contentHeight = list.scrollHeight;
+    const spaceBelow = window.innerHeight - triggerRect.bottom - MARGIN;
+    const spaceAbove = triggerRect.top - MARGIN;
+
+    if (contentHeight <= spaceBelow) {
+      // 아래에 다 들어감
+      list.style.top = `calc(100% + 4px)`;
+      list.style.bottom = '';
+      list.style.maxHeight = '';
+    } else if (contentHeight <= spaceAbove) {
+      // 위에 다 들어감
+      list.style.bottom = `calc(100% + 4px)`;
+      list.style.top = 'auto';
+      list.style.maxHeight = '';
+    } else if (spaceBelow >= spaceAbove) {
+      // 아래가 더 넓음 → 아래에 배치, 가용 공간만큼 max-height
+      list.style.top = `calc(100% + 4px)`;
+      list.style.bottom = '';
+      list.style.maxHeight = `${spaceBelow}px`;
+    } else {
+      // 위가 더 넓음 → 위에 배치, 가용 공간만큼 max-height
+      list.style.bottom = `calc(100% + 4px)`;
+      list.style.top = 'auto';
+      list.style.maxHeight = `${spaceAbove}px`;
+    }
   }
 
   close() {
@@ -149,6 +187,9 @@ class CustomSelect {
     this._el.setAttribute('aria-expanded', 'false');
     this._highlightedIndex = -1;
     this._list.querySelectorAll('.custom-select__item').forEach(i => i.classList.remove('highlighted'));
+    this._list.style.top = '';
+    this._list.style.bottom = '';
+    this._list.style.maxHeight = '';
   }
 
   toggle() {
