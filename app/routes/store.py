@@ -916,20 +916,18 @@ def cancel_payment():
         return jsonify({'error': '결제 내역을 찾을 수 없습니다.'}), 404
 
     payments = Payment.query.filter_by(table_payment_list_id=payment_list_id).all()
-    has_card = False
     for p in payments:
         if p.payment_status != 2:
             p.payment_status = 2
-            if p.payment_method_id == 2:  # 카드
-                has_card = True
+
+    # 취소 시각 기록
+    ph = json.loads(tpl.payment_history) if tpl.payment_history else {}
+    ph['cancelled_at'] = datetime.now().isoformat()
+    tpl.payment_history = json.dumps(ph, ensure_ascii=False)
 
     db.session.commit()
 
-    msg = '결제가 취소 처리되었습니다.'
-    if has_card:
-        msg += '\n카드 승인 취소는 Toss 단말기에서 별도 처리가 필요합니다.'
-
-    return jsonify({'status': 'ok', 'needs_terminal_cancel': has_card, 'message': msg})
+    return jsonify({'status': 'ok', 'message': '환불이 완료되었습니다.'})
 
 
 @store_bp.route('/cancel_toss_payment', methods=['POST'])
