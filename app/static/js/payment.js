@@ -89,6 +89,7 @@ window.addEventListener('DOMContentLoaded', () => {
   socket.on('toss_cancel_result', async (data) => {
     if (String(data.table_id) !== String(lastPath)) return;
     const tplId = _pendingApproval?.table_payment_list_id;
+    const dbSaveFailed = _pendingApproval?.db_save_failed;
     _closeApprovalModal();
     _pendingApproval = null;
 
@@ -100,8 +101,12 @@ window.addEventListener('DOMContentLoaded', () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ table_payment_list_id: tplId, cancel_result: r }),
         }).catch(() => {});
+        showToast('환불이 완료되었습니다.', 'success');
+      } else if (dbSaveFailed) {
+        alert('⚠️ 환불은 단말기에서 완료되었습니다.\n단, 결제 기록 저장에 실패했습니다.\n관리자에게 수동 확인을 요청하세요.');
+      } else {
+        showToast('환불이 완료되었습니다.', 'success');
       }
-      showToast('환불이 완료되었습니다.', 'success');
       location.reload();
     } else {
       showToast('환불 처리 실패. 관리자에게 문의하세요.', 'error');
@@ -285,10 +290,11 @@ async function cancelCardApproval() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(paymentData),
-  }).then(r => r.json()).catch(() => null);
+  }).then(r => r.ok ? r.json() : null).catch(() => null);
   _pendingApproval.table_payment_list_id = saveRes?.table_payment_list_id || null;
+  _pendingApproval.db_save_failed = !saveRes?.table_payment_list_id;
 
-  // ② 환불 요청
+  // ② 환불 요청 (DB 저장 실패해도 환불은 진행)
   const res = await fetch('/pos/toss/cancel_approval', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

@@ -304,7 +304,7 @@ class TablePaymentList(db.Model):
     order_details = db.Column(db.Text)  # 주문 내역 컬럼 (문자열로 저장됨), orderDetails.json
     discount = db.Column(db.Integer)        # 할인 금액
     extra_charge = db.Column(db.Integer)    # 추가 금액 # 추가됨
-    payment_history = db.Column(db.String(512))    # 추가됨
+    payment_history = db.Column(db.Text)    # 추가됨
     payment_time = db.Column(db.DateTime, default=datetime.now)  # 결제 시간 컬럼(분할 시 최근 결제 마다 업데이트)
 
     ### store_id/table_id/first_order_time을 unique key로 걸자!
