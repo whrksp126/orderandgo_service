@@ -18,7 +18,7 @@ window.addEventListener('DOMContentLoaded', () => {
       const msgEl = document.getElementById('refund-status-msg');
       if (msgEl) msgEl.remove();
 
-      if (r.type === 'SUCCESS') {
+      if (r.type === 'SUCCESS' || r.type === 'CANCEL_SUCCESS') {
         if (btn) { btn.disabled = true; btn.textContent = '환불 완료'; }
         showToast('환불이 완료되었습니다.', 'success');
         closeDetailModal();
