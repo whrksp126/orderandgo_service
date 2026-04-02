@@ -855,7 +855,7 @@ def get_payment_history():
                         'count': item.get('count', 1),
                         'options': [
                             {'name': o.get('name', ''), 'price': o.get('price', 0), 'count': o.get('count', 1)}
-                            for o in item.get('option', [])
+                            for o in (item.get('options') or item.get('option') or [])
                         ],
                     })
         except Exception:

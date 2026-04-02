@@ -31,9 +31,6 @@ socket.on('table_status_update', (data) => {
   if (lastPath === 'login') {
     createTableHtml();
   }
-  if (lastPath === 'login') {
-    createTableHtml();
-  }
 });
 
 // 새로운 주문 알림 (POS에서 주문 시)
@@ -101,6 +98,9 @@ const getTableData = async () => {
   const fetchData = {};
   const result = await fetchDataAsync(url, method, fetchData);
   console.log(result)
+  result.forEach(category => {
+    category.pages = [{ tables: category.tables || [] }];
+  });
   STORE.table_list = result;
   createTableHtml()
 }
