@@ -187,7 +187,7 @@ const renderLoginCanvas = (tables) => {
   placed.forEach((table) => {
     const isActive = STORE.active_tables.has(String(table.id));
     const card = document.createElement('div');
-    card.className = `table-card view-card${isActive ? ' active' : ''}`;
+    card.className = `table-card login-card${isActive ? ' active' : ''}`;
     card.dataset.id = table.id;
     card.dataset.gx = table.grid_x;
     card.dataset.gy = table.grid_y;
@@ -195,9 +195,11 @@ const renderLoginCanvas = (tables) => {
     card.dataset.gh = table.grid_h || 2;
     card.dataset.active = isActive;
     card.innerHTML = `
-      <div class="card-title"><h2>${table.name}</h2></div>
-      <div class="card-body">
-        ${isActive ? '<div class="table_state">입장 중</div>' : '<i class="ph-bold ph-sign-in"></i>'}
+      <div class="login-card-inner">
+        <h2>${table.name}</h2>
+        ${isActive
+          ? '<span class="login-card-state">입장 중</span>'
+          : '<i class="ph-bold ph-sign-in"></i>'}
       </div>
     `;
     applyViewCardRect(card);

@@ -1451,6 +1451,69 @@ main section article .table:not([data-active="true"]) .table_state {
   }
 }
 
+/* =============================================
+   Login Canvas Card (/table_order/login)
+   ============================================= */
+
+.table-card.login-card {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+.table-card.login-card:hover {
+  border-color: #1FAA9C;
+  background: #f0faf9;
+  box-shadow: 0 4px 16px rgba(31, 170, 156, 0.15);
+}
+
+.table-card.login-card.active {
+  border-color: #1FAA9C;
+  background: #e6f7f6;
+}
+
+.login-card-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.login-card-inner h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #222;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.login-card-inner i {
+  font-size: 36px;
+  color: #1FAA9C;
+  line-height: 1;
+}
+
+.login-card-state {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1FAA9C;
+  padding: 3px 12px;
+  border-radius: 20px;
+  border: 1.5px solid #1FAA9C;
+}
+
 /* 모든 아이콘에 펄스 효과 적용 (선택 사항) 또는 Welcome/In-use 만 */
 .table-overlay.type-welcome .icon-wrapper,
 .table-overlay.type-in-use .icon-wrapper,
