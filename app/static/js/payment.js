@@ -246,11 +246,11 @@ function _buildTerminalOrderData() {
   const totalPrice = payment_history.curPaymentPrice;
   const tax = Math.round(totalPrice / 11);
   const supplyValue = totalPrice - tax;
-  const orderItems = order_history.map(item => {
-    const entry = { label: item.name, value: item.price * item.count };
-    if (item.count > 1) entry.quantity = item.count;
-    if (item.options && item.options.length > 0) {
-      entry.options = item.options.map(opt => ({
+  const orderItems = setBasketData(order_history).map(({ data, length }) => {
+    const entry = { label: data.name, value: data.price * length };
+    if (length > 1) entry.quantity = length;
+    if (data.options && data.options.length > 0) {
+      entry.options = data.options.map(opt => ({
         type: 'option', label: opt.name, value: opt.price * opt.count,
       }));
     }
