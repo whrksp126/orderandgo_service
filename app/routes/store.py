@@ -508,7 +508,6 @@ def get_table():
         table_list = [{
             'id': t.id,
             'name': t.name,
-            'page': t.page,
             'position': t.position,
             'grid_x': t.grid_x,
             'grid_y': t.grid_y,
@@ -553,11 +552,6 @@ def set_menu_position():
                 'message': '메뉴 이동 실패'
                 }), 400
 
-# POS -> 매장관리 -> 카테고리 관리
-@store_bp.route('/category_mgmt', methods=['GET'])
-def category_mgmt():
-    return render_template('store_category_mgmt.html')
-    
 # 테이블 카테고리 생성/수정
 @store_bp.route('/set_table_category', methods=['POST'])
 def set_table_category():

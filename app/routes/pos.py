@@ -624,7 +624,7 @@ def get_table_page():
         
 
         tables = select_table(category_id)
-        sorted_tables = sorted(tables, key=lambda table: (table.page, table.position))
+        sorted_tables = sorted(tables, key=lambda table: (table.position or 0))
 
         def sort_table(table):
             
@@ -661,7 +661,6 @@ def get_table_page():
                     "tableId": table.id,
                     "table": table.name,
                     "position": table.position,
-                    "page": table.page,
                     "gridX": table.grid_x,
                     "gridY": table.grid_y,
                     "gridW": table.grid_w,
@@ -679,7 +678,6 @@ def get_table_page():
                     "tableId": table.id,
                     "table": table.name,
                     "position": table.position,
-                    "page": table.page,
                     "gridX": table.grid_x,
                     "gridY": table.grid_y,
                     "gridW": table.grid_w,

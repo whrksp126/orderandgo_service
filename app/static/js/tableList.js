@@ -26,7 +26,6 @@ const updateCellSize = () => {
 
 let tableData;
 let cachingData = null;
-let curPage = 1;
 
 // =============================================
 //  Data load
@@ -106,38 +105,6 @@ const createHtml = (data) => {
 //  페이지 네비게이션
 // =============================================
 
-const getPageCount = (tables) => {
-  return tables.reduce((max, t) => {
-    if (t.gridX !== null && t.gridX !== undefined) return Math.max(max, t.page || 1);
-    return max;
-  }, 1);
-};
-
-const renderPageNav = (tables) => {
-  const nav = document.getElementById('page-nav');
-  if (!nav) return;
-
-  const pageCount = getPageCount(tables);
-
-  const prevBtn = curPage > 1
-    ? `<button class="page-arrow-btn" onclick="changePageTo(${curPage - 1})"><i class="ph-bold ph-caret-left"></i></button>`
-    : `<span class="page-arrow-placeholder"></span>`;
-
-  const nextBtn = curPage < pageCount
-    ? `<button class="page-arrow-btn" onclick="changePageTo(${curPage + 1})"><i class="ph-bold ph-caret-right"></i></button>`
-    : `<span class="page-arrow-placeholder"></span>`;
-
-  nav.innerHTML = prevBtn + nextBtn;
-};
-
-const changePageTo = (page) => {
-  curPage = page;
-  const idx = getCurCategoryIndex();
-  const tables = cachingData
-    ? cachingData[idx].tableList
-    : tableData[idx].tableList;
-  renderViewCanvas(tables);
-};
 
 // =============================================
 //  Canvas 렌더링 (view mode)
@@ -149,7 +116,7 @@ const renderViewCanvas = (tables) => {
   canvas.innerHTML = '';
 
   const placed = tables.filter(t =>
-    t.gridX !== null && t.gridX !== undefined && (t.page || 1) === curPage
+    t.gridX !== null && t.gridX !== undefined
   );
 
   if (placed.length === 0) {
@@ -159,15 +126,13 @@ const renderViewCanvas = (tables) => {
         <p>배치된 테이블이 없습니다.</p>
       </div>
     `;
-    renderPageNav(tables);
-    return;
+      return;
   }
 
   placed.forEach((table) => {
     canvas.appendChild(createViewCard(table));
   });
 
-  renderPageNav(tables);
 };
 
 const applyViewCardRect = (card) => {
@@ -241,7 +206,6 @@ const createViewCard = (table) => {
 const changeTableCategory = (event, index) => {
   document.querySelector('main section nav ul li[data-state="active"]').dataset.state = '';
   event.target.closest('li').dataset.state = 'active';
-  curPage = 1;
 
   const tables = cachingData
     ? cachingData[index].tableList

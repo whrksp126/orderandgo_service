@@ -35,13 +35,12 @@ def create_table_category(table_category_list, store_id):
                 if not existing_table:
                     data = {
                         'name': table_name,
-                        'seat_count' : None, 
+                        'seat_count' : None,
                         'is_group' : None,
                         'table_category_id' : table_category.id,
-                        'page': 1,
                         'position' : i+1
                     }
-                    item = Table(name=data['name'], seat_count=data['seat_count'], is_group=data['is_group'], table_category_id=data['table_category_id'], page=data['page'], position=data['position'])
+                    item = Table(name=data['name'], seat_count=data['seat_count'], is_group=data['is_group'], table_category_id=data['table_category_id'], position=data['position'])
                     db.session.add(item)
             db.session.commit()
         result = True
@@ -115,7 +114,7 @@ def update_table(table_id, change_dict):
     if not item:
         return '잘못됨'
     
-    change_list = ['seat_count', 'table_category', 'x_axis', 'y_axis', 'page', 'is_group']
+    change_list = ['seat_count', 'table_category', 'x_axis', 'y_axis', 'is_group']
     for c in change_dict.keys():
         if c in change_list:
             item[c] = change_dict[c]
@@ -195,7 +194,7 @@ def update_table_position(table_id_fir, table_id_sec):
 
 # 테이블 생성
 def create_table(data):
-    item = Table(name=data['name'], seat_count=data['seat_count'], is_group=0, table_category_id=data['table_category'], page=data['page'], position=data['position'])
+    item = Table(name=data['name'], seat_count=data['seat_count'], is_group=0, table_category_id=data['table_category'], position=data['position'])
     db.session.add(item)
     db.session.commit()
     db.session.refresh(item)
@@ -226,8 +225,6 @@ def update_table_layout(tables_data):
         table.grid_y = t.get('grid_y')
         table.grid_w = t.get('grid_w')
         table.grid_h = t.get('grid_h')
-        if t.get('page') is not None:
-            table.page = t.get('page')
     db.session.commit()
     return True
 

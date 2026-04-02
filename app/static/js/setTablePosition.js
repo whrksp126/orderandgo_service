@@ -15,7 +15,6 @@ let CELL_H = 60;
 
 let tableData;
 let curCategoryIndex = 0;
-let curPage  = 1;
 let isDirty  = false;
 let selectedCard = null;
 
@@ -42,36 +41,6 @@ const updateCellSize = () => {
   canvas.style.backgroundSize = `${CELL_W}px ${CELL_H}px`;
 };
 
-// ----- 페이지 수 계산 -----
-const getPageCount = () => {
-  const tables = (tableData?.[curCategoryIndex] || {}).tables || [];
-  const maxPage = tables.reduce((m, t) =>
-    (t.grid_x !== null && t.grid_x !== undefined) ? Math.max(m, t.page || 1) : m, 1);
-  return Math.max(maxPage, curPage);
-};
-
-// ----- 페이지 내비 렌더 (좌우 원형 화살표) -----
-const renderPageNav = () => {
-  const nav = document.getElementById('page-nav');
-  if (!nav) return;
-
-  const prevBtn = curPage > 1
-    ? `<button class="page-arrow-btn prev" onclick="changePageTo(${curPage - 1})"><i class="ph-bold ph-caret-left"></i></button>`
-    : `<span class="page-arrow-placeholder"></span>`;
-
-  const nextBtn = `<button class="page-arrow-btn next" onclick="changePageTo(${curPage + 1})"><i class="ph-bold ph-caret-right"></i></button>`;
-
-  nav.innerHTML = prevBtn + nextBtn;
-};
-
-const changePageTo = (page) => {
-  const count = getPageCount();
-  if (page < 1 || page > count + 1) return;
-  clearSelectedCard();
-  curPage = page;
-  renderCanvas();
-};
-
 // ----- 겹침 감지 -----
 const checkOverlap = (excludeId, gx, gy, gw, gh) => {
   for (const card of document.querySelectorAll('#table-canvas .table-card')) {
@@ -93,29 +62,18 @@ const checkOverlapExcluding = (excludeIds, gx, gy, gw, gh) => {
   return false;
 };
 
-// ----- 페이지별 빈 슬롯 탐색 (tableData 기반) -----
-const findFirstEmptySlotOnPage = (gw, gh, pageNum) => {
+// ----- 빈 슬롯 탐색 (tableData 기반) -----
+const findFirstEmptySlot = (gw, gh) => {
   const tables = (tableData?.[curCategoryIndex] || {}).tables || [];
-  const placed = tables.filter(t =>
-    t.page === pageNum && t.grid_x !== null && t.grid_x !== undefined);
+  const placed = tables.filter(t => t.grid_x !== null && t.grid_x !== undefined);
 
   for (let gy = 0; gy <= ROWS - gh; gy++) {
     for (let gx = 0; gx <= COLS - gw; gx++) {
       const overlaps = placed.some(t =>
         gx < t.grid_x + t.grid_w && gx + gw > t.grid_x &&
         gy < t.grid_y + t.grid_h && gy + gh > t.grid_y);
-      if (!overlaps) return { gx, gy, page: pageNum };
+      if (!overlaps) return { gx, gy };
     }
-  }
-  return null;
-};
-
-// 현재 페이지부터 순차적으로, 가득 차면 다음 페이지
-const findEmptySlotAnyPage = (gw, gh) => {
-  const maxPage = getPageCount();
-  for (let p = curPage; p <= maxPage + 1; p++) {
-    const slot = findFirstEmptySlotOnPage(gw, gh, p);
-    if (slot) return slot;
   }
   return null;
 };
@@ -222,28 +180,20 @@ const createUnplacedItem = (table) => {
   return li;
 };
 
-// ----- 미배치 테이블 자동 배치 (AUTO_GW × AUTO_GH, 다음 페이지까지) -----
+// ----- 미배치 테이블 자동 배치 (AUTO_GW × AUTO_GH) -----
 const autoPlaceTable = (item, tableInfo) => {
-  const slot = findEmptySlotAnyPage(AUTO_GW, AUTO_GH);
+  const slot = findFirstEmptySlot(AUTO_GW, AUTO_GH);
   if (!slot) return showToast('배치할 수 있는 공간이 없습니다.', 'warning');
 
-  syncTableData(tableInfo.id, { grid_x: slot.gx, grid_y: slot.gy, grid_w: AUTO_GW, grid_h: AUTO_GH, page: slot.page });
+  syncTableData(tableInfo.id, { grid_x: slot.gx, grid_y: slot.gy, grid_w: AUTO_GW, grid_h: AUTO_GH });
   item.remove();
 
-  if (slot.page === curPage) {
-    const canvas = document.getElementById('table-canvas');
-    const card = createEditCard({ ...tableInfo, grid_x: slot.gx, grid_y: slot.gy, grid_w: AUTO_GW, grid_h: AUTO_GH, page: slot.page });
-    card.classList.add('placing');
-    canvas.appendChild(card);
-    setTimeout(() => card.classList.remove('placing'), 400);
-  } else {
-    // 다른 페이지에 배치됨 → 해당 페이지로 이동
-    curPage = slot.page;
-    renderCanvas();
-    return;
-  }
+  const canvas = document.getElementById('table-canvas');
+  const card = createEditCard({ ...tableInfo, grid_x: slot.gx, grid_y: slot.gy, grid_w: AUTO_GW, grid_h: AUTO_GH });
+  card.classList.add('placing');
+  canvas.appendChild(card);
+  setTimeout(() => card.classList.remove('placing'), 400);
 
-  renderPageNav();
   isDirty = true;
   updateSaveBtn();
 };
@@ -263,7 +213,6 @@ const autoLayoutAllTables = () => {
     table.grid_y = row * gh;
     table.grid_w = gw;
     table.grid_h = gh;
-    table.page   = 1;
     idx++;
   });
 };
@@ -292,7 +241,6 @@ const createEditCard = (table) => {
   card.dataset.gy   = gy;
   card.dataset.gw   = gw;
   card.dataset.gh   = gh;
-  card.dataset.page = table.page || curPage;
   card.innerHTML = `
     <h2>${table.name}</h2>
     <div class="card-actions">
@@ -504,10 +452,9 @@ const attachUnplacedDrag = (item, tableInfo) => {
         return showToast('해당 위치에 다른 테이블이 있습니다.', 'warning');
       }
 
-      syncTableData(tableInfo.id, { grid_x: dropGx, grid_y: dropGy, grid_w: AUTO_GW, grid_h: AUTO_GH, page: curPage });
-      canvas.appendChild(createEditCard({ ...tableInfo, grid_x: dropGx, grid_y: dropGy, grid_w: AUTO_GW, grid_h: AUTO_GH, page: curPage }));
+      syncTableData(tableInfo.id, { grid_x: dropGx, grid_y: dropGy, grid_w: AUTO_GW, grid_h: AUTO_GH });
+      canvas.appendChild(createEditCard({ ...tableInfo, grid_x: dropGx, grid_y: dropGy, grid_w: AUTO_GW, grid_h: AUTO_GH }));
       item.remove();
-      renderPageNav();
       isDirty = true;
       updateSaveBtn();
     };
@@ -542,15 +489,12 @@ const renderCanvas = () => {
 
   allTables.forEach((table) => {
     const placed = table.grid_x !== null && table.grid_x !== undefined;
-    if (placed && table.page === curPage) {
+    if (placed) {
       canvas.appendChild(createEditCard(table));
-    } else if (!placed) {
+    } else {
       unplacedList.appendChild(createUnplacedItem(table));
     }
-    // 다른 페이지 배치 테이블은 DOM에 표시 안 함
   });
-
-  renderPageNav();
 };
 
 // ----- 카테고리 탭 렌더 -----
@@ -582,7 +526,6 @@ const clickSaveLayoutBtn = async () => {
     grid_y: t.grid_y ?? null,
     grid_w: t.grid_w ?? null,
     grid_h: t.grid_h ?? null,
-    page: t.page || 1,
   }));
 
   const result = await fetchDataAsync('/store/update_table_layout', 'PATCH', { tables });
@@ -601,7 +544,6 @@ window.addEventListener('beforeunload', (e) => { if (isDirty) e.preventDefault()
 const callTableList = () => {
   fetchData('/store/get_table', 'GET', {}, (data) => {
     tableData = data;
-    curPage = 1;
     renderNav();
     updateCellSize();
     renderCanvas();
@@ -611,7 +553,6 @@ const callTableList = () => {
 const changeTableCategory = (event, index) => {
   clearSelectedCard();
   curCategoryIndex = index;
-  curPage = 1;
   renderNav();
   renderCanvas();
 };
@@ -733,10 +674,10 @@ const callCreateTableManual = async (event) => {
   const category = tableData?.[curCategoryIndex];
   if (!category) return;
   const result = await fetchDataAsync('/adm/create_table', 'POST', {
-    name, seat_count: 4, table_category: category.id, page: curPage, position: (category.tables?.length || 0) + 1,
+    name, seat_count: 4, table_category: category.id, position: (category.tables?.length || 0) + 1,
   });
   if (!result || !result.table_id) return showToast(`"${name}" 추가 실패`, 'error');
-  const t = { id: result.table_id, name: result.table_name || name, grid_x: null, grid_y: null, grid_w: null, grid_h: null, page: curPage };
+  const t = { id: result.table_id, name: result.table_name || name, grid_x: null, grid_y: null, grid_w: null, grid_h: null };
   category.tables.push(t);
   removeModal();
   document.querySelector('.unplaced-list').appendChild(createUnplacedItem(t));
@@ -768,10 +709,10 @@ const callCreateTable = async (event, autoPlace = false) => {
   for (let i = 0; i < count; i++) {
     const name = `${prefix} ${startPos + i}`;
     const result = await fetchDataAsync('/adm/create_table', 'POST', {
-      name, seat_count: 4, table_category: category.id, page: curPage, position: startPos + i,
+      name, seat_count: 4, table_category: category.id, position: startPos + i,
     });
     if (!result || !result.table_id) { showToast(`"${name}" 추가 실패`, 'error'); continue; }
-    const t = { id: result.table_id, name: result.table_name || name, grid_x: null, grid_y: null, grid_w: null, grid_h: null, page: curPage };
+    const t = { id: result.table_id, name: result.table_name || name, grid_x: null, grid_y: null, grid_w: null, grid_h: null };
     category.tables.push(t);
     newTables.push(t);
   }
@@ -782,17 +723,14 @@ const callCreateTable = async (event, autoPlace = false) => {
   if (autoPlace) {
     const canvas = document.getElementById('table-canvas');
     newTables.forEach((table) => {
-      const slot = findEmptySlotAnyPage(AUTO_GW, AUTO_GH);
+      const slot = findFirstEmptySlot(AUTO_GW, AUTO_GH);
       if (!slot) return;
-      Object.assign(table, { grid_x: slot.gx, grid_y: slot.gy, grid_w: AUTO_GW, grid_h: AUTO_GH, page: slot.page });
-      if (slot.page === curPage) {
-        const card = createEditCard({ ...table });
-        card.classList.add('placing');
-        canvas.appendChild(card);
-        setTimeout(() => card.classList.remove('placing'), 400);
-      }
+      Object.assign(table, { grid_x: slot.gx, grid_y: slot.gy, grid_w: AUTO_GW, grid_h: AUTO_GH });
+      const card = createEditCard({ ...table });
+      card.classList.add('placing');
+      canvas.appendChild(card);
+      setTimeout(() => card.classList.remove('placing'), 400);
     });
-    renderPageNav();
     showToast(`${newTables.length}개 테이블이 추가 및 배치되었습니다.`, 'success');
   } else {
     const unplacedList = document.querySelector('.unplaced-list');

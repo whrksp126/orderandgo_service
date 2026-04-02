@@ -124,7 +124,6 @@ class Table(db.Model):
     is_group = db.Column(db.Integer, nullable=True)
     group_color = db.Column(db.String(50), nullable=True)
     table_category_id = db.Column(db.Integer, db.ForeignKey('table_category.id'))
-    page = db.Column(db.Integer, nullable=True)
     position = db.Column(db.Integer, nullable=True)
     grid_x = db.Column(db.Integer, nullable=True)
     grid_y = db.Column(db.Integer, nullable=True)
