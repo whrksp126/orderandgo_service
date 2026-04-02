@@ -250,9 +250,13 @@ function _buildTerminalOrderData() {
     const entry = { label: data.name, value: data.price * length };
     if (length > 1) entry.quantity = length;
     if (data.options && data.options.length > 0) {
-      entry.options = data.options.map(opt => ({
-        type: 'option', label: opt.name, value: opt.price * opt.count,
-      }));
+      entry.options = data.options.map(opt => {
+        const optEntry = { type: 'option', label: opt.name };
+        if (opt.count > 1) optEntry.quantity = opt.count;
+        const totalPrice = opt.price * opt.count;
+        if (totalPrice !== 0) optEntry.value = totalPrice;
+        return optEntry;
+      });
     }
     return entry;
   });
@@ -304,13 +308,19 @@ function _updateDisplayPendingOrder() {
 }
 
 // Display pending heartbeat — 5초마다 서버에 alive 신호 (TTL 갱신)
-setInterval(() => {
+setInterval(async () => {
   if (!_displayPaymentId) return;
-  fetch('/pos/toss/update_pending', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ payment_id: _displayPaymentId }),
-  }).catch(() => {});
+  try {
+    const res = await fetch('/pos/toss/update_pending', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payment_id: _displayPaymentId }),
+    });
+    if (res.status === 404) {
+      _displayPaymentId = null;
+      await _initDisplayPending();
+    }
+  } catch (e) {}
 }, 5000);
 
 // 결제 페이지 이탈 시 모든 활성 pending 취소 → 단말기 대기 화면 복귀
@@ -1497,6 +1507,22 @@ const setPayment = (method) => { // 결제 전 데이터 만들기
 
   }
 }
+
+// ─── 비활성 자동 복귀 (5분간 조작 없으면 이전 페이지로 이동) ─────────────────
+let _inactivityTimer = null;
+const INACTIVITY_TIMEOUT = 5 * 60 * 1000;
+
+function _resetInactivityTimer() {
+  clearTimeout(_inactivityTimer);
+  _inactivityTimer = setTimeout(() => {
+    history.back();
+  }, INACTIVITY_TIMEOUT);
+}
+
+_resetInactivityTimer();
+['click', 'touchstart', 'keydown', 'mousemove'].forEach(evt => {
+  document.addEventListener(evt, _resetInactivityTimer, { passive: true });
+});
 
 const callPayment = (event, type) => { // 결제 요청
   console.log(setPayment(type));
