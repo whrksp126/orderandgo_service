@@ -133,8 +133,7 @@ function _openDetailModal(item, date) {
     item.order_items.forEach(oi => {
       const itemTotal = oi.price * oi.count;
       const li = document.createElement('li');
-      li.className = 'menu_row';
-      li.innerHTML = `<div class="menu-info"><div class="menu-count">${oi.count}</div><span>${oi.name}</span></div><span>${itemTotal.toLocaleString()}원</span>`;
+      li.innerHTML = `<span>${oi.name} × ${oi.count}</span><span>${itemTotal.toLocaleString()}원</span>`;
       orderListEl.appendChild(li);
 
       (oi.options || []).forEach(opt => {

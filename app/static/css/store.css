@@ -2000,28 +2000,6 @@ section ul li .submit_btn {
   color: #333;
 }
 
-.payment-detail-modal .order-list li.menu_row {
-  align-items: center;
-}
-
-.payment-detail-modal .order-list li.menu_row .menu-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.payment-detail-modal .order-list li.menu_row .menu-count {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 24px;
-  height: 24px;
-  background: #3CB371;
-  color: #fff;
-  border-radius: 50%;
-  font-size: 12px;
-  font-weight: 700;
-}
 
 .payment-detail-modal .order-list li.option_row {
   color: #999;
