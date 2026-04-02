@@ -253,8 +253,6 @@ function processRefund() {
 
 async function _processTossRefund() {
   if (!_currentItem) return;
-  if (!confirm('단말기에서 환불을 진행하시겠습니까?\n단말기가 온라인 상태여야 합니다.')) return;
-
   const btn = document.querySelector('#detail-refund-btn');
   if (btn) { btn.disabled = true; btn.textContent = '단말기 대기 중...'; }
 
@@ -290,8 +288,6 @@ async function _processTossRefund() {
 
 async function _processCashRefund() {
   if (!_currentItem) return;
-  if (!confirm('현금 환불을 확인하시겠습니까?\n고객에게 현금을 직접 반환한 후 확인하세요.')) return;
-
   const btn = document.querySelector('#detail-refund-btn');
   if (btn) { btn.disabled = true; btn.textContent = '처리 중...'; }
 

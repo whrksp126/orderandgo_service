@@ -23,13 +23,50 @@ const STORE = {
   selectedStaffCallItems: {} // { itemId: quantity }
 };
 
+// =============================================
+//  Canvas constants (login mode) — set_table과 동일한 그리드
+// =============================================
+const COLS = 20, ROWS = 12, GAP = 16;
+let CELL_W = 60, CELL_H = 60;
+
+const updateCellSize = () => {
+  const canvas = document.getElementById('table-canvas');
+  if (!canvas) return;
+  CELL_W = (canvas.clientWidth  + GAP) / COLS;
+  CELL_H = (canvas.clientHeight + GAP) / ROWS;
+};
+
+const applyViewCardRect = (card) => {
+  const gx = Number(card.dataset.gx), gy = Number(card.dataset.gy);
+  const gw = Number(card.dataset.gw), gh = Number(card.dataset.gh);
+  card.style.left   = `${gx * CELL_W}px`;
+  card.style.top    = `${gy * CELL_H}px`;
+  card.style.width  = `${gw * CELL_W - GAP}px`;
+  card.style.height = `${gh * CELL_H - GAP}px`;
+};
+
+let _roTimer;
+const _ro = new ResizeObserver(() => {
+  clearTimeout(_roTimer);
+  _roTimer = setTimeout(() => {
+    updateCellSize();
+    document.querySelectorAll('#table-canvas .table-card').forEach(applyViewCardRect);
+  }, 60);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  const canvas = document.getElementById('table-canvas');
+  if (canvas) _ro.observe(canvas);
+});
+
 // 실시간 상태 업데이트 수신
 socket.on('table_status_update', (data) => {
   console.log('Status Update:', data);
   STORE.active_tables.clear();
   data.active_tables.forEach(id => STORE.active_tables.add(String(id)));
   if (lastPath === 'login') {
-    createTableHtml();
+    const curData = STORE.table_list && STORE.table_list[STORE.cur_category_index];
+    if (curData) renderLoginCanvas(curData.tables);
   }
 });
 
@@ -98,99 +135,88 @@ const getTableData = async () => {
   const fetchData = {};
   const result = await fetchDataAsync(url, method, fetchData);
   console.log(result)
-  result.forEach(category => {
-    category.pages = [{ tables: category.tables || [] }];
-  });
   STORE.table_list = result;
-  createTableHtml()
+  renderLoginHtml(result);
 }
 
-// 테이블 html 만들기
-const createTableHtml = () => {
-  const data = STORE.table_list;
-  if (!data) return; // 데이터가 없으면 중단
-
-  // 데이터가 없을 때 안내 메시지 표시
-  if (data.length === 0) {
-    document.querySelector('.table_order main section nav ul').innerHTML = '';
-    document.querySelector('.table_order main section article .items').innerHTML = `
-      <div class="empty_state">
+// 카테고리 탭 + 캔버스 초기 렌더링
+const renderLoginHtml = (data) => {
+  const _navUl = document.querySelector('.table_order main section nav ul');
+  const canvas = document.getElementById('table-canvas');
+  if (!data || data.length === 0) {
+    _navUl.innerHTML = '';
+    if (canvas) canvas.innerHTML = `
+      <div class="canvas-empty-state">
         <i class="ph ph-table"></i>
         <p>등록된 테이블이 없습니다.</p>
-        <span>매장 관리에서 테이블 카테고리와 테이블을 생성해주세요.</span>
-        <a href="/store/product">매장 관리로 이동 →</a>
       </div>
     `;
     return;
   }
 
   const categoryNum = STORE.cur_category_index;
-  const pageNum = STORE.cur_page_index;
-  const curData = data[categoryNum].pages[pageNum].tables;
   const categoryHtml = data.sort((a, b) => a.position - b.position).map((category, index) => `
     <li data-id="${category.id}" data-state="${index == categoryNum ? 'active' : ''}">
       <button onclick="changeTableCategory(event,${index})">${category.name}</button>
     </li>
   `).join('');
-  document.querySelector('.table_order main section nav ul').innerHTML = categoryHtml;
-  const tableList = new Array(20).fill(false);
-  curData.forEach(data => tableList[data.position - 1] = data);
+  _navUl.innerHTML = categoryHtml;
 
-  const html = tableList.map((table, index) => {
-    if (!table) return `<button></button>`;
-    const isActive = STORE.active_tables.has(String(table.id));
-    return `
-      <button class="table item" data-id="${table.id}" data-name="${table.name}" data-active="${isActive}" data-has="true" data-page="${pageNum}" data-position="${index + 1}" onclick="clickTableArea(event)">
-        <div class="title">
-            <h2>${table.name}</h2>
-            ${isActive ? '<div class="table_state">입장 중</div>' : ''}
-        </div>
-        <div class="body">
-            <i class="ph-bold ph-sign-in"></i>
-        </div>
-      </button>
+  renderLoginCanvas(data[categoryNum].tables || []);
+};
+
+// 캔버스 렌더링 (login mode)
+const renderLoginCanvas = (tables) => {
+  updateCellSize();
+  const canvas = document.getElementById('table-canvas');
+  if (!canvas) return;
+  canvas.innerHTML = '';
+
+  const placed = tables.filter(t => t.grid_x !== null && t.grid_x !== undefined);
+
+  if (placed.length === 0) {
+    canvas.innerHTML = `
+      <div class="canvas-empty-state">
+        <i class="ph ph-table"></i>
+        <p>배치된 테이블이 없습니다.</p>
+      </div>
     `;
-  }).join('');
-  const _items = document.querySelector('.table_order main section article .items');
-  _items.innerHTML = html;
+    return;
+  }
 
-  const _article = document.querySelector('main section article');
-
-  _article.classList.toggle('hasPrevPage', data[categoryNum].pages[pageNum - 1] !== undefined);
-  _article.classList.toggle('hasNextPage', data[categoryNum].pages[pageNum + 1] !== undefined);
-}
+  placed.forEach((table) => {
+    const isActive = STORE.active_tables.has(String(table.id));
+    const card = document.createElement('div');
+    card.className = `table-card view-card${isActive ? ' active' : ''}`;
+    card.dataset.id = table.id;
+    card.dataset.gx = table.grid_x;
+    card.dataset.gy = table.grid_y;
+    card.dataset.gw = table.grid_w || 2;
+    card.dataset.gh = table.grid_h || 2;
+    card.dataset.active = isActive;
+    card.innerHTML = `
+      <div class="card-title"><h2>${table.name}</h2></div>
+      <div class="card-body">
+        ${isActive ? '<div class="table_state">입장 중</div>' : '<i class="ph-bold ph-sign-in"></i>'}
+      </div>
+    `;
+    applyViewCardRect(card);
+    card.addEventListener('click', (event) => clickTableArea(event, table.id, isActive));
+    canvas.appendChild(card);
+  });
+};
 
 // 테이블 카테고리 변경 시
 const changeTableCategory = (event, index) => {
   STORE.cur_category_index = index;
-  STORE.cur_page_index = 0;
-  const _table = document.querySelector('main section article .items');
-  createTableHtml();
-  _table.setAttribute('data-page', STORE.cur_page_index);
-  const _article = document.querySelector('main section article');
-  _article.classList.remove('hasNextPage');
-  _article.classList.remove('hasPrevPage');
-  const curCategoryId = document.querySelector('main section nav ul li[data-state="active"]').dataset.id;
-  const pageLen = STORE.table_list.find((category) => category.id == Number(curCategoryId)).pages.length;
-  if (STORE.cur_page_index < pageLen - 1) { _article.classList.add('hasNextPage') };
-}
-// 페이지 변경 클릭 시
-const clickChangeTablePosition = (event, type) => {
-  if (type == 'prev') { // 이전 페이지
-    STORE.cur_page_index -= 1;
-  }
-  if (type == 'next') { // 다음 페이지
-    STORE.cur_page_index += 1;
-  }
-  createTableHtml();
+  document.querySelector('main section nav ul li[data-state="active"]').dataset.state = '';
+  event.target.closest('li').dataset.state = 'active';
+  const tables = STORE.table_list[index].tables || [];
+  renderLoginCanvas(tables);
 }
 
 // 테이블 접속 클릭 시
-const clickTableArea = (event) => {
-  const target = findParentTarget(event.target, '.item');
-  const table_id = target.dataset.id;
-  const isActive = target.dataset.active === 'true';
-
+const clickTableArea = (event, table_id, isActive) => {
   if (isActive) {
     const modal = openDefaultModal();
     modal.top.innerHTML = modalTopHtml('중복 접속 확인');

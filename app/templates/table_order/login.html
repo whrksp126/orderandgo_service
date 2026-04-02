@@ -19,6 +19,7 @@
   <!-- 전용 css -->
   <link rel="stylesheet" href="/static/css/pos.css">
   <link rel="stylesheet" href="/static/css/table_order.css">
+  <link rel="stylesheet" href="/static/css/canvas.css">
 
   <!-- socket.io -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
@@ -53,13 +54,11 @@
           </button>
         </nav>
         <article>
-          <div class="tables items" data-page="0"></div>
-          <button class="change_page_btn prev_page_btn" onclick="clickChangeTablePosition(event, 'prev')">
-            <i class="ph ph-caret-left"></i>
-          </button>
-          <button class="change_page_btn next_page_btn" onclick="clickChangeTablePosition(event, 'next')">
-            <i class="ph ph-caret-right"></i>
-          </button>
+          <div class="table-canvas-wrap">
+            <div class="canvas-scroll-wrap">
+              <div id="table-canvas"></div>
+            </div>
+          </div>
         </article>
       </section>
     </main>
