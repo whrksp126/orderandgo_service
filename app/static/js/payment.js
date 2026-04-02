@@ -251,13 +251,13 @@ function _buildTerminalOrderData() {
     if (length > 1) entry.quantity = length;
     if (data.options && data.options.length > 0) {
       entry.options = data.options.map(opt => {
-        const totalPrice = (opt.price || 0) * (opt.count || 1);
-        return {
+        const optEntry = {
           type: 'option',
           label: opt.name,
-          quantity: (opt.count || 1) > 1 ? opt.count : null,
-          value: totalPrice > 0 ? totalPrice : null,
+          value: (opt.price || 0) * (opt.count || 1),
         };
+        if ((opt.count || 1) > 1) optEntry.quantity = opt.count;
+        return optEntry;
       });
     }
     return entry;
