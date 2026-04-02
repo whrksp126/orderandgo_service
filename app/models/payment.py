@@ -5,7 +5,7 @@ import bcrypt
 from sqlalchemy import func
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from flask_login import login_user, logout_user
 
 from app.models.menu_category import create_main_category, create_sub_category
@@ -117,7 +117,12 @@ def create_payment_database(store_id, data):
     '''
     try:
         table_id = data['table_id']
-        payment_time = datetime.now()
+        KST = timezone(timedelta(hours=9))
+        toss_ts = data.get('payment', {}).get('payment_history', {}).get('toss_timestamp')
+        if toss_ts and isinstance(toss_ts, (int, float)) and toss_ts > 0:
+            payment_time = datetime.fromtimestamp(toss_ts / 1000, tz=KST).replace(tzinfo=None)
+        else:
+            payment_time = datetime.now(KST).replace(tzinfo=None)
         p = data['payment']
         o = data['order_list']
         tpl_id = None  # table_payment_list_id for response

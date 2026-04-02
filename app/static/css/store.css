@@ -165,6 +165,7 @@ section ul li .input_box {
   justify-content: space-between;
   gap: 10px;
   flex: 1;
+  min-width: 130px;
   width: 100%;
   padding: 12px;
 
