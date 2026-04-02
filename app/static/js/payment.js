@@ -1512,7 +1512,7 @@ const setPayment = (method) => { // 결제 전 데이터 만들기
 
 // ─── 비활성 자동 복귀 (5분간 조작 없으면 이전 페이지로 이동) ─────────────────
 let _inactivityTimer = null;
-const INACTIVITY_TIMEOUT = 5 * 60 * 1000;
+const INACTIVITY_TIMEOUT = 30 * 1000;
 
 function _resetInactivityTimer() {
   clearTimeout(_inactivityTimer);
