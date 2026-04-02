@@ -311,7 +311,7 @@ const clickSetBtn = (event) => {
 const clickGroupBtn = (event) => {
   const asideHtml = `
     <div class="left selete_box_group">
-      <button data-value="1" data-text="그룹 1" class="btn-dropdown" onclick="clickDropDownBtn(event)">
+      <button data-value="1" data-text="그룹 1" class="btn-dropdown" onclick="clickGroupDropDownBtn(event)">
         <div>1</div>
         <span>그룹 1</span>
         <i class="ph ph-caret-up"></i>
@@ -342,7 +342,7 @@ const clickGroupBtn = (event) => {
 };
 
 // 그룹 셀렉트 드롭박스
-const clickDropDownBtn = (event) => {
+const clickGroupDropDownBtn = (event) => {
   event.currentTarget.nextElementSibling.classList.toggle('active');
 };
 
