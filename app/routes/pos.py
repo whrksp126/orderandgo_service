@@ -424,9 +424,13 @@ def submit_toss_result():
 
     # ── payment_type == 'cancel': 이력 페이지 뒤늦은 취소 처리 ──────────────
     if payment_type == 'cancel':
+        import json as _j, sys as _s
+        _s.stdout.write(f'[Toss][CANCEL] payment_id={payment_id} pending={bool(pending)} tpl_id={pending.get("table_payment_list_id") if pending else None} result={_j.dumps(result, ensure_ascii=False)}\n')
+        _s.stdout.flush()
         _pending_payments.pop(payment_id, None)
         tpl_id = pending.get('table_payment_list_id') if pending else None
-        if result and result.get('type') in ('SUCCESS', 'CANCEL_SUCCESS') and tpl_id:
+        result_type = result.get('type') if result else None
+        if result and result_type in ('SUCCESS', 'CANCEL_SUCCESS') and tpl_id:
             from app.models import TablePaymentList, Payment
             from datetime import datetime as dt
             tpl = db.session.query(TablePaymentList).filter_by(id=tpl_id).first()
@@ -439,7 +443,8 @@ def submit_toss_result():
                 ph['toss_cancel_time'] = dt.now().isoformat()
                 tpl.payment_history = json.dumps(ph)
                 db.session.commit()
-        print(f'[Toss] 이력 취소 결과: payment_id={payment_id}, type={result.get("type") if result else "N/A"}')
+        _s.stdout.write(f'[Toss][CANCEL] result_type={result_type} tpl_id={tpl_id} → db_updated={bool(result and result_type in ("SUCCESS","CANCEL_SUCCESS") and tpl_id)}\n')
+        _s.stdout.flush()
         cancel_store_id = pending.get('store_id') if pending else None
         event_data = {
             'payment_id': payment_id,
