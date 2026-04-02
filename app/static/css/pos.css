@@ -127,7 +127,7 @@ main section article {
 }
 
 #container.order main section article {
-  height: calc(100vh - (40px + 50px + 43px));
+  height: calc(100vh - (40px + 50px + 49px));
 }
 
 .payment #container.order main section article {
@@ -1685,9 +1685,10 @@ main section>aside .custom_btns button {
   opacity: 0 !important;
   transform: translateY(-60px) translateZ(-100px) scale(0.8) !important;
 }
+
 /* 테이블 없을 때 빈 상태 안내 */
 main section nav:empty,
-main section nav ul:empty ~ * {
+main section nav ul:empty~* {
   /* 카테고리 nav 최소 높이 유지 */
 }
 
@@ -1747,7 +1748,7 @@ main section nav {
 .card-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);
   z-index: 9000;
   display: flex;
   align-items: center;
@@ -1760,7 +1761,7 @@ main section nav {
   padding: 40px 32px;
   text-align: center;
   min-width: 280px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
 }
 
 /* ─── 카드 결제 타이머 ─── */
@@ -1770,17 +1771,20 @@ main section nav {
   height: 88px;
   margin: 0 auto 20px;
 }
+
 .card-timer-svg {
   transform: rotate(-90deg);
   width: 88px;
   height: 88px;
   display: block;
 }
+
 .card-timer-track {
   fill: none;
   stroke: #f0f0f0;
   stroke-width: 6;
 }
+
 .card-timer-progress {
   fill: none;
   stroke: #3182f6;
@@ -1788,6 +1792,7 @@ main section nav {
   stroke-linecap: round;
   transition: stroke-dashoffset 1s linear;
 }
+
 .card-timer-count {
   position: absolute;
   top: 50%;
@@ -1797,6 +1802,7 @@ main section nav {
   font-weight: 700;
   color: #111;
 }
+
 .card-modal-hint {
   font-size: 12px;
   color: #aaa;
@@ -1834,7 +1840,10 @@ main section nav {
 }
 
 /* ─── 현금영수증 모달 ─────────────────────────────────────────────── */
-.cash-receipt-content { width: 380px; max-width: 95vw; }
+.cash-receipt-content {
+  width: 380px;
+  max-width: 95vw;
+}
 
 .cash-receipt-body {
   display: flex;
@@ -1852,16 +1861,19 @@ main section nav {
   cursor: pointer;
   border: none;
 }
+
 .cr-btn-no-receipt {
   background: #F3F4F6;
   color: #6B7280;
   border: 1px solid #E5E7EB;
 }
+
 .cr-btn-direct {
   background: #F3F4F6;
   color: #6B7280;
   border: 1px solid #E5E7EB;
 }
+
 .cr-btn-issue {
   background: #1FAA9C;
   color: #fff;
@@ -1875,7 +1887,11 @@ main section nav {
 }
 
 /* 타입 버튼 */
-.cr-type-btns { display: flex; gap: 8px; }
+.cr-type-btns {
+  display: flex;
+  gap: 8px;
+}
+
 .cr-type-btn {
   flex: 1;
   padding: 10px 0;
@@ -1887,6 +1903,7 @@ main section nav {
   font-weight: 600;
   cursor: pointer;
 }
+
 .cr-type-btn.active {
   border-color: #1FAA9C;
   background: #E8F7F6;
@@ -1916,5 +1933,3 @@ main section nav {
   font-size: 18px;
   color: #6B7280;
 }
-
-
