@@ -213,7 +213,9 @@ def create_toss_pending():
     _pending_payments[payment_id] = payment
 
     ws_address = _terminal_ws.get(store_id)
+    import json as _json
     print(f'[Toss] 결제 요청 생성: {payment_id}, store={store_id}, table={data.get("table_id")}, ws={ws_address}')
+    print(f'[Toss] order data: {_json.dumps(data.get("order"), ensure_ascii=False)}')
 
     return jsonify({'payment_id': payment_id, 'store_id': store_id, 'ws_address': ws_address, 'status': 'ok'})
 
