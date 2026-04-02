@@ -197,9 +197,11 @@ const renderLoginCanvas = (tables) => {
     card.innerHTML = `
       <div class="login-card-inner">
         <h2>${table.name}</h2>
-        ${isActive
-          ? '<span class="login-card-state">입장 중</span>'
-          : '<i class="ph-bold ph-sign-in"></i>'}
+        <div class="login-card-body">
+          ${isActive
+            ? '<span class="login-card-state">입장 중</span>'
+            : '<i class="ph-bold ph-sign-in"></i>'}
+        </div>
       </div>
     `;
     applyViewCardRect(card);
