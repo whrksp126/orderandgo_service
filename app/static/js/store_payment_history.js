@@ -133,14 +133,15 @@ function _openDetailModal(item, date) {
     item.order_items.forEach(oi => {
       const itemTotal = oi.price * oi.count;
       const li = document.createElement('li');
-      li.innerHTML = `<span>${oi.name}${oi.count > 1 ? ` × ${oi.count}` : ''}</span><span>${itemTotal.toLocaleString()}원</span>`;
+      li.className = 'menu_row';
+      li.innerHTML = `<div class="menu-info"><div class="menu-count">${oi.count}</div><span>${oi.name}</span></div><span>${itemTotal.toLocaleString()}원</span>`;
       orderListEl.appendChild(li);
 
       (oi.options || []).forEach(opt => {
         const optLi = document.createElement('li');
         optLi.className = 'option_row';
         const optTotal = opt.price * opt.count;
-        optLi.innerHTML = `<span>└ ${opt.name}${opt.count > 1 ? ` × ${opt.count}` : ''}</span><span>${optTotal.toLocaleString()}원</span>`;
+        optLi.innerHTML = `<span>└ ${opt.name} × ${opt.count}</span><span>${optTotal.toLocaleString()}원</span>`;
         orderListEl.appendChild(optLi);
       });
     });

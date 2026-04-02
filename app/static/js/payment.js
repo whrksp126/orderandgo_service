@@ -1464,6 +1464,7 @@ const openReceiptDetailModal = async (type) => {
 const setOrderList = () => { // 결제 전 주문 내역 정리
   const items = deepCopy(setBasketData(order_history));
   return order_list = items.map((item) => {
+    item.data.count = item.length; // 실제 주문 수량 반영
     delete item.data.id;
     item.data.options.forEach((option) => {
       delete option.id
