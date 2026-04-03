@@ -309,7 +309,12 @@ const attachResize = (handle, card) => {
       const newGH = clampVal(startGH + Math.round((e.clientY - startPy) / CELL_H), MIN_H, ROWS - gy);
       card.style.width  = `${gridToWidth(newGW)}px`;
       card.style.height = `${gridToHeight(newGH)}px`;
-      if (newGW !== prevSnapW || newGH !== prevSnapH) { haptic(); prevSnapW = newGW; prevSnapH = newGH; }
+      if (newGW !== prevSnapW || newGH !== prevSnapH) {
+        haptic();
+        prevSnapW = newGW; prevSnapH = newGH;
+        card.dataset.gw = newGW; card.dataset.gh = newGH;
+        renderAddButtons();
+      }
     };
 
     const onUp = () => {
@@ -323,8 +328,10 @@ const attachResize = (handle, card) => {
       if (checkOverlap(card.dataset.id, gx, gy, gw, gh)) {
         card.classList.add('overlap');
         setTimeout(() => card.classList.remove('overlap'), 400);
-        card.style.width  = `${gridToWidth(Number(card.dataset.gw))}px`;
-        card.style.height = `${gridToHeight(Number(card.dataset.gh))}px`;
+        card.dataset.gw = startGW; card.dataset.gh = startGH;
+        card.style.width  = `${gridToWidth(startGW)}px`;
+        card.style.height = `${gridToHeight(startGH)}px`;
+        renderAddButtons();
         return;
       }
       card.dataset.gw = gw;
