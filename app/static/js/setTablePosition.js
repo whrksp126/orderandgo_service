@@ -368,8 +368,8 @@ const renderCanvas = () => {
 // ----- 빈 슬롯 + 버튼 렌더 -----
 const renderAddButtons = () => {
   document.querySelectorAll('#table-canvas .add-slot-btn').forEach(b => b.remove());
-  for (let gy = 0; gy <= ROWS - AUTO_GH; gy += AUTO_GH) {
-    for (let gx = 0; gx <= COLS - AUTO_GW; gx += AUTO_GW) {
+  for (let gy = 0; gy <= ROWS - AUTO_GH; gy++) {
+    for (let gx = 0; gx <= COLS - AUTO_GW; gx++) {
       if (!checkOverlap(null, gx, gy, AUTO_GW, AUTO_GH)) {
         document.getElementById('table-canvas').appendChild(createAddSlotBtn(gx, gy));
         return;  // 첫 번째 빈 슬롯 하나만 렌더
