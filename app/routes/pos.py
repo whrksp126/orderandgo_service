@@ -428,7 +428,7 @@ def submit_toss_result():
         _s.stdout.write(f'[Toss][CANCEL] payment_id={payment_id} pending={bool(pending)} tpl_id={pending.get("table_payment_list_id") if pending else None} result={_j.dumps(result, ensure_ascii=False)}\n')
         _s.stdout.flush()
         _pending_payments.pop(payment_id, None)
-        tpl_id = pending.get('table_payment_list_id') if pending else None
+        tpl_id = pending.get('table_payment_list_id') if pending else data.get('table_payment_list_id')
         result_type = result.get('type') if result else None
         if result and result_type in ('SUCCESS', 'CANCEL_SUCCESS') and tpl_id:
             from app.models import TablePaymentList, Payment
@@ -445,7 +445,7 @@ def submit_toss_result():
                 db.session.commit()
         _s.stdout.write(f'[Toss][CANCEL] result_type={result_type} tpl_id={tpl_id} → db_updated={bool(result and result_type in ("SUCCESS","CANCEL_SUCCESS") and tpl_id)}\n')
         _s.stdout.flush()
-        cancel_store_id = pending.get('store_id') if pending else None
+        cancel_store_id = pending.get('store_id') if pending else data.get('store_id')
         event_data = {
             'payment_id': payment_id,
             'table_id': table_id,
