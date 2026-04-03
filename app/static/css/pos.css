@@ -699,11 +699,10 @@ main section>aside .custom_btns button {
   font-size: 14px;
   line-height: 17px;
   color: #999;
-  padding-left: 12px;
 }
 
 .basket_container .basket li>div.menu_option h2 {
-  margin-left: 23px;
+  margin-left: 4px;
 }
 
 .basket_container .basket li>div.menu_option h2::before {
