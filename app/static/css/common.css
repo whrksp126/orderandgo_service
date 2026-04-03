@@ -39,6 +39,18 @@ button.red {
   background: var(--background-color-ff);
 }
 
+button.red_fill {
+  background: #F43E25;
+  border: 1px solid #F43E25;
+  color: #fff;
+}
+
+button.gray {
+  color: #888;
+  border: 1px solid #ccc;
+  background: var(--background-color-ff);
+}
+
 .input_box {
   border: 1px solid var(--border-color-da);
   padding: 12px;

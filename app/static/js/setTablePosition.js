@@ -509,14 +509,16 @@ const startInlineCardEdit = (card, tableId) => {
 
 const openDeleteModal = (id) => {
   const modal = openDefaultModal();
-  modal.top.innerHTML = modalTopHtml('테이블 삭제');
   modal.middle.innerHTML = `
-    <i class="ph ph-warning-circle" style="font-size:40px;color:#e74c3c;"></i>
-    <p style="margin-top:8px;">이 테이블을 삭제하시겠습니까?</p>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:14px;padding:12px 0 4px;">
+      <i class="ph ph-trash" style="font-size:48px;color:#F43E25;"></i>
+      <p style="font-size:16px;font-weight:700;color:#222;text-align:center;">테이블을 삭제하시겠습니까?</p>
+      <p style="font-size:13px;color:#999;text-align:center;">삭제된 테이블은 복구할 수 없습니다.</p>
+    </div>
   `;
   modal.bottom.innerHTML = modalBottomHtml([
-    { class: 'close brand', text: '취소', fun: '' },
-    { class: 'red', text: '삭제', fun: `onclick="callDeleteTable(event,${id})"` },
+    { class: 'close gray', text: '취소', fun: '' },
+    { class: 'red_fill', text: '삭제', fun: `onclick="callDeleteTable(event,${id})"` },
   ]);
 };
 
