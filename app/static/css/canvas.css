@@ -84,6 +84,7 @@ body:not(.set_table_position) #table-canvas {
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: text;
+  padding: 16px 12px 8px;
 }
 
 /* 카드 인라인 이름 편집 input */
