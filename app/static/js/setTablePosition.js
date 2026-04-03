@@ -365,6 +365,7 @@ const renderAddButtons = () => {
     for (let gx = 0; gx <= COLS - AUTO_GW; gx += AUTO_GW) {
       if (!checkOverlap(null, gx, gy, AUTO_GW, AUTO_GH)) {
         document.getElementById('table-canvas').appendChild(createAddSlotBtn(gx, gy));
+        return;  // 첫 번째 빈 슬롯 하나만 렌더
       }
     }
   }
