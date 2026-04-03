@@ -66,15 +66,6 @@ const checkOverlap = (excludeId, gx, gy, gw, gh) => {
   return false;
 };
 
-const checkOverlapExcluding = (excludeIds, gx, gy, gw, gh) => {
-  for (const card of document.querySelectorAll('#table-canvas .table-card')) {
-    if (excludeIds.includes(String(card.dataset.id))) continue;
-    const cx = Number(card.dataset.gx), cy = Number(card.dataset.gy);
-    const cw = Number(card.dataset.gw), ch = Number(card.dataset.gh);
-    if (gx < cx + cw && gx + gw > cx && gy < cy + ch && gy + gh > cy) return true;
-  }
-  return false;
-};
 
 // ----- 빈 슬롯 탐색 (tableData 기반) -----
 const findFirstEmptySlot = (gw, gh) => {
@@ -122,33 +113,22 @@ const handleCardClick = (card) => {
   }
 };
 
-// ----- 두 카드 위치 교환 -----
+// ----- 두 카드 교환 (위치/사이즈 유지, id·이름만 교체) -----
 const swapCards = (cardA, cardB) => {
-  const excludeIds = [String(cardA.dataset.id), String(cardB.dataset.id)];
-  const axOld = Number(cardA.dataset.gx), ayOld = Number(cardA.dataset.gy);
-  const bxOld = Number(cardB.dataset.gx), byOld = Number(cardB.dataset.gy);
-  const awOld = Number(cardA.dataset.gw), ahOld = Number(cardA.dataset.gh);
-  const bwOld = Number(cardB.dataset.gw), bhOld = Number(cardB.dataset.gh);
+  const idA = Number(cardA.dataset.id), idB = Number(cardB.dataset.id);
+  const nameA = cardA.querySelector('h2').textContent;
+  const nameB = cardB.querySelector('h2').textContent;
 
-  if (checkOverlapExcluding(excludeIds, bxOld, byOld, awOld, ahOld) ||
-      checkOverlapExcluding(excludeIds, axOld, ayOld, bwOld, bhOld)) {
-    showToast('교환 시 다른 테이블과 겹칩니다.', 'warning');
-    [cardA, cardB].forEach(c => {
-      c.classList.remove('selected');
-      c.classList.add('overlap');
-      setTimeout(() => c.classList.remove('overlap'), 400);
-    });
-    return;
-  }
-
-  cardA.dataset.gx = bxOld; cardA.dataset.gy = byOld;
-  cardB.dataset.gx = axOld; cardB.dataset.gy = ayOld;
-  applyCardRect(cardA);
-  applyCardRect(cardB);
+  // DOM: id와 이름만 교체, 위치·사이즈는 그대로
+  cardA.dataset.id = idB; cardA.querySelector('h2').textContent = nameB;
+  cardB.dataset.id = idA; cardB.querySelector('h2').textContent = nameA;
   cardB.classList.remove('selected');
 
-  syncTableData(Number(cardA.dataset.id), { grid_x: bxOld, grid_y: byOld });
-  syncTableData(Number(cardB.dataset.id), { grid_x: axOld, grid_y: ayOld });
+  // tableData: 각 id가 상대방 카드 위치·사이즈를 갖도록 업데이트
+  syncTableData(idB, { grid_x: Number(cardA.dataset.gx), grid_y: Number(cardA.dataset.gy),
+                       grid_w: Number(cardA.dataset.gw), grid_h: Number(cardA.dataset.gh) });
+  syncTableData(idA, { grid_x: Number(cardB.dataset.gx), grid_y: Number(cardB.dataset.gy),
+                       grid_w: Number(cardB.dataset.gw), grid_h: Number(cardB.dataset.gh) });
 
   autoSave();
   haptic();
