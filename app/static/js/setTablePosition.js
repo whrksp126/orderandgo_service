@@ -366,31 +366,38 @@ const renderCanvas = () => {
 };
 
 // ----- 빈 슬롯 + 버튼 렌더 -----
-const renderAddButtons = () => {
-  document.querySelectorAll('#table-canvas .add-slot-btn').forEach(b => b.remove());
-  for (let gy = 0; gy <= ROWS - AUTO_GH; gy++) {
-    for (let gx = 0; gx <= COLS - AUTO_GW; gx++) {
-      if (!checkOverlap(null, gx, gy, AUTO_GW, AUTO_GH)) {
-        document.getElementById('table-canvas').appendChild(createAddSlotBtn(gx, gy));
-        return;  // 첫 번째 빈 슬롯 하나만 렌더
-      }
+const findFirstSlotForSize = (gw, gh) => {
+  for (let gy = 0; gy <= ROWS - gh; gy++) {
+    for (let gx = 0; gx <= COLS - gw; gx++) {
+      if (!checkOverlap(null, gx, gy, gw, gh)) return { gx, gy };
     }
   }
+  return null;
 };
 
-const createAddSlotBtn = (gx, gy) => {
+const renderAddButtons = () => {
+  document.querySelectorAll('#table-canvas .add-slot-btn').forEach(b => b.remove());
+  const canvas = document.getElementById('table-canvas');
+  // 기본 사이즈(AUTO_GW×AUTO_GH) 먼저, 없으면 최소 사이즈(MIN_W×MIN_H)
+  let slot = findFirstSlotForSize(AUTO_GW, AUTO_GH);
+  if (slot) { canvas.appendChild(createAddSlotBtn(slot.gx, slot.gy, AUTO_GW, AUTO_GH)); return; }
+  slot = findFirstSlotForSize(MIN_W, MIN_H);
+  if (slot) { canvas.appendChild(createAddSlotBtn(slot.gx, slot.gy, MIN_W, MIN_H)); }
+};
+
+const createAddSlotBtn = (gx, gy, gw, gh) => {
   const btn = document.createElement('div');
   btn.className = 'add-slot-btn';
   btn.style.left   = `${gridToLeft(gx)}px`;
   btn.style.top    = `${gridToTop(gy)}px`;
-  btn.style.width  = `${gridToWidth(AUTO_GW)}px`;
-  btn.style.height = `${gridToHeight(AUTO_GH)}px`;
+  btn.style.width  = `${gridToWidth(gw)}px`;
+  btn.style.height = `${gridToHeight(gh)}px`;
   btn.innerHTML = `<i class="ph ph-plus"></i>`;
-  btn.addEventListener('click', () => clickAddSlot(gx, gy));
+  btn.addEventListener('click', () => clickAddSlot(gx, gy, gw, gh));
   return btn;
 };
 
-const clickAddSlot = async (gx, gy) => {
+const clickAddSlot = async (gx, gy, gw, gh) => {
   // 중복 클릭 방지: 즉시 버튼 제거
   document.querySelectorAll('#table-canvas .add-slot-btn').forEach(b => b.remove());
   const category = tableData?.[curCategoryIndex];
@@ -402,7 +409,7 @@ const clickAddSlot = async (gx, gy) => {
   });
   if (!result || !result.table_id) { renderAddButtons(); return showToast('테이블 추가 실패', 'error'); }
   const t = { id: result.table_id, name: result.table_name || name,
-    grid_x: gx, grid_y: gy, grid_w: AUTO_GW, grid_h: AUTO_GH };
+    grid_x: gx, grid_y: gy, grid_w: gw, grid_h: gh };
   category.tables.push(t);
   await doSave();  // 즉시 저장 (debounce 없이)
 
