@@ -485,8 +485,8 @@ const changeBasketHtml = (datas) => {
     html += `
       <li>
         <div data-id="${data.id}" data-type="menu" data-count="${length}" data-master="${masterName}" class="menu" onclick="clickBasketMenu(event)">
-          <div class="count"><span>${length}</span></div>
           <h2>${data.name}</h2>
+          <span class="quantity">x ${length}</span>
           <span class="price">${(data.price * length).toLocaleString()}원</span>
         </div>
         `
@@ -543,8 +543,8 @@ const changeOrderHtml = (datas) => {
     html += `
       <li data-id="${data.id}" data-type="menu" data-count="${length}" data-master="${masterName}" class="menu" onclick="clickOrderMenu(event)">
         <div data-id="${data.id}" data-type="menu" data-count="${length}" data-master="${masterName}" class="menu">
-          <div class="count"><span>${length}</span></div>
           <h2>${data.name}</h2>
+          <span class="quantity">x ${length}</span>
           <span class="price">${(data.price * length).toLocaleString()}원</span>
         </div>
         `

@@ -669,25 +669,11 @@ main section>aside .custom_btns button {
   font-weight: 500;
 }
 
-.basket_container .basket li>.menu .count {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 20px;
-  background: #1FAA9C;
-  color: #FFF;
-  font-size: 12px;
+.basket_container .basket li>.menu .quantity {
+  white-space: nowrap;
+  font-size: 14px;
   font-weight: 500;
-}
-
-.basket_container .basket li>.menu.cancel .count {
-  background: #F43E25;
-}
-
-.basket_container .basket li>.menu .count.addition {
-  background: #F46325;
+  color: #555;
 }
 
 .basket_container .basket li>.menu h2 {
