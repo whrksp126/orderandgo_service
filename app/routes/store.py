@@ -1006,6 +1006,29 @@ def cancel_toss_payment():
     return jsonify({'payment_id': payment_id, 'status': 'ok'})
 
 
+@store_bp.route('/save_toss_cancel', methods=['POST'])
+@login_required
+def save_toss_cancel():
+    from app.models import TablePaymentList, Payment
+    data = request.get_json()
+    tpl_id = data.get('table_payment_list_id')
+    result = data.get('result')
+    if not tpl_id or not result:
+        return jsonify({'error': '잘못된 요청입니다.'}), 400
+    tpl = TablePaymentList.query.filter_by(id=tpl_id, store_id=current_user.id).first()
+    if not tpl:
+        return jsonify({'error': '결제 내역을 찾을 수 없습니다.'}), 404
+    for p in Payment.query.filter_by(table_payment_list_id=tpl_id).all():
+        if p.payment_status != 2:
+            p.payment_status = 2
+    ph = json.loads(tpl.payment_history) if tpl.payment_history else {}
+    ph['toss_cancel_result'] = result
+    ph['toss_cancel_time'] = datetime.now().isoformat()
+    tpl.payment_history = json.dumps(ph, ensure_ascii=False)
+    db.session.commit()
+    return jsonify({'status': 'ok'})
+
+
 @store_bp.route('/confirm_staff_call', methods=['POST'])
 @login_required
 def api_confirm_staff_call():

@@ -14,13 +14,26 @@ window.addEventListener('DOMContentLoaded', () => {
   if (typeof socket !== 'undefined' && typeof STORE_ID !== 'undefined' && STORE_ID) {
     socket.emit('store_history_login', { store_id: STORE_ID });
 
-    socket.on('toss_history_cancel_result', (data) => {
+    socket.on('toss_history_cancel_result', async (data) => {
       const r = data.result || {};
+      const tpl_id = data.table_payment_list_id || (_currentItem && _currentItem.id);
       const btn = document.querySelector('#detail-refund-btn');
       const msgEl = document.getElementById('refund-status-msg');
       if (msgEl) msgEl.remove();
 
       if (r.type === 'SUCCESS' || r.type === 'CANCEL_SUCCESS') {
+        // 카드 결제와 동일 패턴: 프론트엔드가 API 호출로 DB 저장 확정
+        if (tpl_id) {
+          try {
+            await fetch('/store/save_toss_cancel', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ table_payment_list_id: tpl_id, result: r }),
+            });
+          } catch (e) {
+            console.error('[CANCEL] save_toss_cancel error:', e);
+          }
+        }
         if (btn) { btn.disabled = true; btn.textContent = '환불 완료'; }
         showToast('환불이 완료되었습니다.', 'success');
         closeDetailModal();

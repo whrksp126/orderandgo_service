@@ -429,27 +429,38 @@ def submit_toss_result():
         _s.stdout.flush()
         _pending_payments.pop(payment_id, None)
         tpl_id = pending.get('table_payment_list_id') if pending else data.get('table_payment_list_id')
+        cancel_store_id = pending.get('store_id') if pending else data.get('store_id')
         result_type = result.get('type') if result else None
-        if result and result_type in ('SUCCESS', 'CANCEL_SUCCESS') and tpl_id:
-            from app.models import TablePaymentList, Payment
-            from datetime import datetime as dt
-            tpl = db.session.query(TablePaymentList).filter_by(id=tpl_id).first()
-            if tpl:
-                for p in Payment.query.filter_by(table_payment_list_id=tpl_id).all():
-                    if p.payment_status != 2:
-                        p.payment_status = 2
-                ph = json.loads(tpl.payment_history) if tpl.payment_history else {}
-                ph['toss_cancel_result'] = result
-                ph['toss_cancel_time'] = dt.now().isoformat()
-                tpl.payment_history = json.dumps(ph)
-                db.session.commit()
+
+        # 1차 DB 저장 시도 (실패해도 소켓 전송은 반드시 수행)
+        try:
+            if result and result_type in ('SUCCESS', 'CANCEL_SUCCESS') and tpl_id:
+                from app.models import TablePaymentList, Payment
+                from datetime import datetime as dt
+                tpl = db.session.query(TablePaymentList).filter_by(id=tpl_id).first()
+                if tpl:
+                    for p in Payment.query.filter_by(table_payment_list_id=tpl_id).all():
+                        if p.payment_status != 2:
+                            p.payment_status = 2
+                    ph = json.loads(tpl.payment_history) if tpl.payment_history else {}
+                    ph['toss_cancel_result'] = result
+                    ph['toss_cancel_time'] = dt.now().isoformat()
+                    tpl.payment_history = json.dumps(ph)
+                    db.session.commit()
+        except Exception as _e:
+            import sys as _s2
+            _s2.stdout.write(f'[Toss][CANCEL] DB 1차 저장 실패 (프론트 폴백): {_e}\n')
+            _s2.stdout.flush()
+
         _s.stdout.write(f'[Toss][CANCEL] result_type={result_type} tpl_id={tpl_id} → db_updated={bool(result and result_type in ("SUCCESS","CANCEL_SUCCESS") and tpl_id)}\n')
         _s.stdout.flush()
-        cancel_store_id = pending.get('store_id') if pending else data.get('store_id')
+
+        # 소켓은 DB 결과와 무관하게 항상 전송 (카드 결제와 동일 패턴)
         event_data = {
             'payment_id': payment_id,
             'table_id': table_id,
             'result': result,
+            'table_payment_list_id': tpl_id,   # 프론트 2차 저장용
         }
         socketio.emit('toss_history_cancel_result', event_data, to='pos_group')
         if cancel_store_id:
