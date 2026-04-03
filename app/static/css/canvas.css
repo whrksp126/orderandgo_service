@@ -80,7 +80,6 @@ body:not(.set_table_position) #table-canvas {
   font-size: 16px;
   font-weight: 600;
   color: #222;
-  padding: 20px 20px 8px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -651,4 +650,27 @@ article.disabled .table-card.view-card .transparent_move_box {
 
 .canvas-empty-state p {
   font-size: 14px;
+}
+
+/* === Add Slot Button === */
+.add-slot-btn {
+  position: absolute;
+  box-sizing: border-box;
+  border-radius: 10px;
+  border: 2px dashed rgba(255,255,255,0.2);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: rgba(255,255,255,0.2);
+  font-size: 28px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.add-slot-btn:hover {
+  background: rgba(31,170,156,0.12);
+  border-color: rgba(31,170,156,0.5);
+  color: rgba(31,170,156,0.7);
 }

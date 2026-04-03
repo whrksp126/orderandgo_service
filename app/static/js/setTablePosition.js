@@ -15,8 +15,24 @@ let CELL_H = 60;
 
 let tableData;
 let curCategoryIndex = 0;
-let isDirty  = false;
 let selectedCard = null;
+
+// ----- 자동 저장 -----
+let saveTimer;
+const autoSave = () => {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(doSave, 500);
+};
+const doSave = async () => {
+  const category = tableData?.[curCategoryIndex];
+  if (!category) return;
+  const tables = (category.tables || []).map(t => ({
+    id: t.id,
+    grid_x: t.grid_x ?? null,  grid_y: t.grid_y ?? null,
+    grid_w: t.grid_w ?? null,  grid_h: t.grid_h ?? null,
+  }));
+  await fetchDataAsync('/store/update_table_layout', 'PATCH', { tables });
+};
 
 // ----- 유틸 -----
 const haptic    = () => { if (navigator.vibrate) navigator.vibrate(30); };
@@ -34,8 +50,6 @@ const topToGrid    = (py) => pxToGrid(py, CELL_H);
 const updateCellSize = () => {
   const canvas = document.getElementById('table-canvas');
   if (!canvas) return;
-  // GAP을 더해서 나누면 card_width = gw*CELL_W - GAP 공식으로
-  // 모든 카드가 동일한 크기를 가지면서 우측/하단까지 꽉 채워짐
   CELL_W = (canvas.clientWidth  + GAP) / COLS;
   CELL_H = (canvas.clientHeight + GAP) / ROWS;
   canvas.style.backgroundSize = `${CELL_W}px ${CELL_H}px`;
@@ -44,7 +58,7 @@ const updateCellSize = () => {
 // ----- 겹침 감지 -----
 const checkOverlap = (excludeId, gx, gy, gw, gh) => {
   for (const card of document.querySelectorAll('#table-canvas .table-card')) {
-    if (String(card.dataset.id) === String(excludeId)) continue;
+    if (excludeId !== null && String(card.dataset.id) === String(excludeId)) continue;
     const cx = Number(card.dataset.gx), cy = Number(card.dataset.gy);
     const cw = Number(card.dataset.gw), ch = Number(card.dataset.gh);
     if (gx < cx + cw && gx + gw > cx && gy < cy + ch && gy + gh > cy) return true;
@@ -136,66 +150,8 @@ const swapCards = (cardA, cardB) => {
   syncTableData(Number(cardA.dataset.id), { grid_x: bxOld, grid_y: byOld });
   syncTableData(Number(cardB.dataset.id), { grid_x: axOld, grid_y: ayOld });
 
-  isDirty = true;
-  updateSaveBtn();
+  autoSave();
   haptic();
-};
-
-// ----- 카드를 미배치로 이동 -----
-const moveToUnplaced = (card) => {
-  const tableId = Number(card.dataset.id);
-  const name = card.querySelector('h2').textContent;
-  syncTableData(tableId, { grid_x: null, grid_y: null, grid_w: null, grid_h: null });
-  card.remove();
-
-  const li = createUnplacedItem({ id: tableId, name });
-  document.querySelector('.unplaced-list').appendChild(li);
-
-  isDirty = true;
-  updateSaveBtn();
-};
-
-// ----- 미배치 아이템 DOM 생성 (이름 + 편집/삭제 버튼) -----
-const createUnplacedItem = (table) => {
-  const li = document.createElement('li');
-  li.className = 'unplaced-item';
-  li.dataset.id = String(table.id);
-  li.innerHTML = `
-    <span class="unplaced-name">${table.name}</span>
-    <div class="unplaced-actions">
-      <button class="delete-btn" title="삭제"><i class="ph ph-trash"></i></button>
-    </div>
-  `;
-  li.querySelector('.unplaced-name').addEventListener('pointerdown', e => e.stopPropagation());
-  li.querySelector('.unplaced-name').addEventListener('click', e => {
-    e.stopPropagation();
-    startInlineUnplacedEdit(li, table.id);
-  });
-  li.querySelector('.delete-btn').addEventListener('pointerdown', e => e.stopPropagation());
-  li.querySelector('.delete-btn').addEventListener('click', e => {
-    e.stopPropagation();
-    callDeleteTable(e, table.id);
-  });
-  attachUnplacedDrag(li, table);
-  return li;
-};
-
-// ----- 미배치 테이블 자동 배치 (AUTO_GW × AUTO_GH) -----
-const autoPlaceTable = (item, tableInfo) => {
-  const slot = findFirstEmptySlot(AUTO_GW, AUTO_GH);
-  if (!slot) return showToast('배치할 수 있는 공간이 없습니다.', 'warning');
-
-  syncTableData(tableInfo.id, { grid_x: slot.gx, grid_y: slot.gy, grid_w: AUTO_GW, grid_h: AUTO_GH });
-  item.remove();
-
-  const canvas = document.getElementById('table-canvas');
-  const card = createEditCard({ ...tableInfo, grid_x: slot.gx, grid_y: slot.gy, grid_w: AUTO_GW, grid_h: AUTO_GH });
-  card.classList.add('placing');
-  canvas.appendChild(card);
-  setTimeout(() => card.classList.remove('placing'), 400);
-
-  isDirty = true;
-  updateSaveBtn();
 };
 
 // ----- 초기 자동 격자 배치 (5×4, page 1) -----
@@ -244,7 +200,7 @@ const createEditCard = (table) => {
   card.innerHTML = `
     <h2>${table.name}</h2>
     <div class="card-actions">
-      <button class="delete-btn" title="미배치로 이동"><i class="ph ph-minus-circle"></i></button>
+      <button class="delete-btn" title="삭제"><i class="ph ph-trash"></i></button>
     </div>
     <div class="card-swap-overlay"><i class="ph ph-arrows-left-right"></i></div>
     <div class="resize-handle"></div>
@@ -259,7 +215,7 @@ const createEditCard = (table) => {
   card.querySelector('.delete-btn').addEventListener('pointerdown', e => e.stopPropagation());
   card.querySelector('.delete-btn').addEventListener('click', e => {
     e.stopPropagation();
-    moveToUnplaced(card);
+    openDeleteModal(Number(card.dataset.id));
   });
 
   attachDrag(card);
@@ -271,7 +227,7 @@ const createEditCard = (table) => {
 const attachDrag = (card) => {
   card.addEventListener('pointerdown', (e) => {
     if (e.target.closest('.resize-handle') || e.target.closest('.card-actions')) return;
-    const activeInput = document.querySelector('.unplaced-name-input, .card-name-input');
+    const activeInput = document.querySelector('.card-name-input');
     if (activeInput) { activeInput.blur(); return; }
     e.preventDefault();
     card.setPointerCapture(e.pointerId);
@@ -292,8 +248,6 @@ const attachDrag = (card) => {
         dragStarted = true;
         clearSelectedCard();
         card.classList.add('dragging');
-        isDirty = true;
-        updateSaveBtn();
       }
       if (!dragStarted) return;
 
@@ -305,26 +259,14 @@ const attachDrag = (card) => {
 
       const sx = leftToGrid(newLeft), sy = topToGrid(newTop);
       if (sx !== prevSnapX || sy !== prevSnapY) { haptic(); prevSnapX = sx; prevSnapY = sy; }
-
-      const panel = document.querySelector('.unplaced-panel');
-      const pr = panel.getBoundingClientRect();
-      panel.classList.toggle('drop-highlight',
-        e.clientX >= pr.left && e.clientX <= pr.right && e.clientY >= pr.top && e.clientY <= pr.bottom);
     };
 
     const onUp = (e) => {
       card.removeEventListener('pointermove', onMove);
       card.removeEventListener('pointerup', onUp);
-      document.querySelector('.unplaced-panel').classList.remove('drop-highlight');
 
       if (!dragStarted) { handleCardClick(card); return; }
       card.classList.remove('dragging');
-
-      const panel = document.querySelector('.unplaced-panel');
-      const pr = panel.getBoundingClientRect();
-      if (e.clientX >= pr.left && e.clientX <= pr.right && e.clientY >= pr.top && e.clientY <= pr.bottom) {
-        moveToUnplaced(card); return;
-      }
 
       const gw = Number(card.dataset.gw), gh = Number(card.dataset.gh);
       let gx = clampVal(leftToGrid(parseFloat(card.style.left)), 0, COLS - gw);
@@ -340,6 +282,7 @@ const attachDrag = (card) => {
       card.dataset.gy = gy;
       applyCardRect(card);
       syncTableData(Number(card.dataset.id), { grid_x: gx, grid_y: gy });
+      autoSave();
     };
 
     card.addEventListener('pointermove', onMove);
@@ -359,8 +302,6 @@ const attachResize = (handle, card) => {
     startPx = e.clientX; startPy = e.clientY;
     startGW = Number(card.dataset.gw); startGH = Number(card.dataset.gh);
     prevSnapW = startGW; prevSnapH = startGH;
-    isDirty = true;
-    updateSaveBtn();
 
     const onMove = (e) => {
       const gx = Number(card.dataset.gx), gy = Number(card.dataset.gy);
@@ -390,6 +331,7 @@ const attachResize = (handle, card) => {
       card.dataset.gh = gh;
       applyCardRect(card);
       syncTableData(Number(card.dataset.id), { grid_w: gw, grid_h: gh });
+      autoSave();
     };
 
     handle.addEventListener('pointermove', onMove);
@@ -397,104 +339,75 @@ const attachResize = (handle, card) => {
   });
 };
 
-// ----- 미배치 패널 드래그 (클릭 → 자동 배치) -----
-const attachUnplacedDrag = (item, tableInfo) => {
-  item.addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.unplaced-actions')) return;
-    const activeInput = document.querySelector('.unplaced-name-input, .card-name-input');
-    if (activeInput) { activeInput.blur(); return; }
-    e.preventDefault();
-    item.setPointerCapture(e.pointerId);
-
-    const startPx = e.clientX, startPy = e.clientY;
-    let dragStarted = false;
-    let ghost = null;
-    const canvas = document.getElementById('table-canvas');
-
-    const onMove = (e) => {
-      const dx = e.clientX - startPx, dy = e.clientY - startPy;
-      if (!dragStarted && Math.hypot(dx, dy) > 5) {
-        dragStarted = true;
-        ghost = document.createElement('div');
-        ghost.className = 'table-card ghost';
-        ghost.style.cssText = `left:-9999px;top:-9999px;width:${gridToWidth(AUTO_GW)}px;height:${gridToHeight(AUTO_GH)}px;pointer-events:none;`;
-        ghost.innerHTML = `<h2>${tableInfo.name}</h2>`;
-        canvas.appendChild(ghost);
-      }
-      if (!dragStarted) return;
-
-      const r  = canvas.getBoundingClientRect();
-      const gx = clampVal(leftToGrid(e.clientX - r.left - gridToWidth(AUTO_GW) / 2),  0, COLS - AUTO_GW);
-      const gy = clampVal(topToGrid (e.clientY - r.top  - gridToHeight(AUTO_GH) / 2), 0, ROWS - AUTO_GH);
-      ghost.dataset.gx = gx;
-      ghost.dataset.gy = gy;
-      ghost.style.left = `${gridToLeft(gx)}px`;
-      ghost.style.top  = `${gridToTop(gy)}px`;
-    };
-
-    const onUp = (e) => {
-      item.removeEventListener('pointermove', onMove);
-      item.removeEventListener('pointerup', onUp);
-
-      const dropGx = ghost ? Number(ghost.dataset.gx) : 0;
-      const dropGy = ghost ? Number(ghost.dataset.gy) : 0;
-      if (ghost) { canvas.removeChild(ghost); ghost = null; }
-
-      if (!dragStarted) {
-        autoPlaceTable(item, tableInfo);
-        return;
-      }
-
-      const r = canvas.getBoundingClientRect();
-      if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
-
-      if (checkOverlap(tableInfo.id, dropGx, dropGy, AUTO_GW, AUTO_GH)) {
-        return showToast('해당 위치에 다른 테이블이 있습니다.', 'warning');
-      }
-
-      syncTableData(tableInfo.id, { grid_x: dropGx, grid_y: dropGy, grid_w: AUTO_GW, grid_h: AUTO_GH });
-      canvas.appendChild(createEditCard({ ...tableInfo, grid_x: dropGx, grid_y: dropGy, grid_w: AUTO_GW, grid_h: AUTO_GH }));
-      item.remove();
-      isDirty = true;
-      updateSaveBtn();
-    };
-
-    item.addEventListener('pointermove', onMove);
-    item.addEventListener('pointerup', onUp);
-  });
-};
-
 // ----- 캔버스 렌더 -----
 const renderCanvas = () => {
   clearSelectedCard();
   const canvas = document.getElementById('table-canvas');
-  const unplacedList = document.querySelector('.unplaced-list');
   canvas.innerHTML = '';
-  unplacedList.innerHTML = '';
   if (!tableData || tableData.length === 0) return;
-
   const category = tableData[curCategoryIndex];
   if (!category) return;
-
   const allTables = category.tables || [];
-
-  // 전체 미배치면 자동 격자 배치
   const allUnplaced = allTables.length > 0 &&
     allTables.every(t => t.grid_x === null || t.grid_x === undefined);
-  if (allUnplaced) {
-    autoLayoutAllTables();
-    isDirty = true;
-    updateSaveBtn();
-  }
-
+  if (allUnplaced) { autoLayoutAllTables(); doSave(); }
   allTables.forEach((table) => {
-    const placed = table.grid_x !== null && table.grid_x !== undefined;
-    if (placed) {
+    if (table.grid_x !== null && table.grid_x !== undefined)
       canvas.appendChild(createEditCard(table));
-    } else {
-      unplacedList.appendChild(createUnplacedItem(table));
-    }
   });
+  renderAddButtons();
+};
+
+// ----- 빈 슬롯 + 버튼 렌더 -----
+const renderAddButtons = () => {
+  document.querySelectorAll('#table-canvas .add-slot-btn').forEach(b => b.remove());
+  for (let gy = 0; gy <= ROWS - AUTO_GH; gy += AUTO_GH) {
+    for (let gx = 0; gx <= COLS - AUTO_GW; gx += AUTO_GW) {
+      if (!checkOverlap(null, gx, gy, AUTO_GW, AUTO_GH)) {
+        document.getElementById('table-canvas').appendChild(createAddSlotBtn(gx, gy));
+      }
+    }
+  }
+};
+
+const createAddSlotBtn = (gx, gy) => {
+  const btn = document.createElement('div');
+  btn.className = 'add-slot-btn';
+  btn.style.left   = `${gridToLeft(gx)}px`;
+  btn.style.top    = `${gridToTop(gy)}px`;
+  btn.style.width  = `${gridToWidth(AUTO_GW)}px`;
+  btn.style.height = `${gridToHeight(AUTO_GH)}px`;
+  btn.innerHTML = `<i class="ph ph-plus"></i>`;
+  btn.addEventListener('click', () => clickAddSlot(gx, gy));
+  return btn;
+};
+
+const clickAddSlot = async (gx, gy) => {
+  // 중복 클릭 방지: 즉시 버튼 제거
+  document.querySelectorAll('#table-canvas .add-slot-btn').forEach(b => b.remove());
+  const category = tableData?.[curCategoryIndex];
+  if (!category) return;
+  const name = `${category.name} ${(category.tables?.length || 0) + 1}`;
+  const result = await fetchDataAsync('/adm/create_table', 'POST', {
+    name, seat_count: 4, table_category: category.id,
+    position: (category.tables?.length || 0) + 1,
+  });
+  if (!result || !result.table_id) { renderAddButtons(); return showToast('테이블 추가 실패', 'error'); }
+  const t = { id: result.table_id, name: result.table_name || name,
+    grid_x: gx, grid_y: gy, grid_w: AUTO_GW, grid_h: AUTO_GH };
+  category.tables.push(t);
+  await doSave();  // 즉시 저장 (debounce 없이)
+
+  const canvas = document.getElementById('table-canvas');
+  const card = createEditCard(t);
+  card.classList.add('placing');
+  canvas.appendChild(card);
+  renderAddButtons();  // 남은 빈 슬롯 다시 렌더
+
+  setTimeout(() => {
+    card.classList.remove('placing');
+    startInlineCardEdit(card, t.id);  // 이름 편집 포커스
+  }, 350);
 };
 
 // ----- 카테고리 탭 렌더 -----
@@ -509,33 +422,6 @@ const renderNav = () => {
       </li>
     `).join('');
 };
-
-// ----- 저장 버튼 상태 -----
-const updateSaveBtn = () => {
-  document.querySelector('.save-layout-btn')?.classList.toggle('dirty', isDirty);
-};
-
-// ----- 저장 (tableData 기준 전체 페이지) -----
-const clickSaveLayoutBtn = async () => {
-  const category = tableData?.[curCategoryIndex];
-  if (!category) return;
-
-  const tables = (category.tables || []).map(t => ({
-    id: t.id,
-    grid_x: t.grid_x ?? null,
-    grid_y: t.grid_y ?? null,
-    grid_w: t.grid_w ?? null,
-    grid_h: t.grid_h ?? null,
-  }));
-
-  const result = await fetchDataAsync('/store/update_table_layout', 'PATCH', { tables });
-  if (result.code !== 200) return showToast(result.msg, 'error');
-  isDirty = false;
-  updateSaveBtn();
-  showToast('저장되었습니다.', 'success');
-};
-
-window.addEventListener('beforeunload', (e) => { if (isDirty) e.preventDefault(); });
 
 // =============================================
 //  API
@@ -563,11 +449,12 @@ const ro = new ResizeObserver(() => {
   resizeTimer = setTimeout(() => {
     updateCellSize();
     document.querySelectorAll('#table-canvas .table-card').forEach(applyCardRect);
+    renderAddButtons();
   }, 60);
 });
 
 // =============================================
-//  테이블 추가
+//  테이블 이름 변경 / 삭제
 // =============================================
 
 const focusInputAtEnd = (input) => {
@@ -576,177 +463,6 @@ const focusInputAtEnd = (input) => {
   const len = input.value.length;
   input.setSelectionRange(len, len);
 };
-
-const clickAddTableBtn = () => {
-  const category = tableData?.[curCategoryIndex];
-  const categoryName = category?.name || '테이블';
-  const modal = openDefaultModal();
-  modal.top.innerHTML = modalTopHtml('테이블 추가');
-  modal.middle.innerHTML = `
-    <div style="display:flex;border-bottom:2px solid #eee;margin-bottom:18px;">
-      <button type="button" id="tab-auto" onclick="switchAddTableTab('auto')"
-        style="flex:1;padding:10px 0;font-size:13px;font-weight:700;border:none;background:none;cursor:pointer;color:#1FAA9C;border-bottom:2px solid #1FAA9C;margin-bottom:-2px;">
-        자동 배치
-      </button>
-      <button type="button" id="tab-manual" onclick="switchAddTableTab('manual')"
-        style="flex:1;padding:10px 0;font-size:13px;font-weight:700;border:none;background:none;cursor:pointer;color:#aaa;border-bottom:2px solid transparent;margin-bottom:-2px;">
-        수동 추가
-      </button>
-    </div>
-
-    <!-- 자동 배치 패널 -->
-    <div id="panel-auto">
-      <label style="display:block;font-size:13px;font-weight:600;color:#555;margin-bottom:6px;">고정 테이블명</label>
-      <input type="text" id="table-name-prefix" placeholder="예: 홀" value="${categoryName}"
-        style="width:100%;box-sizing:border-box;height:38px;padding:0 10px;border:1px solid #dadada;border-radius:8px;font-size:14px;outline:none;"/>
-      <label style="display:flex;align-items:center;gap:8px;margin-top:14px;cursor:pointer;font-size:13px;font-weight:500;color:#555;">
-        <input type="checkbox" id="table-auto-number" onchange="toggleStartNum(this.checked)"
-          style="width:16px;height:16px;accent-color:#1FAA9C;cursor:pointer;"/>
-        배치된 테이블 기준 자동 숫자 증가
-      </label>
-      <div style="display:flex;gap:12px;margin-top:14px;">
-        <div id="wrap-start-num" style="flex:1;">
-          <label style="display:block;font-size:13px;font-weight:600;color:#555;margin-bottom:6px;">시작 번호</label>
-          <input type="number" id="table-start-num" value="1" min="1"
-            style="width:100%;box-sizing:border-box;height:38px;padding:0 10px;text-align:center;border:1px solid #dadada;border-radius:8px;font-size:14px;font-weight:600;outline:none;"/>
-        </div>
-        <div style="flex:1;">
-          <label style="display:block;font-size:13px;font-weight:600;color:#555;margin-bottom:6px;">추가할 개수</label>
-          <div style="display:flex;align-items:center;gap:6px;">
-            <button type="button" class="brand" onclick="adjustTableCount(-1)"
-              style="width:38px;height:38px;border-radius:8px;font-size:18px;cursor:pointer;flex-shrink:0;">-</button>
-            <input type="number" id="table-count" value="5" min="1" max="20"
-              style="flex:1;height:38px;text-align:center;border:1px solid #dadada;border-radius:8px;font-size:15px;font-weight:600;outline:none;"/>
-            <button type="button" class="brand" onclick="adjustTableCount(1)"
-              style="width:38px;height:38px;border-radius:8px;font-size:18px;cursor:pointer;flex-shrink:0;">+</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 수동 추가 패널 -->
-    <div id="panel-manual" style="display:none;">
-      <label style="display:block;font-size:13px;font-weight:600;color:#555;margin-bottom:6px;">테이블 이름</label>
-      <input type="text" id="table-manual-name" placeholder="테이블 이름 입력" value="${categoryName}"
-        style="width:100%;box-sizing:border-box;height:38px;padding:0 10px;border:1px solid #dadada;border-radius:8px;font-size:14px;outline:none;"/>
-      <p style="margin-top:10px;font-size:12px;color:#aaa;">입력한 이름 그대로 1개 테이블이 미배치 목록에 추가됩니다.</p>
-    </div>
-  `;
-  modal.bottom.innerHTML = `
-    <div id="bottom-auto" class="buttons">
-      <button class="close brand">취소</button>
-      <button class="brand_fill" onclick="callCreateTable(event, true)">자동 배치</button>
-    </div>
-    <div id="bottom-manual" class="buttons" style="display:none;">
-      <button class="close brand">취소</button>
-      <button class="brand_fill" onclick="callCreateTableManual(event)">추가</button>
-    </div>
-  `;
-  focusInputAtEnd(document.getElementById('table-name-prefix'));
-};
-
-const toggleStartNum = (checked) => {
-  document.getElementById('wrap-start-num').style.display = checked ? 'none' : '';
-};
-
-const switchAddTableTab = (tab) => {
-  const isAuto = tab === 'auto';
-  document.getElementById('tab-auto').style.color    = isAuto ? '#1FAA9C' : '#aaa';
-  document.getElementById('tab-auto').style.borderBottomColor = isAuto ? '#1FAA9C' : 'transparent';
-  document.getElementById('tab-manual').style.color  = isAuto ? '#aaa' : '#1FAA9C';
-  document.getElementById('tab-manual').style.borderBottomColor = isAuto ? 'transparent' : '#1FAA9C';
-  document.getElementById('panel-auto').style.display   = isAuto ? '' : 'none';
-  document.getElementById('panel-manual').style.display = isAuto ? 'none' : '';
-  document.getElementById('bottom-auto').style.display   = isAuto ? 'flex' : 'none';
-  document.getElementById('bottom-manual').style.display = isAuto ? 'none' : 'flex';
-  focusInputAtEnd(document.getElementById(isAuto ? 'table-name-prefix' : 'table-manual-name'));
-};
-
-const adjustTableCount = (delta) => {
-  const input = document.getElementById('table-count');
-  if (!input) return;
-  input.value = Math.min(20, Math.max(1, (parseInt(input.value) || 1) + delta));
-};
-
-const callCreateTableManual = async (event) => {
-  const name = document.getElementById('table-manual-name')?.value?.trim();
-  if (!name) return showToast('테이블 이름을 입력해주세요.', 'warning');
-  const category = tableData?.[curCategoryIndex];
-  if (!category) return;
-  const result = await fetchDataAsync('/adm/create_table', 'POST', {
-    name, seat_count: 4, table_category: category.id, position: (category.tables?.length || 0) + 1,
-  });
-  if (!result || !result.table_id) return showToast(`"${name}" 추가 실패`, 'error');
-  const t = { id: result.table_id, name: result.table_name || name, grid_x: null, grid_y: null, grid_w: null, grid_h: null };
-  category.tables.push(t);
-  removeModal();
-  document.querySelector('.unplaced-list').appendChild(createUnplacedItem(t));
-  showToast(`"${name}" 테이블이 추가되었습니다.`, 'success');
-  isDirty = true;
-  updateSaveBtn();
-};
-
-const callCreateTable = async (event, autoPlace = false) => {
-  const prefix = document.getElementById('table-name-prefix')?.value?.trim() || '테이블';
-  const count  = Math.min(20, Math.max(1, parseInt(document.getElementById('table-count')?.value) || 1));
-  const autoNumber = document.getElementById('table-auto-number')?.checked || false;
-  const category = tableData?.[curCategoryIndex];
-  if (!category) return;
-
-  let startPos;
-  if (autoNumber) {
-    const placedTables = (category.tables || []).filter(t => t.grid_x !== null && t.grid_x !== undefined);
-    const maxNum = placedTables.reduce((max, t) => {
-      const m = t.name.match(/(\d+)\s*$/);
-      return m ? Math.max(max, parseInt(m[1])) : max;
-    }, 0);
-    startPos = maxNum + 1;
-  } else {
-    startPos = parseInt(document.getElementById('table-start-num')?.value) || 1;
-  }
-  const newTables = [];
-
-  for (let i = 0; i < count; i++) {
-    const name = `${prefix} ${startPos + i}`;
-    const result = await fetchDataAsync('/adm/create_table', 'POST', {
-      name, seat_count: 4, table_category: category.id, position: startPos + i,
-    });
-    if (!result || !result.table_id) { showToast(`"${name}" 추가 실패`, 'error'); continue; }
-    const t = { id: result.table_id, name: result.table_name || name, grid_x: null, grid_y: null, grid_w: null, grid_h: null };
-    category.tables.push(t);
-    newTables.push(t);
-  }
-
-  if (!newTables.length) return;
-  removeModal();
-
-  if (autoPlace) {
-    const canvas = document.getElementById('table-canvas');
-    newTables.forEach((table) => {
-      const slot = findFirstEmptySlot(AUTO_GW, AUTO_GH);
-      if (!slot) return;
-      Object.assign(table, { grid_x: slot.gx, grid_y: slot.gy, grid_w: AUTO_GW, grid_h: AUTO_GH });
-      const card = createEditCard({ ...table });
-      card.classList.add('placing');
-      canvas.appendChild(card);
-      setTimeout(() => card.classList.remove('placing'), 400);
-    });
-    showToast(`${newTables.length}개 테이블이 추가 및 배치되었습니다.`, 'success');
-  } else {
-    const unplacedList = document.querySelector('.unplaced-list');
-    newTables.forEach((table) => {
-      unplacedList.appendChild(createUnplacedItem(table));
-    });
-    showToast(`${newTables.length}개 테이블이 추가되었습니다.`, 'success');
-  }
-
-  isDirty = true;
-  updateSaveBtn();
-};
-
-// =============================================
-//  테이블 이름 변경 / 삭제
-// =============================================
 
 // ----- 캔버스 카드 인라인 이름 편집 -----
 const startInlineCardEdit = (card, tableId) => {
@@ -780,54 +496,6 @@ const startInlineCardEdit = (card, tableId) => {
     const result = await fetchDataAsync('/adm/update_table_name', 'PATCH', { table_id: tableId, name: newName });
     if (result.code !== 200) { showToast(result.msg, 'error'); restore(currentName); return; }
     syncTableData(tableId, { name: newName });
-    const nameEl = document.querySelector(`.unplaced-item[data-id="${tableId}"] .unplaced-name`);
-    if (nameEl) nameEl.textContent = newName;
-    restore(newName);
-  };
-
-  input.addEventListener('pointerdown', e => e.stopPropagation());
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); save(); }
-    if (e.key === 'Escape') { done = true; restore(currentName); }
-  });
-  input.addEventListener('blur', save);
-};
-
-// ----- 미배치 아이템 인라인 이름 편집 -----
-const startInlineUnplacedEdit = (item, tableId) => {
-  const nameEl = item.querySelector('.unplaced-name');
-  if (!nameEl) return;
-  const currentName = nameEl.textContent;
-
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.value = currentName;
-  input.className = 'unplaced-name-input';
-  nameEl.replaceWith(input);
-  input.focus();
-  input.select();
-
-  let done = false;
-  const restore = (name) => {
-    if (done) return;
-    done = true;
-    const newSpan = document.createElement('span');
-    newSpan.className = 'unplaced-name';
-    newSpan.textContent = name;
-    newSpan.addEventListener('pointerdown', e => e.stopPropagation());
-    newSpan.addEventListener('click', e => { e.stopPropagation(); startInlineUnplacedEdit(item, tableId); });
-    if (input.parentNode) input.replaceWith(newSpan);
-  };
-
-  const save = async () => {
-    if (done) return;
-    const newName = input.value.trim();
-    if (!newName || newName === currentName) { restore(currentName); return; }
-    const result = await fetchDataAsync('/adm/update_table_name', 'PATCH', { table_id: tableId, name: newName });
-    if (result.code !== 200) { showToast(result.msg, 'error'); restore(currentName); return; }
-    syncTableData(tableId, { name: newName });
-    const cardH2 = document.querySelector(`#table-canvas .table-card[data-id="${tableId}"] h2`);
-    if (cardH2) cardH2.textContent = newName;
     restore(newName);
   };
 
@@ -856,15 +524,12 @@ const callDeleteTable = async (event, id) => {
   const result = await fetchDataAsync('/store/set_table', 'DELETE', { id });
   if (result.code !== 200) return showToast(result.msg, 'error');
   document.querySelector(`#table-canvas .table-card[data-id="${id}"]`)?.remove();
-  document.querySelector(`.unplaced-item[data-id="${id}"]`)?.remove();
   document.querySelector('.modal')?.click();
   showToast('삭제되었습니다.', 'success');
   const category = tableData?.[curCategoryIndex];
   if (category) category.tables = category.tables.filter(t => t.id !== id);
-  isDirty = true;
-  updateSaveBtn();
+  renderAddButtons();
 };
-
 
 // =============================================
 //  구역 관리
