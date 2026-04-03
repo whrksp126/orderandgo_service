@@ -669,7 +669,7 @@ main section>aside .custom_btns button {
   font-weight: 500;
 }
 
-.basket_container .basket li>.menu .quantity {
+.basket_container .basket li>div .quantity {
   white-space: nowrap;
   font-size: 14px;
   font-weight: 500;
@@ -688,23 +688,18 @@ main section>aside .custom_btns button {
 }
 
 .basket_container .basket li>div .price {
+  min-width: 88px;
   text-align: end;
 }
 
 .basket_container .basket li>div.menu_option {
   position: relative;
-  justify-content: space-between;
   border-color: #999;
   font-weight: 500;
   font-size: 14px;
   line-height: 17px;
   color: #999;
-}
-
-.basket_container .basket li>div.menu_option .option_name_count {
-  display: flex;
-  align-items: center;
-  gap: 5px;
+  padding-left: 12px;
 }
 
 .basket_container .basket li>div.menu_option h2 {

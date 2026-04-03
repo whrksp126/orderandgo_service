@@ -486,7 +486,7 @@ const changeBasketHtml = (datas) => {
       <li>
         <div data-id="${data.id}" data-type="menu" data-count="${length}" data-master="${masterName}" class="menu" onclick="clickBasketMenu(event)">
           <h2>${data.name}</h2>
-          <span class="quantity">x ${length}</span>
+          <span class="quantity">${length}</span>
           <span class="price">${(data.price * length).toLocaleString()}원</span>
         </div>
         `
@@ -494,11 +494,8 @@ const changeBasketHtml = (datas) => {
       totalPrice += option.price * option.count * length
       html += `
           <div data-id="${option.id}" data-type="menu_option" class="menu_option" onclick="clickBasketMenu(event)">
-            <div class="option_name_count">
-              <h2>${option.name}</h2>
-              <span>x</span>
-              <span>${option.count}</span>
-            </div>
+            <h2>${option.name}</h2>
+            <span class="quantity">${option.count}</span>
             <span class="price">${(option.price * option.count * length).toLocaleString()}원</span>
           </div>
           `
@@ -544,7 +541,7 @@ const changeOrderHtml = (datas) => {
       <li data-id="${data.id}" data-type="menu" data-count="${length}" data-master="${masterName}" class="menu" onclick="clickOrderMenu(event)">
         <div data-id="${data.id}" data-type="menu" data-count="${length}" data-master="${masterName}" class="menu">
           <h2>${data.name}</h2>
-          <span class="quantity">x ${length}</span>
+          <span class="quantity">${length}</span>
           <span class="price">${(data.price * length).toLocaleString()}원</span>
         </div>
         `
@@ -552,11 +549,8 @@ const changeOrderHtml = (datas) => {
       totalPrice += option.price * option.count * length
       html += `
           <div data-id="${option.id}" data-type="menu_option" class="menu_option">
-            <div class="option_name_count">
-              <h2>${option.name}</h2>
-              <span>x</span>
-              <span>${option.count}</span>
-            </div>
+            <h2>${option.name}</h2>
+            <span class="quantity">${option.count}</span>
             <span class="price">${(option.price * option.count * length).toLocaleString()}원</span>
           </div>
           `
