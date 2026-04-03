@@ -258,7 +258,11 @@ const attachDrag = (card) => {
       card.style.top  = `${newTop}px`;
 
       const sx = leftToGrid(newLeft), sy = topToGrid(newTop);
-      if (sx !== prevSnapX || sy !== prevSnapY) { haptic(); prevSnapX = sx; prevSnapY = sy; }
+      if (sx !== prevSnapX || sy !== prevSnapY) {
+        haptic(); prevSnapX = sx; prevSnapY = sy;
+        card.dataset.gx = sx; card.dataset.gy = sy;
+        renderAddButtons();
+      }
     };
 
     const onUp = (e) => {
@@ -282,6 +286,7 @@ const attachDrag = (card) => {
       card.dataset.gy = gy;
       applyCardRect(card);
       syncTableData(Number(card.dataset.id), { grid_x: gx, grid_y: gy });
+      renderAddButtons();
       autoSave();
     };
 
