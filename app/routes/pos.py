@@ -430,6 +430,7 @@ def submit_toss_result():
         _pending_payments.pop(payment_id, None)
         tpl_id = pending.get('table_payment_list_id') if pending else data.get('table_payment_list_id')
         cancel_store_id = pending.get('store_id') if pending else data.get('store_id')
+        db_payment_id = pending.get('db_payment_id') if pending else None
         result_type = result.get('type') if result else None
 
         # 1차 DB 저장 시도 (실패해도 소켓 전송은 반드시 수행)
@@ -439,13 +440,24 @@ def submit_toss_result():
                 from datetime import datetime as dt
                 tpl = db.session.query(TablePaymentList).filter_by(id=tpl_id).first()
                 if tpl:
-                    for p in Payment.query.filter_by(table_payment_list_id=tpl_id).all():
-                        if p.payment_status != 2:
+                    now_iso = dt.now().isoformat()
+                    if db_payment_id:
+                        # 개별 Payment만 취소
+                        p = Payment.query.get(db_payment_id)
+                        if p and p.table_payment_list_id == tpl_id and p.payment_status != 2:
                             p.payment_status = 2
-                    ph = json.loads(tpl.payment_history) if tpl.payment_history else {}
-                    ph['toss_cancel_result'] = result
-                    ph['toss_cancel_time'] = dt.now().isoformat()
-                    tpl.payment_history = json.dumps(ph)
+                            pi = json.loads(p.payment_info) if p.payment_info else {}
+                            pi['toss_cancel_result'] = result
+                            pi['toss_cancel_time'] = now_iso
+                            p.payment_info = json.dumps(pi)
+                    else:
+                        for p in Payment.query.filter_by(table_payment_list_id=tpl_id).all():
+                            if p.payment_status != 2:
+                                p.payment_status = 2
+                        ph = json.loads(tpl.payment_history) if tpl.payment_history else {}
+                        ph['toss_cancel_result'] = result
+                        ph['toss_cancel_time'] = now_iso
+                        tpl.payment_history = json.dumps(ph)
                     db.session.commit()
         except Exception as _e:
             import sys as _s2
@@ -461,7 +473,7 @@ def submit_toss_result():
             'table_id': table_id,
             'result': result,
             'table_payment_list_id': tpl_id,   # 프론트 2차 저장용
-            'db_payment_id': pending.get('db_payment_id') if pending else None,
+            'db_payment_id': db_payment_id,
         }
         socketio.emit('toss_history_cancel_result', event_data, to='pos_group')
         if cancel_store_id:
