@@ -247,11 +247,16 @@ function _openDetailModal(item, date) {
     modalActions.parentNode.insertBefore(tossSection, modalActions);
   }
 
-  // 환불 처리 버튼 상태
+  // 환불 처리 버튼 상태 (분할결제는 개별 환불 버튼만 사용, 전체 환불 버튼 숨김)
   const allCancelled = item.payments.length > 0 && item.payments.every(p => p.status === 2);
   const refundBtn = document.querySelector('#detail-refund-btn');
-  refundBtn.disabled = allCancelled;
-  refundBtn.textContent = allCancelled ? '환불 완료' : (item.payments.length > 1 ? '전체 환불' : '환불 처리');
+  if (item.payments.length > 1) {
+    refundBtn.style.display = 'none';
+  } else {
+    refundBtn.style.display = '';
+    refundBtn.disabled = allCancelled;
+    refundBtn.textContent = allCancelled ? '환불 완료' : '환불 처리';
+  }
 
   // 진행 중 메시지 초기화
   const oldMsg = document.getElementById('refund-status-msg');
@@ -383,7 +388,7 @@ async function _processTossItemRefund(paymentId) {
     const data = await res.json();
     if (!res.ok) {
       showToast(data.error || '환불 요청에 실패했습니다.', 'error');
-      if (btn) { btn.disabled = false; btn.textContent = _currentItem && _currentItem.payments.length > 1 ? '전체 환불' : '환불 처리'; }
+      if (btn) { btn.disabled = false; btn.textContent = '환불 처리'; }
       return;
     }
     if (btn) btn.textContent = '단말기 처리 중...';
