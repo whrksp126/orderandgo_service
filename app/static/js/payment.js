@@ -165,7 +165,13 @@ let _cashReceiptIsFinished = false;  // 결제 완료 여부 (영수증 처리 �
   const poll = () => {
     fetch('/pos/toss/terminal_online')
       .then(r => r.json())
-      .then(d => { _terminalOnline = !!d.online; })
+      .then(d => {
+        const wasOnline = _terminalOnline;
+        _terminalOnline = !!d.online;
+        if (!wasOnline && _terminalOnline) {
+          _initDisplayPending();
+        }
+      })
       .catch(() => { _terminalOnline = false; });
   };
   poll();

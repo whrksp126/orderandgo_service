@@ -533,7 +533,13 @@ def submit_toss_result():
 @pos_bp.route('/toss/approval_status', methods=['GET'])
 def get_toss_approval_status():
     """단말기가 결제 승인 후 확정/취소 신호를 폴링"""
+    token = request.args.get('token')
     payment_id = request.args.get('payment_id')
+    if token:
+        record = TerminalToken.query.filter_by(token=token).first()
+        if record:
+            record.last_polled_at = datetime.now()
+            db.session.commit()
     if not payment_id:
         return jsonify({'status': 'not_found'})
     payment = _completed_payments.get(payment_id)
