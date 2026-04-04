@@ -831,6 +831,7 @@ def get_payment_history():
                 'amount': p.payment_amount,
                 'status': p.payment_status,
                 'datetime': p.payment_datetime.strftime('%H:%M:%S') if p.payment_datetime else '',
+                'payment_info': json.loads(p.payment_info) if p.payment_info else {},
             })
             if is_cancelled:
                 has_cancelled = True
@@ -927,6 +928,119 @@ def cancel_payment():
     return jsonify({'status': 'ok', 'message': '환불이 완료되었습니다.'})
 
 
+@store_bp.route('/cancel_payment_item', methods=['POST'])
+@login_required
+def cancel_payment_item():
+    """개별 Payment 현금 환불"""
+    from app.models import Payment, TablePaymentList
+
+    data = request.get_json()
+    payment_id = data.get('payment_id')
+    if not payment_id:
+        return jsonify({'error': '잘못된 요청입니다.'}), 400
+
+    p = Payment.query.get(payment_id)
+    if not p:
+        return jsonify({'error': '결제 내역을 찾을 수 없습니다.'}), 404
+
+    tpl = TablePaymentList.query.filter_by(id=p.table_payment_list_id, store_id=current_user.id).first()
+    if not tpl:
+        return jsonify({'error': '권한이 없습니다.'}), 403
+
+    if p.payment_status == 2:
+        return jsonify({'error': '이미 취소된 결제입니다.'}), 400
+
+    p.payment_status = 2
+    pi = json.loads(p.payment_info) if p.payment_info else {}
+    pi['cancelled_at'] = datetime.now().isoformat()
+    p.payment_info = json.dumps(pi, ensure_ascii=False)
+
+    db.session.commit()
+    return jsonify({'status': 'ok', 'message': '환불이 완료되었습니다.'})
+
+
+@store_bp.route('/cancel_toss_payment_item', methods=['POST'])
+@login_required
+def cancel_toss_payment_item():
+    """개별 Payment 토스 단말기 환불"""
+    import uuid as _uuid
+    import time as _time
+    from app.models import Payment, TablePaymentList
+    from app.routes.pos import _pending_payments
+
+    data = request.get_json()
+    payment_id = data.get('payment_id')
+    if not payment_id:
+        return jsonify({'error': '잘못된 요청입니다.'}), 400
+
+    p = Payment.query.get(payment_id)
+    if not p:
+        return jsonify({'error': '결제 내역을 찾을 수 없습니다.'}), 404
+
+    tpl = TablePaymentList.query.filter_by(id=p.table_payment_list_id, store_id=current_user.id).first()
+    if not tpl:
+        return jsonify({'error': '권한이 없습니다.'}), 403
+
+    if p.payment_status == 2:
+        return jsonify({'error': '이미 취소된 결제입니다.'}), 400
+
+    pi = json.loads(p.payment_info) if p.payment_info else {}
+
+    cancel_data = None
+    if pi.get('toss_details'):
+        details = pi['toss_details']
+        card = details.get('card') or {}
+        ts = card.get('timestamp') or details.get('timestamp') or pi.get('toss_timestamp')
+        cancel_data = {
+            'paymentKey': details.get('paymentKey') or pi.get('toss_payment_key', ''),
+            'paymentMethod': details.get('paymentMethod', 'CARD'),
+            'timestamp': ts if isinstance(ts, (int, float)) else 0,
+            'approvalNumber': (
+                card.get('approvalNumber')
+                or card.get('approvalNo')
+                or details.get('approvalNumber', '')
+                or pi.get('toss_approval_no', '')
+            ),
+            'tax': pi.get('toss_tax') or round((details.get('totalAmount') or 0) / 11),
+            'supplyValue': pi.get('toss_supply_value') or round((details.get('totalAmount') or 0) * 10 / 11),
+            'tip': 0,
+        }
+    elif pi.get('toss_payment_key') and pi.get('toss_cash_receipt'):
+        cash_ts = pi.get('toss_timestamp')
+        cancel_data = {
+            'paymentKey': pi.get('toss_payment_key', ''),
+            'paymentMethod': 'CASH',
+            'timestamp': cash_ts if isinstance(cash_ts, (int, float)) else 0,
+            'approvalNumber': (pi.get('toss_cash_receipt') or {}).get('approvalNumber', ''),
+            'tax': pi.get('toss_tax', 0),
+            'supplyValue': pi.get('toss_supply_value', 0),
+            'tip': 0,
+            'isSelfIssuance': (pi.get('toss_cash_receipt') or {}).get('isSelfIssuance', False),
+        }
+
+    if not cancel_data:
+        return jsonify({'error': 'Toss 결제 정보가 없어 단말기 취소를 진행할 수 없습니다.'}), 400
+
+    if not cancel_data.get('paymentKey'):
+        return jsonify({'error': '환불에 필요한 정보(결제 키)가 저장되어 있지 않습니다.\n해당 결제는 단말기 직접 취소가 필요합니다.'}), 400
+
+    tmp_id = str(_uuid.uuid4())[:8]
+    _pending_payments[tmp_id] = {
+        'payment_id': tmp_id,
+        'store_id': current_user.id,
+        'table_id': tpl.table_id,
+        'order': None,
+        'payment_type': 'cancel',
+        'cancel_data': cancel_data,
+        'table_payment_list_id': tpl.id,
+        'db_payment_id': payment_id,
+        'status': 'pending',
+        'last_active_at': _time.time(),
+    }
+
+    return jsonify({'payment_id': tmp_id, 'status': 'ok'})
+
+
 @store_bp.route('/cancel_toss_payment', methods=['POST'])
 @login_required
 def cancel_toss_payment():
@@ -1013,18 +1127,34 @@ def save_toss_cancel():
     data = request.get_json()
     tpl_id = data.get('table_payment_list_id')
     result = data.get('result')
+    db_payment_id = data.get('db_payment_id')
     if not tpl_id or not result:
         return jsonify({'error': '잘못된 요청입니다.'}), 400
     tpl = TablePaymentList.query.filter_by(id=tpl_id, store_id=current_user.id).first()
     if not tpl:
         return jsonify({'error': '결제 내역을 찾을 수 없습니다.'}), 404
-    for p in Payment.query.filter_by(table_payment_list_id=tpl_id).all():
-        if p.payment_status != 2:
+
+    now_iso = datetime.now().isoformat()
+
+    if db_payment_id:
+        # 개별 Payment만 취소 처리
+        p = Payment.query.get(db_payment_id)
+        if p and p.table_payment_list_id == tpl_id and p.payment_status != 2:
             p.payment_status = 2
-    ph = json.loads(tpl.payment_history) if tpl.payment_history else {}
-    ph['toss_cancel_result'] = result
-    ph['toss_cancel_time'] = datetime.now().isoformat()
-    tpl.payment_history = json.dumps(ph, ensure_ascii=False)
+            pi = json.loads(p.payment_info) if p.payment_info else {}
+            pi['toss_cancel_result'] = result
+            pi['toss_cancel_time'] = now_iso
+            p.payment_info = json.dumps(pi, ensure_ascii=False)
+    else:
+        # 전체 취소 (기존 동작)
+        for p in Payment.query.filter_by(table_payment_list_id=tpl_id).all():
+            if p.payment_status != 2:
+                p.payment_status = 2
+        ph = json.loads(tpl.payment_history) if tpl.payment_history else {}
+        ph['toss_cancel_result'] = result
+        ph['toss_cancel_time'] = now_iso
+        tpl.payment_history = json.dumps(ph, ensure_ascii=False)
+
     db.session.commit()
     return jsonify({'status': 'ok'})
 

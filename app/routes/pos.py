@@ -461,6 +461,7 @@ def submit_toss_result():
             'table_id': table_id,
             'result': result,
             'table_payment_list_id': tpl_id,   # 프론트 2차 저장용
+            'db_payment_id': pending.get('db_payment_id') if pending else None,
         }
         socketio.emit('toss_history_cancel_result', event_data, to='pos_group')
         if cancel_store_id:

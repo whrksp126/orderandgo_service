@@ -17,6 +17,7 @@ window.addEventListener('DOMContentLoaded', () => {
     socket.on('toss_history_cancel_result', async (data) => {
       const r = data.result || {};
       const tpl_id = data.table_payment_list_id || (_currentItem && _currentItem.id);
+      const db_payment_id = data.db_payment_id || null;
       const btn = document.querySelector('#detail-refund-btn');
       const msgEl = document.getElementById('refund-status-msg');
       if (msgEl) msgEl.remove();
@@ -25,10 +26,12 @@ window.addEventListener('DOMContentLoaded', () => {
         // 카드 결제와 동일 패턴: 프론트엔드가 API 호출로 DB 저장 확정
         if (tpl_id) {
           try {
+            const body = { table_payment_list_id: tpl_id, result: r };
+            if (db_payment_id) body.db_payment_id = db_payment_id;
             await fetch('/store/save_toss_cancel', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ table_payment_list_id: tpl_id, result: r }),
+              body: JSON.stringify(body),
             });
           } catch (e) {
             console.error('[CANCEL] save_toss_cancel error:', e);
@@ -182,16 +185,27 @@ function _openDetailModal(item, date) {
   paymentListEl.innerHTML = '';
   item.payments.forEach(p => {
     const isCancelled = p.status === 2;
+    const pi = p.payment_info || {};
+    const hasToss = !!(pi.toss_details || (pi.toss_payment_key && pi.toss_cash_receipt));
     const li = document.createElement('li');
     li.innerHTML = `
       <span>${p.method}</span>
       <div class="pay-right">
         <span>${p.amount.toLocaleString()}원</span>
         <span class="status_badge ${isCancelled ? 'cancelled' : 'paid'}">${isCancelled ? '취소' : '완료'}</span>
+        ${!isCancelled ? `<button class="refund-item-btn" data-payment-id="${p.id}" data-has-toss="${hasToss}">환불</button>` : ''}
       </div>
     `;
     paymentListEl.appendChild(li);
   });
+  paymentListEl.onclick = (e) => {
+    const btn = e.target.closest('.refund-item-btn');
+    if (btn) {
+      const paymentId = parseInt(btn.dataset.paymentId);
+      const hasToss = btn.dataset.hasToss === 'true';
+      _processItemRefund(paymentId, hasToss);
+    }
+  };
 
   // 합계
   document.querySelector('#detail-total').textContent = `${item.total_paid.toLocaleString()}원`;
@@ -237,7 +251,7 @@ function _openDetailModal(item, date) {
   const allCancelled = item.payments.length > 0 && item.payments.every(p => p.status === 2);
   const refundBtn = document.querySelector('#detail-refund-btn');
   refundBtn.disabled = allCancelled;
-  refundBtn.textContent = allCancelled ? '환불 완료' : '환불 처리';
+  refundBtn.textContent = allCancelled ? '환불 완료' : (item.payments.length > 1 ? '전체 환불' : '환불 처리');
 
   // 진행 중 메시지 초기화
   const oldMsg = document.getElementById('refund-status-msg');
@@ -323,5 +337,66 @@ async function _processCashRefund() {
   } catch (e) {
     alert('네트워크 오류가 발생했습니다.');
     if (btn) { btn.disabled = false; btn.textContent = '환불 처리'; }
+  }
+}
+
+// ─── 개별 결제 환불 ─────────────────────────────────────────────────────────────
+
+function _processItemRefund(paymentId, hasToss) {
+  if (!confirm('이 결제 건만 환불하시겠습니까?')) return;
+  if (hasToss) {
+    _processTossItemRefund(paymentId);
+  } else {
+    _processCashItemRefund(paymentId);
+  }
+}
+
+async function _processCashItemRefund(paymentId) {
+  try {
+    const res = await fetch('/store/cancel_payment_item', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payment_id: paymentId }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showToast('환불이 완료되었습니다.', 'success');
+      closeDetailModal();
+      fetchPaymentHistory();
+    } else {
+      alert(data.error || '환불 처리에 실패했습니다.');
+    }
+  } catch (e) {
+    alert('네트워크 오류가 발생했습니다.');
+  }
+}
+
+async function _processTossItemRefund(paymentId) {
+  const btn = document.querySelector('#detail-refund-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '단말기 대기 중...'; }
+  try {
+    const res = await fetch('/store/cancel_toss_payment_item', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payment_id: paymentId }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showToast(data.error || '환불 요청에 실패했습니다.', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = _currentItem && _currentItem.payments.length > 1 ? '전체 환불' : '환불 처리'; }
+      return;
+    }
+    if (btn) btn.textContent = '단말기 처리 중...';
+    const actionsEl = document.querySelector('.modal-actions');
+    if (actionsEl) {
+      const msgEl = document.createElement('p');
+      msgEl.id = 'refund-status-msg';
+      msgEl.style.cssText = 'color:#888;font-size:13px;margin-top:8px;text-align:center;';
+      msgEl.textContent = '단말기에서 환불을 진행해주세요...';
+      actionsEl.after(msgEl);
+    }
+  } catch (e) {
+    alert('네트워크 오류가 발생했습니다.');
+    if (btn) { btn.disabled = false; btn.textContent = _currentItem && _currentItem.payments.length > 1 ? '전체 환불' : '환불 처리'; }
   }
 }

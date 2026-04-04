@@ -24,8 +24,8 @@ def create_table_payment_list(store_id, table_id, first_order_time, order_detail
 
 
 # Payment 생성
-def create_payment(table_payment_list_id, payment_method_id, payment_status, payment_amount, payment_time):
-    payment_item = Payment(table_payment_list_id=table_payment_list_id, payment_method_id=payment_method_id, payment_status=payment_status, payment_amount=payment_amount, payment_datetime=payment_time)
+def create_payment(table_payment_list_id, payment_method_id, payment_status, payment_amount, payment_time, payment_info=None):
+    payment_item = Payment(table_payment_list_id=table_payment_list_id, payment_method_id=payment_method_id, payment_status=payment_status, payment_amount=payment_amount, payment_datetime=payment_time, payment_info=json.dumps(payment_info) if payment_info else None)
     db.session.add(payment_item)
     db.session.commit()
 
@@ -150,7 +150,7 @@ def create_payment_database(store_id, data):
                 table_payment_list_item = create_table_payment_list(store_id, table_id, first_ordered_time, str(data['order_list']), p['discount'], p['extra_charge'], p['payment_history'], payment_time)
 
             tpl_id = table_payment_list_item.id
-            create_payment(table_payment_list_item.id, p['method'], 1, p['price'], payment_time)
+            create_payment(table_payment_list_item.id, p['method'], 1, p['price'], payment_time, payment_info=p.get('payment_history'))
 
             # Table과 관련된 Order, TableOrderList 삭제하기
             delete_order_tableorderlist(store_id, table_id)
@@ -172,7 +172,7 @@ def create_payment_database(store_id, data):
                     p['payment_history']['curDutch'] = p['payment_history']['curDutch'] + 1
                 table_payment_list_item = create_table_payment_list(store_id, table_id, first_ordered_time, str(data['order_list']), p['discount'], p['extra_charge'], p['payment_history'], payment_time)
                 tpl_id = table_payment_list_item.id
-                create_payment(table_payment_list_item.id, p['method'], 1, p['price'], payment_time)
+                create_payment(table_payment_list_item.id, p['method'], 1, p['price'], payment_time, payment_info=p.get('payment_history'))
 
                 # paid, is_finished
                 paid = True
@@ -186,14 +186,14 @@ def create_payment_database(store_id, data):
                                     .scalar()
 
                 if (sum_payment or 0)+p['price'] != data['total_price']:  # 2-2. 분할결제중
-                    create_payment(check_table_payment_list.id, p['method'], 1, p['price'], payment_time)
+                    create_payment(check_table_payment_list.id, p['method'], 1, p['price'], payment_time, payment_info=p.get('payment_history'))
 
                     # paid, is_finished
                     paid = True
                     is_finished = False
 
                 else:                                   # 2-3. 마지막 분할결제
-                    create_payment(check_table_payment_list.id, p['method'], 1, p['price'], payment_time)
+                    create_payment(check_table_payment_list.id, p['method'], 1, p['price'], payment_time, payment_info=p.get('payment_history'))
                     # Table과 관련된 Order, TableOrderList 삭제하기
                     delete_order_tableorderlist(store_id, table_id)
                     # paid, is_finished

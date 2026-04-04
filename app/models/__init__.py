@@ -280,6 +280,7 @@ class Payment(db.Model):
     payment_status = db.Column(db.Integer, db.ForeignKey('payment_status.id'))  # 결제 상태 컬럼
     payment_amount = db.Column(db.Integer, nullable=False)  # 결제 금액 컬럼 (실수형)
     payment_datetime = db.Column(db.DateTime, default=datetime.now)  # 결제 시간 컬럼
+    payment_info = db.Column(db.Text, nullable=True)  # 개별 결제 정보 (toss 키, 승인번호 등) JSON
 
     
     # payment_amount = db.Column(db.Integer, nullable=False)
