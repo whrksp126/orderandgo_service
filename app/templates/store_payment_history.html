@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/static/css/animation.css">
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
-  <link rel="stylesheet" href="/static/css/store.css?v=17">
+  <link rel="stylesheet" href="/static/css/store.css?v=18">
 </head>
 
 <body class="payment_history_page">
@@ -172,7 +172,7 @@
       </div>
 
       <div class="modal-actions">
-        <button class="btn-receipt" disabled title="영수증 출력 기능은 추후 지원 예정입니다.">
+        <button class="btn-receipt" onclick="_openReceipt()">
           <i class="ph ph-printer"></i> 영수증 출력
         </button>
         <button class="btn-cancel" id="detail-refund-btn" onclick="processRefund()">
@@ -185,8 +185,10 @@
   <!-- socket.io -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
   <script>const STORE_ID = {{ store_id | tojson }};</script>
+  <script>const STORE_INFO = {{ store_info | tojson }};</script>
   <script src="/static/js/common.js?v=2"></script>
-  <script src="/static/js/store_payment_history.js?v=8"></script>
+  <script src="/static/js/receipt.js?v=1"></script>
+  <script src="/static/js/store_payment_history.js?v=9"></script>
 </body>
 
 </html>

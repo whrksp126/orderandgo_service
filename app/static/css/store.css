@@ -1857,6 +1857,116 @@ section ul li .submit_btn {
   font-size: 13px;
 }
 
+/* 결제 수단 목록 아이템 재설계 */
+.payment-detail-modal .payment-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #F4F4F4;
+  gap: 12px;
+  list-style: none;
+}
+.payment-detail-modal .payment-item-row:last-child { border-bottom: none; }
+
+.payment-detail-modal .pay-item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.payment-detail-modal .pay-method-name {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+/* 상태: 버튼이 아닌 점+텍스트 라벨 */
+.payment-detail-modal .pay-status-label {
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+.payment-detail-modal .pay-status-label::before {
+  content: '●';
+  font-size: 7px;
+}
+.payment-detail-modal .pay-status-label.paid { color: #1FAA9C; }
+.payment-detail-modal .pay-status-label.cancelled { color: #E74C3C; }
+
+.payment-detail-modal .pay-item-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.payment-detail-modal .pay-amount-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: #222;
+  white-space: nowrap;
+}
+
+.payment-detail-modal .pay-item-actions {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+/* 영수증 아이콘 버튼 */
+.payment-detail-modal .btn-item-receipt {
+  background: none;
+  border: 1px solid #DDD;
+  border-radius: 4px;
+  padding: 5px 7px;
+  cursor: pointer;
+  color: #888;
+  font-size: 14px;
+  line-height: 1;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.payment-detail-modal .btn-item-receipt:hover {
+  background: #F5F5F5;
+  color: #333;
+  border-color: #BBB;
+}
+
+/* 환불 아웃라인 버튼 */
+.payment-detail-modal .btn-item-refund {
+  background: none;
+  border: 1px solid #E74C3C;
+  border-radius: 4px;
+  padding: 5px 10px;
+  cursor: pointer;
+  color: #E74C3C;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.12s, color 0.12s;
+}
+.payment-detail-modal .btn-item-refund:hover {
+  background: #E74C3C;
+  color: #FFF;
+}
+
+/* 메인 영수증 버튼 활성화 스타일 */
+.payment-detail-modal .btn-receipt {
+  background: #F5F5F5 !important;
+  color: #555 !important;
+  border: 1px solid #DDD !important;
+  cursor: pointer !important;
+  transition: background 0.12s, color 0.12s;
+}
+.payment-detail-modal .btn-receipt:hover {
+  background: #EBEBEB !important;
+  color: #222 !important;
+}
+
 @keyframes ph-spin {
   from {
     transform: rotate(0deg);

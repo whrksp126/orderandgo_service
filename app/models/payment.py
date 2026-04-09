@@ -15,8 +15,8 @@ from flask_socketio import emit
 
 
 # TablePaymentList 생성
-def create_table_payment_list(store_id, table_id, first_order_time, order_details, discount, extra_charge, payment_history,payment_time):
-    table_payment_list_item = TablePaymentList(store_id=store_id, table_id=table_id, first_order_time=first_order_time, order_details=order_details, discount=discount, extra_charge=extra_charge, payment_history=json.dumps(payment_history), payment_time=payment_time)
+def create_table_payment_list(store_id, table_id, table_name, first_order_time, order_details, discount, extra_charge, payment_history, payment_time):
+    table_payment_list_item = TablePaymentList(store_id=store_id, table_id=table_id, table_name=table_name, first_order_time=first_order_time, order_details=order_details, discount=discount, extra_charge=extra_charge, payment_history=json.dumps(payment_history), payment_time=payment_time)
     db.session.add(table_payment_list_item)
     db.session.commit()
 
@@ -54,7 +54,7 @@ def delete_order_tableorderlist(store_id, table_id):
 
 
 # 결제 통신 json
-def make_payment_history(store_id, table_id, paid, is_finished, tpl_id=None):
+def make_payment_history(store_id, table_id, paid=None, is_finished=False, tpl_id=None):
     first_order_time = db.session.query(func.min(Order.ordered_at))\
                                 .filter(Order.table_id == table_id)\
                                 .scalar()
@@ -88,6 +88,9 @@ def make_payment_history(store_id, table_id, paid, is_finished, tpl_id=None):
         payment = []
     else:
         payment = [{'method':p.method, 'price':p.payment_amount} for p in all_payment_list]
+
+    if paid is None:
+        paid = len(payment) > 0
 
     table_payment_data = {
         'is_finished': is_finished,
@@ -127,6 +130,10 @@ def create_payment_database(store_id, data):
         o = data['order_list']
         tpl_id = None  # table_payment_list_id for response
 
+        # 결제 시점 테이블 이름 조회 (테이블 삭제 후에도 이름 유지를 위해 저장)
+        table_obj = Table.query.get(table_id)
+        current_table_name = table_obj.name if table_obj else None
+
         first_ordered_time = db.session.query(func.min(Order.ordered_at))\
                                     .filter(Order.table_id == table_id)\
                                     .scalar()
@@ -144,10 +151,12 @@ def create_payment_database(store_id, data):
                 existing_payment_list.extra_charge = p['extra_charge']
                 existing_payment_list.payment_history = json.dumps(p['payment_history'])
                 existing_payment_list.payment_time = payment_time
+                if existing_payment_list.table_name is None:
+                    existing_payment_list.table_name = current_table_name
                 db.session.commit()
                 table_payment_list_item = existing_payment_list
             else:
-                table_payment_list_item = create_table_payment_list(store_id, table_id, first_ordered_time, str(data['order_list']), p['discount'], p['extra_charge'], p['payment_history'], payment_time)
+                table_payment_list_item = create_table_payment_list(store_id, table_id, current_table_name, first_ordered_time, str(data['order_list']), p['discount'], p['extra_charge'], p['payment_history'], payment_time)
 
             tpl_id = table_payment_list_item.id
             create_payment(table_payment_list_item.id, p['method'], 1, p['price'], payment_time, payment_info=p.get('payment_history'))
@@ -170,7 +179,7 @@ def create_payment_database(store_id, data):
                 # TablePaymentList, Payment 생성하기
                 if p['payment_history']['isDutch'] :
                     p['payment_history']['curDutch'] = p['payment_history']['curDutch'] + 1
-                table_payment_list_item = create_table_payment_list(store_id, table_id, first_ordered_time, str(data['order_list']), p['discount'], p['extra_charge'], p['payment_history'], payment_time)
+                table_payment_list_item = create_table_payment_list(store_id, table_id, current_table_name, first_ordered_time, str(data['order_list']), p['discount'], p['extra_charge'], p['payment_history'], payment_time)
                 tpl_id = table_payment_list_item.id
                 create_payment(table_payment_list_item.id, p['method'], 1, p['price'], payment_time, payment_info=p.get('payment_history'))
 

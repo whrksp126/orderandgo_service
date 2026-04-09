@@ -242,21 +242,39 @@ function _openDetailModal(item) {
     const pi = p.payment_info || {};
     const hasToss = !!(pi.toss_details || (pi.toss_payment_key && pi.toss_cash_receipt));
     const li = document.createElement('li');
+    li.className = 'payment-item-row';
     li.innerHTML = `
-      <span>${p.method}</span>
-      <div class="pay-right">
-        <span>${p.amount.toLocaleString()}원</span>
-        <span class="status_badge ${isCancelled ? 'cancelled' : 'paid'}">${isCancelled ? '취소' : '완료'}</span>
-        ${!isCancelled ? `<button class="refund-item-btn" data-payment-id="${p.id}" data-has-toss="${hasToss}">환불</button>` : ''}
+      <div class="pay-item-left">
+        <span class="pay-method-name">${p.method}</span>
+        <span class="pay-status-label ${isCancelled ? 'cancelled' : 'paid'}">${isCancelled ? '취소' : '완료'}</span>
+      </div>
+      <div class="pay-item-right">
+        <span class="pay-amount-text">${p.amount.toLocaleString()}원</span>
+        ${!isCancelled ? `
+          <div class="pay-item-actions">
+            <button class="btn-item-receipt" title="영수증 출력" data-payment-id="${p.id}">
+              <i class="ph ph-printer"></i>
+            </button>
+            <button class="btn-item-refund refund-item-btn" data-payment-id="${p.id}" data-has-toss="${hasToss}">
+              환불
+            </button>
+          </div>` : ''}
       </div>
     `;
     paymentListEl.appendChild(li);
   });
   paymentListEl.onclick = (e) => {
-    const btn = e.target.closest('.refund-item-btn');
-    if (btn) {
-      const paymentId = parseInt(btn.dataset.paymentId);
-      const hasToss = btn.dataset.hasToss === 'true';
+    const receiptBtn = e.target.closest('.btn-item-receipt');
+    if (receiptBtn) {
+      const paymentId = parseInt(receiptBtn.dataset.paymentId);
+      const payment = _currentItem.payments.find(p => p.id === paymentId);
+      if (payment) _openPaymentReceipt(payment);
+      return;
+    }
+    const refundBtn = e.target.closest('.refund-item-btn');
+    if (refundBtn) {
+      const paymentId = parseInt(refundBtn.dataset.paymentId);
+      const hasToss = refundBtn.dataset.hasToss === 'true';
       _processItemRefund(paymentId, hasToss);
     }
   };
@@ -320,6 +338,36 @@ function _openDetailModal(item) {
 function closeDetailModal() {
   document.querySelector('#payment-detail-modal').classList.add('hidden');
   _currentItem = null;
+}
+
+// ─── 영수증 출력 ────────────────────────────────────────────────────────────────
+
+function _openReceipt() {
+  if (!_currentItem) return;
+  const item = _currentItem;
+  const storeInfo = window.STORE_INFO || {};
+  const orderData = { tableName: item.table_name, items: item.order_items };
+  const activePay = item.payments.find(p => p.status !== 2);
+  const method = activePay && activePay.method.includes('현금') ? 1 : 2;
+  const paymentInfo = {
+    price: item.total_paid,
+    method,
+    discount: item.discount || 0,
+    extra_charge: item.extra_charge || 0,
+  };
+  ReceiptEngine.openReceiptModal(storeInfo, orderData, paymentInfo);
+}
+
+function _openPaymentReceipt(payment) {
+  if (!_currentItem) return;
+  const item = _currentItem;
+  const storeInfo = window.STORE_INFO || {};
+  const orderData = { tableName: item.table_name, items: item.order_items };
+  const paymentInfo = {
+    price: payment.amount,
+    method: payment.method.includes('현금') ? 1 : 2,
+  };
+  ReceiptEngine.openReceiptModal(storeInfo, orderData, paymentInfo);
 }
 
 // ─── 환불 처리 ─────────────────────────────────────────────────────────────────

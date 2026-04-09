@@ -775,7 +775,16 @@ def payment_history_page():
     from app.models import Store
     store = Store.query.filter_by(user_id=current_user.id).first()
     store_id = store.id if store else None
-    return render_template('store_payment_history.html', store_id=store_id)
+    store_info = {
+        'name': store.name or '',
+        'business_number': store.business_number or '',
+        'representative_name': store.representative_name or '',
+        'address': store.address or '',
+        'tel': store.tel or '',
+        'receipt_header': store.receipt_header or '',
+        'receipt_footer': store.receipt_footer or '',
+    } if store else {}
+    return render_template('store_payment_history.html', store_id=store_id, store_info=store_info)
 
 
 @store_bp.route('/get_payment_history', methods=['GET'])
@@ -878,7 +887,7 @@ def get_payment_history():
         result.append({
             'id': tpl.id,
             'table_id': tpl.table_id,
-            'table_name': table_name or f'테이블 {tpl.table_id or "?"}',
+            'table_name': tpl.table_name or table_name or '(삭제된 테이블)',
             'payment_date': tpl.payment_time.strftime('%Y-%m-%d') if tpl.payment_time else '',
             'first_order_time': tpl.first_order_time.strftime('%H:%M') if tpl.first_order_time else '',
             'payment_time': tpl.payment_time.strftime('%H:%M:%S') if tpl.payment_time else '',

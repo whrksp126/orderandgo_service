@@ -299,6 +299,7 @@ class TablePaymentList(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     store_id = db.Column(db.Integer, db.ForeignKey('store.id'))
     table_id = db.Column(db.Integer, db.ForeignKey('table.id'), nullable=True)
+    table_name = db.Column(db.String(100), nullable=True)  # 결제 시점 테이블 이름 (삭제 후에도 유지)
     # table_order_list_id = db.Column(db.Integer, db.ForeignKey('table_order_list.id'))
     first_order_time = db.Column(db.DateTime) # 첫 주문 시간
     order_details = db.Column(db.Text)  # 주문 내역 컬럼 (문자열로 저장됨), orderDetails.json
