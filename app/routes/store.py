@@ -785,30 +785,38 @@ def get_payment_history():
     from app.models import TablePaymentList, Payment, Payment_method, Table
 
     store_id = current_user.id
-    date_str = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
+    date_str = request.args.get('date', '')
     filter_type = request.args.get('filter', 'all')  # all, paid, cancelled
     sort = request.args.get('sort', 'time_desc')     # time_desc, time_asc, amount_desc, amount_asc
+    page = max(1, int(request.args.get('page', 1)))
+    per_page = max(1, min(100, int(request.args.get('per_page', 20))))
 
-    try:
-        target_date = datetime.strptime(date_str, '%Y-%m-%d')
-    except ValueError:
-        target_date = datetime.now()
-
-    date_start = target_date.replace(hour=0, minute=0, second=0, microsecond=0)
-    date_end = target_date.replace(hour=23, minute=59, second=59, microsecond=999999)
-
-    query = db.session.query(TablePaymentList, Table.name)\
+    base_query = db.session.query(TablePaymentList, Table.name)\
         .outerjoin(Table, Table.id == TablePaymentList.table_id)\
-        .filter(TablePaymentList.store_id == store_id)\
-        .filter(TablePaymentList.payment_time >= date_start)\
-        .filter(TablePaymentList.payment_time <= date_end)
+        .filter(TablePaymentList.store_id == store_id)
 
-    if sort == 'time_asc':
-        query = query.order_by(TablePaymentList.payment_time.asc())
+    if date_str:
+        try:
+            target_date = datetime.strptime(date_str, '%Y-%m-%d')
+        except ValueError:
+            target_date = datetime.now()
+        date_start = target_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        date_end = target_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+        base_query = base_query.filter(
+            TablePaymentList.payment_time >= date_start,
+            TablePaymentList.payment_time <= date_end
+        )
+        if sort == 'time_asc':
+            base_query = base_query.order_by(TablePaymentList.payment_time.asc())
+        else:
+            base_query = base_query.order_by(TablePaymentList.payment_time.desc())
+        tpl_list = base_query.all()
+        has_more = False
     else:
-        query = query.order_by(TablePaymentList.payment_time.desc())
-
-    tpl_list = query.all()
+        base_query = base_query.order_by(TablePaymentList.payment_time.desc())
+        raw = base_query.offset((page - 1) * per_page).limit(per_page + 1).all()
+        has_more = len(raw) > per_page
+        tpl_list = raw[:per_page]
 
     result = []
     for tpl, table_name in tpl_list:
@@ -871,6 +879,7 @@ def get_payment_history():
             'id': tpl.id,
             'table_id': tpl.table_id,
             'table_name': table_name or f'테이블 {tpl.table_id or "?"}',
+            'payment_date': tpl.payment_time.strftime('%Y-%m-%d') if tpl.payment_time else '',
             'first_order_time': tpl.first_order_time.strftime('%H:%M') if tpl.first_order_time else '',
             'payment_time': tpl.payment_time.strftime('%H:%M:%S') if tpl.payment_time else '',
             'order_items': order_items,
@@ -883,10 +892,11 @@ def get_payment_history():
             'has_cancelled': has_cancelled,
         })
 
-    if sort == 'amount_desc':
-        result.sort(key=lambda x: x['total_paid'], reverse=True)
-    elif sort == 'amount_asc':
-        result.sort(key=lambda x: x['total_paid'])
+    if date_str:
+        if sort == 'amount_desc':
+            result.sort(key=lambda x: x['total_paid'], reverse=True)
+        elif sort == 'amount_asc':
+            result.sort(key=lambda x: x['total_paid'])
 
     summary = {
         'total_count': len(result),
@@ -896,7 +906,7 @@ def get_payment_history():
         'total_cancelled': sum(r['total_cancelled'] for r in result),
     }
 
-    return jsonify({'list': result, 'summary': summary})
+    return jsonify({'list': result, 'summary': summary, 'has_more': has_more})
 
 
 @store_bp.route('/cancel_payment', methods=['POST'])

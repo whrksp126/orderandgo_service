@@ -1801,13 +1801,13 @@ section ul li .submit_btn {
 }
 
 .payment_history_page .payment_list {
-  min-width: 700px;
+  min-width: 780px;
   width: 100%;
 }
 
 .payment_history_page .payment_list li {
   display: grid;
-  grid-template-columns: 90px 100px 1fr 110px 120px 90px;
+  grid-template-columns: 75px 90px 100px 1fr 110px 120px 90px;
   align-items: center;
   padding: 11px 16px;
   border-bottom: 1px solid #F4F4F4;

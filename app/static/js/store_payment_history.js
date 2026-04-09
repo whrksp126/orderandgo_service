@@ -1,14 +1,27 @@
 let _currentItem = null; // 현재 열려 있는 상세 결제 항목
 
-window.addEventListener('DOMContentLoaded', () => {
-  // 오늘 날짜로 date picker 초기화
-  const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm = String(today.getMonth() + 1).padStart(2, '0');
-  const dd = String(today.getDate()).padStart(2, '0');
-  document.querySelector('#date-picker').value = `${yyyy}-${mm}-${dd}`;
+// 무한 스크롤 상태
+let _currentPage = 1;
+let _isLoading = false;
+let _hasMore = false;
+let _summaryAccum = null; // 누적 요약 (날짜 미지정 모드)
 
+window.addEventListener('DOMContentLoaded', () => {
+  // 날짜 기본값 없이 최근 내역 바로 조회
   fetchPaymentHistory();
+
+  // 무한 스크롤: .article_bottom 스크롤 감지
+  const articleBottom = document.querySelector('.article_bottom');
+  articleBottom.addEventListener('scroll', () => {
+    if (_isLoading || !_hasMore) return;
+    if (document.querySelector('#date-picker').value) return; // 날짜 지정 시 무한 스크롤 없음
+
+    const el = articleBottom;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 150) {
+      _currentPage++;
+      fetchPaymentHistory(true);
+    }
+  });
 
   // 결제 이력 페이지 전용 소켓 룸 참여 + 환불 결과 수신
   if (typeof socket !== 'undefined' && typeof STORE_ID !== 'undefined' && STORE_ID) {
@@ -51,52 +64,91 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // ─── 결제 내역 조회 ────────────────────────────────────────────────────────────
 
-function fetchPaymentHistory() {
+function fetchPaymentHistory(append = false) {
+  if (_isLoading) return;
+
+  if (!append) {
+    _currentPage = 1;
+    _summaryAccum = null;
+  }
+
+  _isLoading = true;
+  _showLoading(true, append);
+
   const date = document.querySelector('#date-picker').value;
   const filter = document.querySelector('#filter-select .btn-dropdown')?.dataset.id ?? 'all';
   const sort = document.querySelector('#sort-select .btn-dropdown')?.dataset.id ?? 'time_desc';
 
-  _showLoading(true);
+  let url = `/store/get_payment_history?filter=${filter}&sort=${sort}`;
+  if (date) {
+    url += `&date=${date}`;
+  } else {
+    url += `&page=${_currentPage}&per_page=20`;
+  }
 
-  fetch(`/store/get_payment_history?date=${date}&filter=${filter}&sort=${sort}`)
+  fetch(url)
     .then(r => r.json())
     .then(data => {
-      _renderSummary(data.summary);
-      _renderList(data.list, date);
+      _renderSummary(data.summary, append);
+      _renderList(data.list, append);
+      _hasMore = !date && !!data.has_more;
+      _isLoading = false;
+      _showLoading(false, append);
     })
     .catch(() => {
-      _showLoading(false);
-      alert('결제 내역을 불러오는 중 오류가 발생했습니다.');
+      _isLoading = false;
+      _showLoading(false, append);
+      if (!append) alert('결제 내역을 불러오는 중 오류가 발생했습니다.');
     });
 }
 
-function _showLoading(show) {
+function _showLoading(show, append = false) {
   const loading = document.querySelector('.table_loading');
   const noData = document.querySelector('.no_data');
-  loading.style.display = show ? 'flex' : 'none';
-  noData.style.display = 'none';
-  if (show) {
-    document.querySelectorAll('.payment_list li.table_row').forEach(el => el.remove());
+  const scrollLoading = document.querySelector('#scroll-loading');
+
+  if (append) {
+    // 무한 스크롤 로딩: 하단 인디케이터만 제어
+    if (scrollLoading) scrollLoading.style.display = show ? 'block' : 'none';
+  } else {
+    // 초기/새 조회 로딩
+    loading.style.display = show ? 'flex' : 'none';
+    noData.style.display = 'none';
+    if (scrollLoading) scrollLoading.style.display = 'none';
+    if (show) {
+      document.querySelectorAll('.payment_list li.table_row').forEach(el => el.remove());
+    }
   }
 }
 
-function _renderSummary(summary) {
+function _renderSummary(summary, append = false) {
+  if (!append || !_summaryAccum) {
+    _summaryAccum = { ...summary };
+  } else {
+    _summaryAccum.total_count += summary.total_count;
+    _summaryAccum.paid_count += summary.paid_count;
+    _summaryAccum.cancelled_count += summary.cancelled_count;
+    _summaryAccum.total_paid += summary.total_paid;
+    _summaryAccum.total_cancelled += summary.total_cancelled;
+  }
+  const s = _summaryAccum;
   document.querySelector('#summary-count').textContent =
-    `${summary.total_count}건 (결제 ${summary.paid_count}건 / 취소 ${summary.cancelled_count}건)`;
+    `${s.total_count}건 (결제 ${s.paid_count}건 / 취소 ${s.cancelled_count}건)`;
   document.querySelector('#summary-paid').textContent =
-    `${summary.total_paid.toLocaleString()}원`;
+    `${s.total_paid.toLocaleString()}원`;
   document.querySelector('#summary-cancelled').textContent =
-    `${summary.total_cancelled.toLocaleString()}원`;
+    `${s.total_cancelled.toLocaleString()}원`;
 }
 
-function _renderList(list, date) {
-  _showLoading(false);
+function _renderList(list, append = false) {
   const ul = document.querySelector('.payment_list');
 
-  if (!list || list.length === 0) {
+  if (!append && (!list || list.length === 0)) {
     document.querySelector('.no_data').style.display = 'flex';
     return;
   }
+
+  if (!list || list.length === 0) return;
 
   list.forEach(item => {
     const methodSet = [...new Set(item.payments.map(p => p.method))].join(', ');
@@ -108,6 +160,7 @@ function _renderList(list, date) {
     li.className = 'table_row';
     li.dataset.id = item.id;
     li.innerHTML = `
+      <div>${item.payment_date ? item.payment_date.slice(5) : '-'}</div>
       <div>${item.payment_time}</div>
       <div>${item.table_name}</div>
       <div class="order-summary-cell ellipsis">${_getOrderSummary(item.order_items)}</div>
@@ -115,7 +168,7 @@ function _renderList(list, date) {
       <div class="amount">${item.total_paid.toLocaleString()}원</div>
       <div><span class="status_badge ${statusClass}">${statusText}</span></div>
     `;
-    li.addEventListener('click', () => _openDetailModal(item, date));
+    li.addEventListener('click', () => _openDetailModal(item));
     ul.appendChild(li);
   });
 }
@@ -129,17 +182,18 @@ function _getOrderSummary(orderItems) {
 
 // ─── 상세 모달 ─────────────────────────────────────────────────────────────────
 
-function _openDetailModal(item, date) {
+function _openDetailModal(item) {
   _currentItem = item;
   const modal = document.querySelector('#payment-detail-modal');
   modal.classList.remove('hidden');
 
   // 기본 정보
+  const dateStr = item.payment_date || '';
   document.querySelector('#detail-table-name').textContent = item.table_name;
   document.querySelector('#detail-first-order').textContent =
-    item.first_order_time ? `${date} ${item.first_order_time}` : '-';
+    item.first_order_time ? `${dateStr} ${item.first_order_time}` : '-';
   document.querySelector('#detail-payment-time').textContent =
-    item.payment_time ? `${date} ${item.payment_time}` : '-';
+    item.payment_time ? `${dateStr} ${item.payment_time}` : '-';
 
   // 주문 내역
   const orderListEl = document.querySelector('#detail-order-list');

@@ -98,6 +98,7 @@
         <div class="article_bottom scrollbar_hidden">
           <ul class="payment_list scrollbar_hidden">
             <li class="table_header">
+              <div>날짜</div>
               <div>결제 시간</div>
               <div>테이블</div>
               <div>주문 내역</div>
@@ -111,9 +112,12 @@
             </li>
             <li class="no_data" style="display:none;">
               <i class="ph ph-receipt"></i>
-              <span>해당 날짜의 결제 내역이 없습니다.</span>
+              <span>결제 내역이 없습니다.</span>
             </li>
           </ul>
+          <div id="scroll-loading" style="display:none; text-align:center; padding:16px; color:#888; font-size:14px;">
+            <i class="ph ph-circle-notch spin-icon"></i> 불러오는 중...
+          </div>
         </div>
       </article>
     </main>
@@ -182,7 +186,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
   <script>const STORE_ID = {{ store_id | tojson }};</script>
   <script src="/static/js/common.js?v=2"></script>
-  <script src="/static/js/store_payment_history.js?v=7"></script>
+  <script src="/static/js/store_payment_history.js?v=8"></script>
 </body>
 
 </html>
