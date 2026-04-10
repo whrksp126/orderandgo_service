@@ -881,7 +881,8 @@ def get_payment_history():
         )
         order_total = item_total + (tpl.extra_charge or 0) - (tpl.discount or 0)
         all_cancelled = len(payment_list) > 0 and all(p['status'] == 2 for p in payment_list)
-        is_partial = total_paid > 0 and total_paid < order_total and not all_cancelled
+        # 분할 결제 진행 중: 취소 없이 총액 미달 (취소가 있으면 부분취소로 처리)
+        is_partial = total_paid > 0 and total_paid < order_total and not all_cancelled and not has_cancelled
         remaining_amount = max(0, order_total - total_paid) if is_partial else 0
 
         if filter_type == 'paid' and (has_cancelled or is_partial):

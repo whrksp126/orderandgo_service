@@ -307,10 +307,16 @@ function _openDetailModal(item) {
   const originalTotal = item.total_paid + item.total_cancelled;
   document.querySelector('#detail-total').textContent = `${originalTotal.toLocaleString()}원`;
 
-  // 미납금 섹션 (분할 결제 미완료 시)
+  // 결제 상태 요약 섹션 (분할 결제 진행 중 / 부분 취소)
   const existingRemainingSection = document.querySelector('#detail-remaining-section');
   if (existingRemainingSection) existingRemainingSection.remove();
+  const allCancelledModal = item.payments.length > 0 && item.payments.every(p => p.status === 2);
+
+  const totalRow = document.querySelector('#detail-total').closest('.detail-total-row') ||
+                   document.querySelector('#detail-total').parentElement;
+
   if (item.is_partial && item.remaining_amount > 0) {
+    // 분할 결제 진행 중: 결제 완료 + 미납금
     const remainingSection = document.createElement('div');
     remainingSection.id = 'detail-remaining-section';
     remainingSection.className = 'detail-remaining-section';
@@ -320,12 +326,26 @@ function _openDetailModal(item) {
         <span class="remaining-paid">${item.total_paid.toLocaleString()}원</span>
       </div>
       <div class="remaining-row highlight">
-        <span class="remaining-label">남은 미납금</span>
+        <span class="remaining-label">미납금</span>
         <span class="remaining-amount">${item.remaining_amount.toLocaleString()}원</span>
       </div>
     `;
-    const totalRow = document.querySelector('#detail-total').closest('.detail-total-row') ||
-                     document.querySelector('#detail-total').parentElement;
+    totalRow.after(remainingSection);
+  } else if (item.has_cancelled && !allCancelledModal && item.total_cancelled > 0) {
+    // 결제 완료 후 일부 취소: 결제 금액 + 취소 금액
+    const remainingSection = document.createElement('div');
+    remainingSection.id = 'detail-remaining-section';
+    remainingSection.className = 'detail-remaining-section partial-cancel';
+    remainingSection.innerHTML = `
+      <div class="remaining-row">
+        <span class="remaining-label">결제 금액</span>
+        <span class="remaining-paid">${item.total_paid.toLocaleString()}원</span>
+      </div>
+      <div class="remaining-row highlight-cancel">
+        <span class="remaining-label">취소 금액</span>
+        <span class="remaining-cancelled">${item.total_cancelled.toLocaleString()}원</span>
+      </div>
+    `;
     totalRow.after(remainingSection);
   }
 

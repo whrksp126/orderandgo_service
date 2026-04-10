@@ -2181,6 +2181,20 @@ section ul li .submit_btn {
   color: #2980B9;
 }
 
+.payment-detail-modal .remaining-row.highlight-cancel {
+  font-weight: 700;
+  color: #E74C3C;
+  font-size: 15px;
+}
+
+.payment-detail-modal .remaining-row .remaining-cancelled {
+  color: #E74C3C;
+}
+
+.payment-detail-modal .detail-remaining-section.partial-cancel {
+  border-top-color: #E74C3C;
+}
+
 .payment-detail-modal .modal-actions {
   display: flex;
   gap: 10px;
