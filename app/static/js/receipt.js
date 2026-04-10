@@ -196,6 +196,136 @@ const ReceiptEngine = {
         }, 500);
     },
 
+    // 취소 영수증 텍스트 생성
+    generateCancelReceiptText(storeInfo, orderData, cancelInfo) {
+        const cancelledAt = cancelInfo.cancelledAt
+            ? new Date(cancelInfo.cancelledAt).toLocaleString('ko-KR')
+            : new Date().toLocaleString('ko-KR');
+        const totalPrice = cancelInfo.price;
+        const vat = Math.round(totalPrice / 11);
+        const supplyPrice = totalPrice - vat;
+
+        let text = storeInfo.receipt_header ? storeInfo.receipt_header + '\n' : `
+^취 소 영 수 증
+^${storeInfo.name || 'Order & Go'}
+`;
+        text += `---
+사업자번호: | ${storeInfo.business_number || '000-00-00000'}
+대 표 자: | ${storeInfo.representative_name || '-'}
+주    소: | ${storeInfo.address || '-'}
+전화번호: | ${storeInfo.tel || '-'}
+---
+취 소 일 시: | ${cancelledAt}
+테 이 블 명: | ${orderData.tableName || '-'}
+---
+{B:메뉴명} | {B:수량} | {B:금액}
+`;
+
+        orderData.items.forEach(item => {
+            text += `${item.name} | ${item.count} | ${(item.price * item.count).toLocaleString()}\n`;
+            if (item.options) {
+                item.options.forEach(opt => {
+                    text += ` - ${opt.name} | ${opt.count || 1} | ${(opt.price * (opt.count || 1)).toLocaleString()}\n`;
+                });
+            }
+        });
+
+        text += `---
+공급가액: | ${supplyPrice.toLocaleString()}
+부가가치세: | ${vat.toLocaleString()}
+{B:취소금액} | {B:${totalPrice.toLocaleString()}}
+---
+결제수단: | ${cancelInfo.method === 1 ? '현금' : '카드'} (취소)
+`;
+
+        if (storeInfo.receipt_footer) {
+            text += storeInfo.receipt_footer + '\n';
+        } else {
+            text += `---
+^^이용해 주셔서 감사합니다.
+^^Order & Go POS System
+`;
+        }
+        return text;
+    },
+
+    // 취소 영수증 모달 오픈
+    openCancelReceiptModal(storeInfo, orderData, cancelInfo) {
+        const receiptText = this.generateCancelReceiptText(storeInfo, orderData, cancelInfo);
+
+        let receiptSvg = '';
+        if (typeof receiptline !== 'undefined') {
+            receiptSvg = receiptline.transform(receiptText, { cpl: this.cpl, lang: "ko" });
+        } else {
+            receiptSvg = '<div style="padding:20px;">ReceiptLine Library Not Loaded</div>';
+        }
+
+        const modalId = 'receipt-view-modal';
+        let modalEl = document.getElementById(modalId);
+        if (!modalEl) {
+            modalEl = document.createElement('div');
+            modalEl.id = modalId;
+            modalEl.className = 'option-modal-overlay active';
+            document.body.appendChild(modalEl);
+        }
+
+        const totalPrice = cancelInfo.price;
+        const vat = Math.round(totalPrice / 11);
+        const supplyPrice = totalPrice - vat;
+        const cancelledAt = cancelInfo.cancelledAt
+            ? new Date(cancelInfo.cancelledAt).toLocaleString('ko-KR')
+            : new Date().toLocaleString('ko-KR');
+
+        const itemsListHtml = orderData.items.map(item => `
+            <div class="summary-item">
+                <span class="name">${item.name} x ${item.count}</span>
+                <span class="val">${(item.price * item.count).toLocaleString()}원</span>
+            </div>
+        `).join('');
+
+        modalEl.innerHTML = `
+      <div class="receipt-modal-content premium-modal">
+         <div class="receipt-modal-header">
+           <h1>취소 영수증 상세보기</h1>
+           <i class="ph-bold ph-x" onclick="document.getElementById('${modalId}').remove()"></i>
+        </div>
+        <div class="receipt-modal-body split-layout">
+          <div class="receipt-preview-section">
+            <div id="receipt-svg-container-modal" class="receipt-paper-effect">
+              ${receiptSvg}
+            </div>
+          </div>
+          <div class="receipt-summary-section">
+            <div class="summary-box">
+                <div class="summary-header">
+                  <h3>취소 내역 상세</h3>
+                </div>
+                <div class="summary-list">
+                  <div class="summary-item"><span>매장명</span><span>${storeInfo.name}</span></div>
+                  <div class="summary-item" style="color:#e74c3c;"><span>취소일시</span><span>${cancelledAt}</span></div>
+                  <div class="summary-item"><span>테이블</span><span>${orderData.tableName}</span></div>
+                  <div class="summary-divider"></div>
+                  <div class="items-scroll-area">
+                    ${itemsListHtml}
+                  </div>
+                  <div class="summary-divider"></div>
+                  <div class="summary-item"><span>공급가액</span><span>${supplyPrice.toLocaleString()}원</span></div>
+                  <div class="summary-item"><span>부가가치세</span><span>${vat.toLocaleString()}원</span></div>
+                  <div class="summary-item total" style="color:#e74c3c;"><span>취소금액</span><span>${totalPrice.toLocaleString()}원</span></div>
+                  <div class="summary-item"><span>결제수단</span><span>${cancelInfo.method === 1 ? '현금' : '카드'} (취소)</span></div>
+                </div>
+            </div>
+            <div class="receipt-modal-actions">
+              <button class="receipt-btn save-img" onclick="ReceiptEngine.saveAsImage('receipt-svg-container-modal', 'CancelReceipt')">이미지로 저장</button>
+              <button class="receipt-btn print-paper" onclick="ReceiptEngine.printToPaper('receipt-svg-container-modal')">종이로 인쇄</button>
+              <button class="receipt-btn close-btn" onclick="document.getElementById('${modalId}').remove()">닫기</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    },
+
     // 기존 함수 유지 (호환성용)
     generateCustomerReceipt(storeInfo, orderData, paymentInfo) {
         const text = this.generateReceiptText(storeInfo, orderData, paymentInfo);

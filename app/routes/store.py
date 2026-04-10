@@ -856,11 +856,6 @@ def get_payment_history():
             else:
                 total_paid += p.payment_amount
 
-        if filter_type == 'paid' and has_cancelled:
-            continue
-        if filter_type == 'cancelled' and not has_cancelled:
-            continue
-
         # order_details는 str(list) 형식으로 저장됨 → ast.literal_eval로 파싱
         order_items = []
         try:
@@ -878,6 +873,21 @@ def get_payment_history():
                     })
         except Exception:
             pass
+
+        # 분할 결제 미완료 판단: 주문 총액 계산 후 실제 결제액과 비교
+        item_total = sum(
+            oi['price'] * oi['count'] + sum(o['price'] * o['count'] for o in oi.get('options', []))
+            for oi in order_items
+        )
+        order_total = item_total + (tpl.extra_charge or 0) - (tpl.discount or 0)
+        all_cancelled = len(payment_list) > 0 and all(p['status'] == 2 for p in payment_list)
+        is_partial = total_paid > 0 and total_paid < order_total and not all_cancelled
+        remaining_amount = max(0, order_total - total_paid) if is_partial else 0
+
+        if filter_type == 'paid' and (has_cancelled or is_partial):
+            continue
+        if filter_type == 'cancelled' and not has_cancelled:
+            continue
 
         try:
             ph = json.loads(tpl.payment_history) if tpl.payment_history else {}
@@ -899,6 +909,9 @@ def get_payment_history():
             'total_cancelled': total_cancelled,
             'payments': payment_list,
             'has_cancelled': has_cancelled,
+            'is_partial': is_partial,
+            'remaining_amount': remaining_amount,
+            'order_total': order_total,
         })
 
     if date_str:
@@ -909,8 +922,9 @@ def get_payment_history():
 
     summary = {
         'total_count': len(result),
-        'paid_count': sum(1 for r in result if not r['has_cancelled']),
+        'paid_count': sum(1 for r in result if not r['has_cancelled'] and not r.get('is_partial')),
         'cancelled_count': sum(1 for r in result if r['has_cancelled']),
+        'partial_count': sum(1 for r in result if r.get('is_partial')),
         'total_paid': sum(r['total_paid'] for r in result),
         'total_cancelled': sum(r['total_cancelled'] for r in result),
     }

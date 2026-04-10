@@ -1919,7 +1919,8 @@ section ul li .submit_btn {
 }
 
 /* 영수증 아이콘 버튼 */
-.payment-detail-modal .btn-item-receipt {
+.payment-detail-modal .btn-item-receipt,
+.payment-detail-modal .btn-item-cancel-receipt {
   background: none;
   border: 1px solid #DDD;
   border-radius: 4px;
@@ -1930,7 +1931,8 @@ section ul li .submit_btn {
   line-height: 1;
   transition: background 0.12s, color 0.12s, border-color 0.12s;
 }
-.payment-detail-modal .btn-item-receipt:hover {
+.payment-detail-modal .btn-item-receipt:hover,
+.payment-detail-modal .btn-item-cancel-receipt:hover {
   background: #F5F5F5;
   color: #333;
   border-color: #BBB;
@@ -2004,6 +2006,11 @@ section ul li .submit_btn {
 .status_badge.partial {
   background: #FEF9E7;
   color: #E67E22;
+}
+
+.status_badge.pending-pay {
+  background: #EBF5FB;
+  color: #2980B9;
 }
 
 /* 결제 상세 모달 */
@@ -2147,6 +2154,31 @@ section ul li .submit_btn {
   padding-top: 10px;
   border-top: 2px solid #EBEBEB;
   color: #1FAA9C;
+}
+
+.payment-detail-modal .detail-remaining-section {
+  border-top: 1px dashed #F0B429;
+  padding-top: 10px;
+  margin-top: 4px;
+}
+
+.payment-detail-modal .remaining-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.payment-detail-modal .remaining-row.highlight {
+  font-weight: 700;
+  color: #2980B9;
+  font-size: 15px;
+}
+
+.payment-detail-modal .remaining-row .remaining-amount {
+  color: #2980B9;
 }
 
 .payment-detail-modal .modal-actions {

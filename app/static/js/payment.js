@@ -467,6 +467,7 @@ const paymentHtml = () => {
   const _sectionTotalPrice = document.querySelector('main section .total_price .price');
   _sectionTotalPrice.innerHTML = `${(totalPrice - receivedTotalPrice).toLocaleString()} 원`;
   setPaymentData();
+  _initDisplayPending();  // curPaymentPrice 설정 직후 즉시 시도 (terminal 이미 online 케이스)
 }
 
 // 금액 추가 버튼 클릭 시
@@ -565,10 +566,15 @@ const setPaymentData = (curPaymentPrice = false) => {
   if (!curPaymentPrice) {
     if (payment_history.payment_history.isDutch) {
       _currentPrice.innerHTML = `${(payment_history.payment_history.dutchPrice).toLocaleString()}원`;
-      payment_history.curPaymentPrice = payment_history.payment_history.dutchPrice
+      payment_history.curPaymentPrice = payment_history.payment_history.dutchPrice;
+    } else if (payment_history.payment_history.isDirect && payment_history.payment_history.direct > 0) {
+      const _remaining = totalPrice - receivedTotalPrice;
+      const _directAmt = Math.min(payment_history.payment_history.direct, _remaining);
+      _currentPrice.innerHTML = `${_directAmt.toLocaleString()}원`;
+      payment_history.curPaymentPrice = _directAmt;
     } else {
       _currentPrice.innerHTML = `${(totalPrice - receivedTotalPrice).toLocaleString()}원`;
-      payment_history.curPaymentPrice = totalPrice - receivedTotalPrice
+      payment_history.curPaymentPrice = totalPrice - receivedTotalPrice;
     }
   } else {
 

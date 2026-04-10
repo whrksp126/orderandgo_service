@@ -481,8 +481,8 @@ def submit_toss_result():
         return jsonify({'status': 'ok'})
 
     result_type = result.get('type') if result else None
-    if result_type in ('CANCELED', 'TIMEOUT') and pending:
-        # 고객 취소/타임아웃 → pending을 display 상태로 복귀 (단말기가 주문 내역 재표시)
+    if result_type != 'SUCCESS' and pending:
+        # 결제 실패(취소·타임아웃·금액오류 등) → display로 복귀 (단말기가 주문 내역 재표시)
         _pending_payments[payment_id]['payment_type'] = 'display'
         _pending_payments[payment_id]['status'] = 'pending'   # pop 대신 pending 복귀 (KeyError 방지)
         _pending_payments[payment_id].pop('cash_ready', None)  # 현금 재시도 가능하도록 초기화
@@ -1120,7 +1120,7 @@ def payment_history(table_id):
 
     if request.method == 'GET':     # 첫 결제하기 들어왔을 때
         print("###",'get')
-        table_payment_data = make_payment_history(store_id, table_id, False, False)
+        table_payment_data = make_payment_history(store_id, table_id)
     else:                           # 결제중
         print("###",'post')
         payment_data = request.get_json()

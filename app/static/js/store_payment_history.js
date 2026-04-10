@@ -162,8 +162,9 @@ function _renderList(list, append = false) {
   list.forEach(item => {
     const methodSet = [...new Set(item.payments.map(p => p.method))].join(', ');
     const allCancelled = item.payments.length > 0 && item.payments.every(p => p.status === 2);
-    const statusClass = allCancelled ? 'cancelled' : (item.has_cancelled ? 'partial' : 'paid');
-    const statusText = allCancelled ? '취소' : (item.has_cancelled ? '부분취소' : '결제완료');
+    const isPartial = item.is_partial;
+    const statusClass = allCancelled ? 'cancelled' : (isPartial ? 'pending-pay' : (item.has_cancelled ? 'partial' : 'paid'));
+    const statusText = allCancelled ? '취소' : (isPartial ? '결제 중' : (item.has_cancelled ? '부분취소' : '결제완료'));
     // 원래 결제 금액 (취소 포함) 표시
     const originalTotal = item.total_paid + item.total_cancelled;
 
@@ -261,7 +262,12 @@ function _openDetailModal(item) {
       </div>
       <div class="pay-item-right">
         <span class="pay-amount-text">${p.amount.toLocaleString()}원</span>
-        ${!isCancelled ? `
+        ${isCancelled ? `
+          <div class="pay-item-actions">
+            <button class="btn-item-cancel-receipt" title="취소 영수증 출력" data-payment-id="${p.id}">
+              <i class="ph ph-printer"></i>
+            </button>
+          </div>` : `
           <div class="pay-item-actions">
             <button class="btn-item-receipt" title="영수증 출력" data-payment-id="${p.id}">
               <i class="ph ph-printer"></i>
@@ -269,12 +275,19 @@ function _openDetailModal(item) {
             <button class="btn-item-refund refund-item-btn" data-payment-id="${p.id}" data-has-toss="${hasToss}">
               환불
             </button>
-          </div>` : ''}
+          </div>`}
       </div>
     `;
     paymentListEl.appendChild(li);
   });
   paymentListEl.onclick = (e) => {
+    const cancelReceiptBtn = e.target.closest('.btn-item-cancel-receipt');
+    if (cancelReceiptBtn) {
+      const paymentId = parseInt(cancelReceiptBtn.dataset.paymentId);
+      const payment = _currentItem.payments.find(p => p.id === paymentId);
+      if (payment) _openCancelPaymentReceipt(payment);
+      return;
+    }
     const receiptBtn = e.target.closest('.btn-item-receipt');
     if (receiptBtn) {
       const paymentId = parseInt(receiptBtn.dataset.paymentId);
@@ -293,6 +306,28 @@ function _openDetailModal(item) {
   // 합계: 원래 결제 금액 (취소 포함)
   const originalTotal = item.total_paid + item.total_cancelled;
   document.querySelector('#detail-total').textContent = `${originalTotal.toLocaleString()}원`;
+
+  // 미납금 섹션 (분할 결제 미완료 시)
+  const existingRemainingSection = document.querySelector('#detail-remaining-section');
+  if (existingRemainingSection) existingRemainingSection.remove();
+  if (item.is_partial && item.remaining_amount > 0) {
+    const remainingSection = document.createElement('div');
+    remainingSection.id = 'detail-remaining-section';
+    remainingSection.className = 'detail-remaining-section';
+    remainingSection.innerHTML = `
+      <div class="remaining-row">
+        <span class="remaining-label">결제 완료</span>
+        <span class="remaining-paid">${item.total_paid.toLocaleString()}원</span>
+      </div>
+      <div class="remaining-row highlight">
+        <span class="remaining-label">남은 미납금</span>
+        <span class="remaining-amount">${item.remaining_amount.toLocaleString()}원</span>
+      </div>
+    `;
+    const totalRow = document.querySelector('#detail-total').closest('.detail-total-row') ||
+                     document.querySelector('#detail-total').parentElement;
+    totalRow.after(remainingSection);
+  }
 
   // Toss 결제 상세 정보 표시
   const ph = item.payment_history || {};
@@ -369,6 +404,21 @@ function _openPaymentReceipt(payment) {
     method: payment.method.includes('현금') ? 1 : 2,
   };
   ReceiptEngine.openReceiptModal(storeInfo, orderData, paymentInfo);
+}
+
+function _openCancelPaymentReceipt(payment) {
+  if (!_currentItem) return;
+  const item = _currentItem;
+  const storeInfo = window.STORE_INFO || {};
+  const orderData = { tableName: item.table_name, items: item.order_items };
+  const pi = payment.payment_info || {};
+  const cancelledAt = pi.toss_cancel_time || pi.cancelled_at || null;
+  const cancelInfo = {
+    price: payment.amount,
+    method: payment.method.includes('현금') ? 1 : 2,
+    cancelledAt,
+  };
+  ReceiptEngine.openCancelReceiptModal(storeInfo, orderData, cancelInfo);
 }
 
 // ─── 개별 결제 환불 ─────────────────────────────────────────────────────────────
