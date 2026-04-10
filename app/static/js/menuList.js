@@ -738,6 +738,14 @@ const clickOrder = async (event) => {
     };
     const result = await fetchDataAsync(url, method, fetchData);
     if (result.code == 200) {
+      // 프린터 연결 시 주문 슬립 자동 출력
+      if (window.PrinterManager && PrinterManager.isConnected()) {
+        const orderData = {
+          tableName: window.CURRENT_TABLE_NAME || String(lastPath),
+          items: deepCopy(menuAllData),
+        };
+        PrinterManager.printOrderSlip(orderData).catch(e => console.warn('프린터 출력 실패:', e));
+      }
       showToast('주문이 완료되었습니다.');
       setTimeout(() => {
         window.location.href = '/pos/tableList';

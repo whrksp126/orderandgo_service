@@ -746,9 +746,11 @@ def get_table_page():
 
 # 테이블 -> 메뉴리스트 페이지
 @pos_bp.route('/menuList/<table_id>', methods=['GET'])
-def menuList(table_id): 
-    # JSON 데이터를 프론트에 반환
-    return render_template('/pos/menu_list.html')
+def menuList(table_id):
+    from app.models import Table
+    table = Table.query.filter_by(id=table_id).first()
+    table_name = table.name if table else str(table_id)
+    return render_template('/pos/menu_list.html', table_name=table_name)
 
 # 테이블 주문내역 조회
 @pos_bp.route('/get_table_order_list/<table_id>', methods=['GET'])

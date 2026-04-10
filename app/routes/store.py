@@ -601,6 +601,12 @@ def get_table_id_yn():
         else:
             return jsonify({'status': False}), 200
 
+# 프린터 관리 페이지
+@store_bp.route('/printer_mgmt')
+@login_required
+def printer_mgmt():
+    return render_template('store_printer_mgmt.html')
+
 # 직원 호출 항목 관리 페이지
 @store_bp.route('/staff_call_mgmt')
 @login_required
