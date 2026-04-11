@@ -1,7 +1,8 @@
-from flask import render_template, jsonify, request
+from flask import render_template, jsonify, request, Response
 import json
 import uuid
 import time
+from datetime import datetime
 from app.models.menu import select_main_category, select_sub_category, select_menu_all, select_menu, select_menu_option, select_menu_option_all, select_menu_all_to_main_category
 from app.models.order import find_order_list, get_orders_by_store_id
 from flask_login import login_required, current_user
@@ -1276,3 +1277,71 @@ def get_store_info():
         "address": store.address,
         "tel": store.tel
     })
+# ─── 주문 슬립 ESC/POS 바이트 생성 ──────────────────────────────────────────────
+@pos_bp.route("/generate_order_slip", methods=["POST"])
+@login_required
+def generate_order_slip():
+    """
+    프론트에서 주문 데이터를 받아 EUC-KR 인코딩된 ESC/POS 바이트를 반환.
+    Web Serial API로 직접 열전사 프린터에 전송하기 위한 엔드포인트.
+    """
+    data = request.get_json()
+    table_name = data.get("tableName", "-")
+    items = data.get("items", [])
+    total = data.get("total", 0)
+    now_str = datetime.now().strftime("%H:%M:%S")
+    DIVIDER = "--------------------------------
+"
+
+    def t(s):
+        return s.encode("cp949", errors="replace")
+
+    def line(s):
+        return t(s + "
+")
+
+    buf = bytearray()
+    buf += b"@"        # ESC @ — 초기화
+    buf += b"R"   # ESC R 13 — 한국 문자셋
+    buf += b"a"   # 가운데 정렬
+    buf += b"E"   # 굵게 ON
+    buf += line("=== 주  문  서 ===")
+    buf += b"E "   # 굵게 OFF
+    buf += b"a "   # 왼쪽 정렬
+    buf += t(DIVIDER)
+    buf += line(f"테이블: {table_name}")
+    buf += line(f"시  간: {now_str}")
+    buf += t(DIVIDER)
+
+    for item in items:
+        d = item.get("data", {})
+        name = d.get("name", "")
+        price = d.get("price", 0)
+        length = item.get("length", 1)
+        item_total = price * length
+        buf += b"E"  # 굵게 ON
+        buf += line(name)
+        buf += b"E "  # 굵게 OFF
+        if length >= 2:
+            buf += line(f"  수량 x{length}   {item_total:,}원")
+        else:
+            buf += line(f"  {item_total:,}원")
+        for opt in d.get("options", []):
+            opt_count = opt.get("count", 1)
+            opt_total = opt.get("price", 0) * opt_count
+            count_str = f" x{opt_count}" if opt_count >= 2 else ""
+            buf += line(f"  + {opt.get(name,)}{count_str}  {opt_total:,}원")
+
+    buf += t(DIVIDER)
+    buf += b"E"   # 굵게 ON
+    buf += line(f"합  계:  {total:,}원")
+    buf += b"E "   # 굵게 OFF
+    buf += t(DIVIDER)
+    buf += b"
+
+
+"   # 줄 이송 3줄
+    buf += b"V"   # GS V 1 — 자동 커팅
+
+    return Response(bytes(buf), mimetype="application/octet-stream")
+
