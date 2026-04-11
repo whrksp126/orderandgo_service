@@ -109,14 +109,19 @@ const PrinterManager = {
 
     // ─── 주문 슬립 출력 ──────────────────────────────────────────────────────────
     /**
+     * 토스 프론트 단말기 주문 내역 레이아웃과 동일한 포맷으로 출력
      * @param {Object} orderData
-     * @param {string} orderData.tableName - 테이블 이름
-     * @param {Array}  orderData.items     - [{ name, count, options: [{name, count}] }]
+     * @param {string} orderData.tableName  - 테이블 이름
+     * @param {Array}  orderData.items      - setBasketData() 결과: [{ data: { name, price, options: [{name, price, count}] }, length }]
+     * @param {number} [orderData.total]    - 합계 금액 (없으면 items에서 자동 계산)
      * @param {string} [orderData.orderedAt] - 주문 시각 (없으면 현재 시각)
      */
     async printOrderSlip(orderData) {
         const { tableName, items, orderedAt } = orderData;
         const now = orderedAt || new Date().toLocaleTimeString('ko-KR');
+
+        // 합계 계산
+        const total = orderData.total ?? items.reduce((sum, { data, length }) => sum + (data.price || 0) * length, 0);
 
         // 헤더
         await this._send([
@@ -132,23 +137,34 @@ const PrinterManager = {
             ...this._divider(),
         ]);
 
-        // 메뉴 목록
-        for (const item of items) {
-            const name = String(item.name || '').substring(0, 20);
-            const count = item.count || 1;
-            await this._send(this._line(`${name}  x${count}`));
+        // 메뉴 목록 (토스 단말기와 동일: 메뉴명 + 금액, 수량 2이상이면 수량 줄 추가)
+        for (const { data, length } of items) {
+            const name = String(data.name || '').substring(0, 16);
+            const itemTotal = (data.price || 0) * length;
+            await this._send(this._line(`${name}  ${itemTotal.toLocaleString()}원`));
+
+            if (length >= 2) {
+                await this._send(this._line(`  수량 x${length}`));
+            }
 
             // 옵션
-            if (Array.isArray(item.options) && item.options.length > 0) {
-                for (const opt of item.options) {
-                    const optName = String(opt.name || '').substring(0, 18);
-                    await this._send(this._line(`  + ${optName} x${opt.count || 1}`));
+            if (Array.isArray(data.options) && data.options.length > 0) {
+                for (const opt of data.options) {
+                    const optName = String(opt.name || '').substring(0, 14);
+                    const optCount = opt.count || 1;
+                    const optTotal = (opt.price || 0) * optCount;
+                    const optCountStr = optCount >= 2 ? ` x${optCount}` : '';
+                    await this._send(this._line(`  + ${optName}${optCountStr}  ${optTotal.toLocaleString()}원`));
                 }
             }
         }
 
-        // 마무리: 여백 3줄 + 자동 커팅
+        // 합계 + 마무리
         await this._send([
+            ...this._divider(),
+            ...this.CMD.BOLD_ON,
+            ...this._line(`합  계:  ${total.toLocaleString()}원`),
+            ...this.CMD.BOLD_OFF,
             ...this._divider(),
             ...this.CMD.FEED,
             ...this.CMD.FEED,
@@ -162,9 +178,9 @@ const PrinterManager = {
         await this.printOrderSlip({
             tableName: '테스트 테이블',
             items: [
-                { name: '아메리카노', count: 2 },
-                { name: '카페라떼', count: 1, options: [{ name: '샷 추가', count: 1 }] },
-                { name: '치즈케이크', count: 1 },
+                { data: { name: '아메리카노', price: 4500, options: [] }, length: 2 },
+                { data: { name: '카페라떼', price: 5500, options: [{ name: '샷 추가', price: 500, count: 1 }] }, length: 1 },
+                { data: { name: '치즈케이크', price: 6500, options: [] }, length: 1 },
             ],
             orderedAt: new Date().toLocaleTimeString('ko-KR'),
         });

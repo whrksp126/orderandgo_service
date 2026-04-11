@@ -738,11 +738,14 @@ const clickOrder = async (event) => {
     };
     const result = await fetchDataAsync(url, method, fetchData);
     if (result.code == 200) {
-      // 프린터 연결 시 주문 슬립 자동 출력
+      // 프린터 연결 시 주문 슬립 자동 출력 (토스 단말기 주문 내역과 동일 포맷)
       if (window.PrinterManager && PrinterManager.isConnected()) {
+        const groupedItems = setBasketData(menuAllData);
+        const totalPrice = groupedItems.reduce((sum, { data, length }) => sum + (data.price || 0) * length, 0);
         const orderData = {
           tableName: window.CURRENT_TABLE_NAME || String(lastPath),
-          items: deepCopy(menuAllData),
+          items: groupedItems,
+          total: totalPrice,
         };
         PrinterManager.printOrderSlip(orderData).catch(e => console.warn('프린터 출력 실패:', e));
       }
