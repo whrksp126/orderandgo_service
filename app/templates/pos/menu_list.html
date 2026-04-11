@@ -37,9 +37,6 @@
         <div class="header_info">
           <span class="cur_time">2023-05-01(월) 14:00</span>
           <span class="store_state" data-state="open">영업중</span>
-          <button class="btn_printer" id="printerBtn" onclick="togglePrinterConnection()" title="프린터 연결">
-            <i class="ph ph-printer" id="printerIcon"></i>
-          </button>
           <button class="btn_alarm" onclick="toggleNotificationSidebar()">
             <i class="ph ph-bell"></i>
           </button>
@@ -218,53 +215,9 @@
     integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA=="
     crossorigin="anonymous"></script>
   <script>const CURRENT_TABLE_NAME = "{{ table_name }}";</script>
-  <script src="/static/js/printer.js?v=4"></script>
   <script src="/static/js/common.js?v=3"></script>
   <!-- 전용 스크립트 -->
-  <script src="/static/js/menuList.js?v=3"></script>
-  <script>
-    // 프린터 상태 UI 업데이트
-    function updatePrinterBtn() {
-      const btn = document.getElementById('printerBtn');
-      const icon = document.getElementById('printerIcon');
-      if (!btn || !icon) return;
-      if (PrinterManager.isConnected()) {
-        btn.style.color = '#4ade80';
-        btn.title = '프린터 연결됨 (클릭 시 해제)';
-        icon.className = 'ph-fill ph-printer';
-      } else {
-        btn.style.color = '';
-        btn.title = '프린터 연결';
-        icon.className = 'ph ph-printer';
-      }
-    }
-
-    // 프린터 연결/해제 토글
-    async function togglePrinterConnection() {
-      if (!PrinterManager.isSupported()) {
-        showToast('Web Serial API 미지원 브라우저입니다. Chrome 또는 Edge를 사용해주세요.');
-        return;
-      }
-      if (PrinterManager.isConnected()) {
-        await PrinterManager.disconnect();
-        showToast('프린터 연결이 해제되었습니다.');
-      } else {
-        try {
-          await PrinterManager.connect();
-          showToast('프린터가 연결되었습니다.');
-        } catch (e) {
-          showToast('프린터 연결 실패: ' + (e.message || '포트를 선택해주세요.'));
-        }
-      }
-      updatePrinterBtn();
-    }
-
-    // 페이지 로드 시 프린터 자동 재연결
-    PrinterManager.autoConnect().then(ok => {
-      if (ok) showToast('프린터가 자동으로 연결되었습니다.');
-      updatePrinterBtn();
-    }).catch(() => { updatePrinterBtn(); });
-  </script>
+  <script src="/static/js/menuList.js?v=4"></script>
 </body>
 
 </html>

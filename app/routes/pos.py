@@ -1,4 +1,4 @@
-from flask import render_template, jsonify, request, Response
+from flask import render_template, jsonify, request
 import json
 import uuid
 import time
@@ -1277,67 +1277,3 @@ def get_store_info():
         "address": store.address,
         "tel": store.tel
     })
-
-
-# ─── 주문 슬립 ESC/POS 바이트 생성 ──────────────────────────────────────────────
-@pos_bp.route('/generate_order_slip', methods=['POST'])
-@login_required
-def generate_order_slip():
-    """
-    주문 데이터를 받아 cp949(EUC-KR) 인코딩된 ESC/POS 바이트 반환.
-    프론트에서 Web Serial API로 직접 열전사 프린터에 전송.
-    """
-    data = request.get_json()
-    table_name = data.get('tableName', '-')
-    items = data.get('items', [])
-    total = data.get('total', 0)
-    now_str = datetime.now().strftime('%H:%M:%S')
-    divider = b'--------------------------------\n'
-
-    def cp(s):
-        return s.encode('cp949', errors='replace')
-
-    def line(s):
-        return cp(s + '\n')
-
-    buf = bytearray()
-    buf += b'\x1b\x40'          # ESC @  — 초기화
-    buf += b'\x1b\x52\x0d'      # ESC R 13 — 한국 문자셋
-    buf += b'\x1b\x61\x01'      # ESC a 1 — 가운데 정렬
-    buf += b'\x1b\x45\x01'      # ESC E 1 — 굵게 ON
-    buf += line('=== 주  문  서 ===')
-    buf += b'\x1b\x45\x00'      # ESC E 0 — 굵게 OFF
-    buf += b'\x1b\x61\x00'      # ESC a 0 — 왼쪽 정렬
-    buf += divider
-    buf += line(f'테이블: {table_name}')
-    buf += line(f'시  간: {now_str}')
-    buf += divider
-
-    for item in items:
-        d = item.get('data', {})
-        name = d.get('name', '')
-        price = d.get('price', 0)
-        length = item.get('length', 1)
-        item_total = price * length
-        buf += b'\x1b\x45\x01'  # 굵게 ON
-        buf += line(name)
-        buf += b'\x1b\x45\x00'  # 굵게 OFF
-        if length >= 2:
-            buf += line(f'  수량 x{length}   {item_total:,}원')
-        else:
-            buf += line(f'  {item_total:,}원')
-        for opt in d.get('options', []):
-            opt_count = opt.get('count', 1)
-            opt_total = opt.get('price', 0) * opt_count
-            count_str = f' x{opt_count}' if opt_count >= 2 else ''
-            buf += line(f'  + {opt.get("name", "")}{count_str}  {opt_total:,}원')
-
-    buf += divider
-    buf += b'\x1b\x45\x01'      # 굵게 ON
-    buf += line(f'합  계:  {total:,}원')
-    buf += b'\x1b\x45\x00'      # 굵게 OFF
-    buf += divider
-    buf += b'\x0a\x0a\x0a'      # LF × 3 — 줄 이송
-    buf += b'\x1d\x56\x01'      # GS V 1 — 자동 커팅
-
-    return Response(bytes(buf), mimetype='application/octet-stream')

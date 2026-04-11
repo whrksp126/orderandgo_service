@@ -738,25 +738,6 @@ const clickOrder = async (event) => {
     };
     const result = await fetchDataAsync(url, method, fetchData);
     if (result.code == 200) {
-      // 프린터 연결 시 주문 슬립 자동 출력 (토스 단말기 주문 내역과 동일 포맷)
-      if (window.PrinterManager && PrinterManager.isConnected()) {
-        const groupedItems = setBasketData(menuAllData);
-        const totalPrice = groupedItems.reduce((sum, { data, length }) => sum + (data.price || 0) * length, 0);
-        const orderData = {
-          tableName: window.CURRENT_TABLE_NAME || String(lastPath),
-          items: groupedItems,
-          total: totalPrice,
-        };
-        PrinterManager.printOrderSlip(orderData)
-          .then(() => { if (typeof updatePrinterBtn === 'function') updatePrinterBtn(); })
-          .catch(e => {
-            console.warn('프린터 출력 실패:', e);
-            showToast('프린터 출력 실패: ' + (e.message || '연결을 확인해주세요.'));
-            if (typeof updatePrinterBtn === 'function') updatePrinterBtn();
-          });
-      } else if (window.PrinterManager && PrinterManager.isSupported()) {
-        showToast('프린터가 연결되지 않았습니다. 헤더의 프린터 아이콘을 눌러 연결해주세요.');
-      }
       showToast('주문이 완료되었습니다.');
       setTimeout(() => {
         window.location.href = '/pos/tableList';
