@@ -747,7 +747,15 @@ const clickOrder = async (event) => {
           items: groupedItems,
           total: totalPrice,
         };
-        PrinterManager.printOrderSlip(orderData).catch(e => console.warn('프린터 출력 실패:', e));
+        PrinterManager.printOrderSlip(orderData)
+          .then(() => { if (typeof updatePrinterBtn === 'function') updatePrinterBtn(); })
+          .catch(e => {
+            console.warn('프린터 출력 실패:', e);
+            showToast('프린터 출력 실패: ' + (e.message || '연결을 확인해주세요.'));
+            if (typeof updatePrinterBtn === 'function') updatePrinterBtn();
+          });
+      } else if (window.PrinterManager && PrinterManager.isSupported()) {
+        showToast('프린터가 연결되지 않았습니다. 헤더의 프린터 아이콘을 눌러 연결해주세요.');
       }
       showToast('주문이 완료되었습니다.');
       setTimeout(() => {
