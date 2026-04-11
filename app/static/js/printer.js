@@ -9,6 +9,7 @@
 const PrinterManager = {
     port: null,
     writer: null,
+    _opening: false,
 
     /** 프린터 연결 여부 */
     isConnected() {
@@ -28,6 +29,8 @@ const PrinterManager = {
         if (!this.isSupported()) {
             throw new Error('Web Serial API 미지원 브라우저입니다. Chrome 또는 Edge를 사용해주세요.');
         }
+        if (this.isConnected()) return true;
+        if (this._opening) throw new Error('이미 연결 시도 중입니다. 잠시 후 다시 시도해주세요.');
         this.port = await navigator.serial.requestPort();
         await this._openPort();
         return true;
@@ -38,6 +41,8 @@ const PrinterManager = {
      */
     async autoConnect() {
         if (!this.isSupported()) return false;
+        if (this.isConnected()) return true;
+        if (this._opening) return false;
         try {
             const ports = await navigator.serial.getPorts();
             if (ports.length === 0) return false;
@@ -54,9 +59,15 @@ const PrinterManager = {
 
     /** 포트 열기 (baudRate는 localStorage에서 로드, 기본 19200) */
     async _openPort() {
-        const baudRate = parseInt(localStorage.getItem('printer_baud') || '19200');
-        await this.port.open({ baudRate });
-        this.writer = this.port.writable.getWriter();
+        if (this._opening) throw new Error('이미 포트 열기 진행 중입니다.');
+        this._opening = true;
+        try {
+            const baudRate = parseInt(localStorage.getItem('printer_baud') || '19200');
+            await this.port.open({ baudRate });
+            this.writer = this.port.writable.getWriter();
+        } finally {
+            this._opening = false;
+        }
     },
 
     /** 연결 해제 */
