@@ -117,6 +117,7 @@ const PrinterManager = {
      * @param {string} [orderData.orderedAt] - 주문 시각 (없으면 현재 시각)
      */
     async printOrderSlip(orderData) {
+        console.log('[PrinterManager] printOrderSlip 호출:', JSON.stringify(orderData));
         const { tableName, items, orderedAt } = orderData;
         const now = orderedAt || new Date().toLocaleTimeString('ko-KR');
 
