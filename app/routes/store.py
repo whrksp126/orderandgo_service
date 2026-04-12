@@ -630,6 +630,8 @@ def api_get_printer_environments():
                 'name': p.name,
                 'baud_rate': p.baud_rate,
                 'description': p.description or '',
+                'usb_vendor_id': p.usb_vendor_id,
+                'usb_product_id': p.usb_product_id,
                 'position': p.position
             })
         result.append({
@@ -709,6 +711,8 @@ def api_create_printer():
     name = (data.get('name') or '').strip()
     baud_rate = int(data.get('baud_rate') or 19200)
     description = (data.get('description') or '').strip()
+    usb_vendor_id = data.get('usb_vendor_id')
+    usb_product_id = data.get('usb_product_id')
 
     if not name:
         return jsonify({'message': '프린터 이름을 입력해주세요.'}), 400
@@ -719,7 +723,9 @@ def api_create_printer():
 
     count = Printer.query.filter_by(environment_id=env_id).count()
     printer = Printer(store_id=store_id, environment_id=env_id, name=name,
-                      baud_rate=baud_rate, description=description, position=count)
+                      baud_rate=baud_rate, description=description,
+                      usb_vendor_id=usb_vendor_id, usb_product_id=usb_product_id,
+                      position=count)
     db.session.add(printer)
     db.session.commit()
     return jsonify({'message': 'Success', 'id': printer.id}), 201
@@ -735,6 +741,8 @@ def api_update_printer():
     name = (data.get('name') or '').strip()
     baud_rate = int(data.get('baud_rate') or 19200)
     description = (data.get('description') or '').strip()
+    usb_vendor_id = data.get('usb_vendor_id')
+    usb_product_id = data.get('usb_product_id')
 
     if not name:
         return jsonify({'message': '프린터 이름을 입력해주세요.'}), 400
@@ -746,6 +754,8 @@ def api_update_printer():
     printer.name = name
     printer.baud_rate = baud_rate
     printer.description = description
+    printer.usb_vendor_id = usb_vendor_id
+    printer.usb_product_id = usb_product_id
     db.session.commit()
     return jsonify({'message': 'Success'}), 200
 

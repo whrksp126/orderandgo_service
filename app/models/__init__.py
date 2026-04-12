@@ -364,5 +364,7 @@ class Printer(db.Model):
     name = db.Column(db.String(100), nullable=False)
     baud_rate = db.Column(db.Integer, default=19200)
     description = db.Column(db.String(200), nullable=True)
+    usb_vendor_id = db.Column(db.Integer, nullable=True)
+    usb_product_id = db.Column(db.Integer, nullable=True)
     position = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.now)

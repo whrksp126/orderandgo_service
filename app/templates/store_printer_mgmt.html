@@ -312,6 +312,60 @@
     .modal_btns .btn_confirm.danger { background-color: #F03E3E; }
     .modal_btns .btn_confirm.danger:hover { background-color: #C92A2A; }
 
+    /* 포트 정보 표시 */
+    .port_badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 20px;
+      background-color: #F1F3F5;
+      color: #868E96;
+    }
+    .port_badge.connected {
+      background-color: #EBFBEE;
+      color: #12b886;
+    }
+
+    /* 모달 포트 정보 박스 */
+    .modal_port_box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      border: 1.5px solid #DEE2E6;
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 0.88rem;
+      color: #495057;
+      background-color: #F8F9FA;
+    }
+    .modal_port_box .port_label {
+      flex: 1;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: #212529;
+    }
+    .modal_port_box .port_label.empty { color: #ADB5BD; font-weight: 400; }
+    .btn_change_port {
+      background: none;
+      border: 1.5px solid #DEE2E6;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #495057;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .btn_change_port:hover { background-color: #F1F3F5; border-color: #ADB5BD; }
+
     /* 미지원 브라우저 경고 */
     #unsupported_warning {
       display: none;
@@ -416,6 +470,15 @@
     <div class="modal_box">
       <div class="modal_title" id="modal_printer_title">프린터 추가</div>
       <div class="modal_field">
+        <label>연결된 포트</label>
+        <div class="modal_port_box">
+          <span class="port_label empty" id="modal_printer_port_label">포트 미선택</span>
+          <button class="btn_change_port" id="btn_change_port">
+            <i class="ph ph-usb"></i> 포트 변경
+          </button>
+        </div>
+      </div>
+      <div class="modal_field">
         <label>프린터 이름</label>
         <input type="text" id="modal_printer_name" placeholder="예: 카운터 프린터" maxlength="100">
       </div>
@@ -460,6 +523,8 @@
     let _envModal = { mode: 'create', envId: null };
     let _printerModal = { mode: 'create', printerId: null };
     let _deleteModal = { type: null, id: null };
+    // 모달에서 선택된 포트 정보 (추가/수정 시 임시 저장)
+    let _selectedPort = { usbVendorId: null, usbProductId: null };
 
     // ─── 초기화 ──────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', async () => {
@@ -563,6 +628,13 @@
         env.printers.forEach(printer => {
           const metaText = `Baud: ${printer.baud_rate}` +
             (printer.description ? ` · ${escapeHtml(printer.description)}` : '');
+
+          const hasPort = printer.usb_vendor_id !== null && printer.usb_vendor_id !== undefined;
+          const portBadge = hasPort
+            ? `<span class="port_badge connected"><i class="ph-fill ph-usb"></i> USB 연결됨</span>`
+            : `<span class="port_badge"><i class="ph ph-usb"></i> 포트 미선택</span>`;
+          const vendorAttr = hasPort ? `data-vendor-id="${printer.usb_vendor_id}" data-product-id="${printer.usb_product_id}"` : '';
+
           const card = document.createElement('div');
           card.className = 'printer_card';
           card.innerHTML = `
@@ -572,9 +644,10 @@
                 <div class="printer_card_name">${escapeHtml(printer.name)}</div>
                 <div class="printer_card_meta">${metaText}</div>
               </div>
+              ${portBadge}
             </div>
             <div class="printer_card_actions">
-              <button class="btn_test" data-baud="${printer.baud_rate}" onclick="handleTestPrint(this)">
+              <button class="btn_test" data-baud="${printer.baud_rate}" ${vendorAttr} onclick="handleTestPrint(this)">
                 <i class="ph ph-paper-plane-tilt"></i> 테스트 출력
               </button>
               <button class="btn_icon" onclick="openEditPrinterModal(${printer.id})">
@@ -611,12 +684,14 @@
       }
 
       const baudRate = parseInt(btn.dataset.baud) || 19200;
+      const vendorId = btn.dataset.vendorId !== undefined ? parseInt(btn.dataset.vendorId) : null;
+      const productId = btn.dataset.productId !== undefined ? parseInt(btn.dataset.productId) : null;
       btn.disabled = true;
       const originalHtml = btn.innerHTML;
       btn.innerHTML = '<i class="ph ph-circle-notch"></i> 출력 중...';
 
       try {
-        await PrinterManager.testPrint(baudRate);
+        await PrinterManager.testPrint(baudRate, vendorId, productId);
         showToast('테스트 출력이 완료되었습니다.', 'success');
       } catch (e) {
         if (e.message) showToast(e.message, 'error');
@@ -680,15 +755,42 @@
       document.getElementById('modal_delete').classList.add('show');
     }
 
+    // ─── 포트 정보 모달 표시 헬퍼 ───────────────────────
+    function updateModalPortDisplay() {
+      const label = document.getElementById('modal_printer_port_label');
+      if (_selectedPort.usbVendorId !== null && _selectedPort.usbVendorId !== undefined) {
+        label.textContent = `0x${_selectedPort.usbVendorId.toString(16).toUpperCase().padStart(4,'0')} / 0x${_selectedPort.usbProductId !== null ? _selectedPort.usbProductId.toString(16).toUpperCase().padStart(4,'0') : '????'}`;
+        label.classList.remove('empty');
+      } else {
+        label.textContent = '포트 미선택';
+        label.classList.add('empty');
+      }
+    }
+
     // ─── 모달: 프린터 추가/수정 ──────────────────────────
-    function openAddPrinterModal() {
+    async function openAddPrinterModal() {
       if (!_selectedEnvId) return;
+
+      // Web Serial 지원 시 포트 먼저 선택 (클릭 제스처 컨텍스트에서 바로 호출)
+      _selectedPort = { usbVendorId: null, usbProductId: null };
+      if (PrinterManager.isSupported()) {
+        try {
+          const portInfo = await PrinterManager.selectPort();
+          if (portInfo === null) return; // 사용자가 취소
+          _selectedPort = portInfo;
+        } catch (e) {
+          showToast(e.message || '포트 선택 실패', 'error');
+          return;
+        }
+      }
+
       _printerModal = { mode: 'create', printerId: null };
       document.getElementById('modal_printer_title').textContent = '프린터 추가';
       document.getElementById('modal_printer_name').value = '';
       document.getElementById('modal_printer_baud').value = '19200';
       document.getElementById('modal_printer_desc').value = '';
       document.getElementById('modal_printer_confirm').textContent = '추가';
+      updateModalPortDisplay();
       document.getElementById('modal_printer').classList.add('show');
       setTimeout(() => document.getElementById('modal_printer_name').focus(), 50);
     }
@@ -701,12 +803,19 @@
       const printer = env.printers.find(p => p.id === printerId);
       if (!printer) return;
 
+      // 기존 포트 정보 로드
+      _selectedPort = {
+        usbVendorId: printer.usb_vendor_id ?? null,
+        usbProductId: printer.usb_product_id ?? null
+      };
+
       _printerModal = { mode: 'edit', printerId };
       document.getElementById('modal_printer_title').textContent = '프린터 수정';
       document.getElementById('modal_printer_name').value = printer.name;
       document.getElementById('modal_printer_baud').value = String(printer.baud_rate);
       document.getElementById('modal_printer_desc').value = printer.description || '';
       document.getElementById('modal_printer_confirm').textContent = '저장';
+      updateModalPortDisplay();
       document.getElementById('modal_printer').classList.add('show');
       setTimeout(() => document.getElementById('modal_printer_name').focus(), 50);
     }
@@ -718,10 +827,16 @@
 
       if (!name) { showToast('프린터 이름을 입력해주세요.', 'error'); return; }
 
+      const portPayload = {
+        usb_vendor_id: _selectedPort.usbVendorId,
+        usb_product_id: _selectedPort.usbProductId
+      };
+
       if (_printerModal.mode === 'create') {
         const res = await fetchDataAsync('/store/create_printer', 'POST', {
           environment_id: _selectedEnvId,
-          name, baud_rate: baudRate, description
+          name, baud_rate: baudRate, description,
+          ...portPayload
         });
         if (res) {
           closeModal('modal_printer');
@@ -731,13 +846,30 @@
       } else {
         const res = await fetchDataAsync('/store/update_printer', 'PATCH', {
           printer_id: _printerModal.printerId,
-          name, baud_rate: baudRate, description
+          name, baud_rate: baudRate, description,
+          ...portPayload
         });
         if (res) {
           closeModal('modal_printer');
           await loadEnvironments();
           showToast('프린터 정보가 수정되었습니다.', 'success');
         }
+      }
+    });
+
+    // ─── 모달: 포트 변경 버튼 ────────────────────────────
+    document.getElementById('btn_change_port').addEventListener('click', async () => {
+      if (!PrinterManager.isSupported()) {
+        showToast('Chrome 또는 Edge 브라우저에서만 포트 선택이 가능합니다.', 'error');
+        return;
+      }
+      try {
+        const portInfo = await PrinterManager.selectPort();
+        if (portInfo === null) return; // 사용자가 취소
+        _selectedPort = portInfo;
+        updateModalPortDisplay();
+      } catch (e) {
+        showToast(e.message || '포트 선택 실패', 'error');
       }
     });
 

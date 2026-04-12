@@ -22,6 +22,29 @@ const PrinterManager = (() => {
   }
 
   /**
+   * 사용자가 시리얼 포트를 선택하도록 picker를 열고 포트 정보를 반환
+   * 반드시 클릭 이벤트 핸들러에서 직접 호출해야 함 (사용자 제스처 필요)
+   * @returns {Promise<{usbVendorId: number|null, usbProductId: number|null}>}
+   */
+  async function selectPort() {
+    if (!isSupported()) {
+      throw new Error('이 브라우저는 Web Serial API를 지원하지 않습니다.\nChrome 또는 Edge를 사용해주세요.');
+    }
+    let port;
+    try {
+      port = await navigator.serial.requestPort();
+    } catch (e) {
+      if (e.name === 'NotFoundError') return null; // 사용자가 취소
+      throw new Error('포트 선택 실패: ' + e.message);
+    }
+    const info = port.getInfo();
+    return {
+      usbVendorId: info.usbVendorId !== undefined ? info.usbVendorId : null,
+      usbProductId: info.usbProductId !== undefined ? info.usbProductId : null
+    };
+  }
+
+  /**
    * 한글이 포함된 문자열을 EUC-KR 바이트 배열로 변환 (서버 API 활용)
    * @param {string} text
    * @returns {Promise<Uint8Array>}
@@ -82,25 +105,43 @@ const PrinterManager = (() => {
 
   /**
    * 테스트 출력
-   * 1. requestPort() 호출 (사용자 제스처 필요)
-   * 2. 포트 오픈
-   * 3. 인쇄 내용 전송 + 자동 절단
-   * 4. 포트 닫기
+   * 1. 저장된 usbVendorId/usbProductId가 있으면 getPorts()로 자동 매칭 시도
+   * 2. 매칭 실패 시 requestPort()로 사용자 선택 (사용자 제스처 필요)
+   * 3. 포트 오픈 → 인쇄 내용 전송 + 자동 절단 → 포트 닫기
    *
    * @param {number} baudRate - 프린터 보드레이트
+   * @param {number|null} usbVendorId - 저장된 USB Vendor ID (없으면 null)
+   * @param {number|null} usbProductId - 저장된 USB Product ID (없으면 null)
    */
-  async function testPrint(baudRate) {
+  async function testPrint(baudRate, usbVendorId, usbProductId) {
     if (!isSupported()) {
       throw new Error('이 브라우저는 Web Serial API를 지원하지 않습니다.\nChrome 또는 Edge를 사용해주세요.');
     }
 
-    // 사용자 제스처(클릭) 컨텍스트에서 바로 호출
-    let port;
-    try {
-      port = await navigator.serial.requestPort();
-    } catch (e) {
-      if (e.name === 'NotFoundError') return; // 사용자가 취소
-      throw new Error('포트 선택 실패: ' + e.message);
+    let port = null;
+
+    // 저장된 포트 정보가 있으면 기존 권한 포트에서 자동 매칭 시도
+    if (usbVendorId !== null && usbVendorId !== undefined) {
+      try {
+        const ports = await navigator.serial.getPorts();
+        for (const p of ports) {
+          const info = p.getInfo();
+          if (info.usbVendorId === usbVendorId && info.usbProductId === usbProductId) {
+            port = p;
+            break;
+          }
+        }
+      } catch (_) {}
+    }
+
+    // 자동 매칭 실패 시 사용자 제스처(클릭) 컨텍스트에서 requestPort() 호출
+    if (!port) {
+      try {
+        port = await navigator.serial.requestPort();
+      } catch (e) {
+        if (e.name === 'NotFoundError') return; // 사용자가 취소
+        throw new Error('포트 선택 실패: ' + e.message);
+      }
     }
 
     try {
@@ -135,6 +176,7 @@ const PrinterManager = (() => {
 
   return {
     isSupported,
+    selectPort,
     testPrint,
     encodeToEucKR,
     encodeASCII,
