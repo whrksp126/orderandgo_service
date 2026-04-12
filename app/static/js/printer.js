@@ -145,11 +145,14 @@ const PrinterManager = (() => {
     }
 
     try {
-      // dataBits/stopBits/parity 명시 (RS-232 계열 프린터 필수)
-      await port.open({ baudRate: baudRate || 19200, dataBits: 8, stopBits: 1, parity: 'none' });
+      await port.open({ baudRate: baudRate || 9600, dataBits: 8, stopBits: 1, parity: 'none' });
       console.log('[Printer] 포트 열림. info:', port.getInfo(), '/ baudRate:', baudRate);
 
-      // 테스트 출력은 ASCII만 사용 (서버 네트워크 콜 제거)
+      // DTR 신호 활성화 (POS BANK A11: HANDSHAKING = DTR/DSR)
+      // DTR이 HIGH가 되어야 프린터가 데이터 수신 준비 상태로 전환됨
+      await port.setSignals({ dataTerminalReady: true });
+      await new Promise(resolve => setTimeout(resolve, 100)); // 프린터 준비 대기
+
       const payload = concatBytes(
         CMD_INIT,
         encodeASCII('===== Test Print =====\n'),
@@ -159,13 +162,16 @@ const PrinterManager = (() => {
         CMD_CUT
       );
 
-      console.log('[Printer] 전송 바이트 수:', payload.length);
+      console.log('[Printer] DTR 활성화 후 전송. 바이트 수:', payload.length);
       await sendBytes(port, payload);
-      console.log('[Printer] 전송 완료 - 물리 전송 대기 중 (500ms)');
-      // RS-232는 물리 전송에 시간이 걸림. FTDI TX 버퍼가 비워질 때까지 대기
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // 9600bps 기준 69바이트 전송 약 72ms + 여유
+      await new Promise(resolve => setTimeout(resolve, 300));
+      console.log('[Printer] 전송 완료');
     } finally {
-      try { await port.close(); } catch (_) {}
+      try {
+        await port.setSignals({ dataTerminalReady: false });
+        await port.close();
+      } catch (_) {}
       console.log('[Printer] 포트 닫힘');
     }
   }
