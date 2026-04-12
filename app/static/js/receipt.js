@@ -23,7 +23,7 @@ const ReceiptEngine = {
         text += `---
 사업자번호: | ${storeInfo.business_number || '000-00-00000'}
 대 표 자: | ${storeInfo.representative_name || '-'}
-주    소: | ${storeInfo.address || '-'}
+주    소: | ${(storeInfo.address || '-').replace(' | ', ' ')}
 전화번호: | ${storeInfo.tel || '-'}
 ---
 거 래 일 시: | ${dateTimeStr}
@@ -212,7 +212,7 @@ const ReceiptEngine = {
         text += `---
 사업자번호: | ${storeInfo.business_number || '000-00-00000'}
 대 표 자: | ${storeInfo.representative_name || '-'}
-주    소: | ${storeInfo.address || '-'}
+주    소: | ${(storeInfo.address || '-').replace(' | ', ' ')}
 전화번호: | ${storeInfo.tel || '-'}
 ---
 취 소 일 시: | ${cancelledAt}
@@ -442,7 +442,7 @@ const ReceiptEngine = {
         // 매장 정보 (법적 필수)
         lines.push('사업자번호: ' + (storeInfo.business_number || '000-00-00000'));
         lines.push('대 표 자:   ' + (storeInfo.representative_name || '-'));
-        lines.push('주    소:   ' + (storeInfo.address || '-'));
+        lines.push('주    소:   ' + (storeInfo.address || '-').replace(' | ', ' '));
         lines.push('전화번호:   ' + (storeInfo.tel || '-'));
         lines.push(SEP);
 
@@ -548,7 +548,7 @@ const ReceiptEngine = {
         // 매장 정보 (법적 필수)
         lines.push('사업자번호: ' + (storeInfo.business_number || '000-00-00000'));
         lines.push('대 표 자:   ' + (storeInfo.representative_name || '-'));
-        lines.push('주    소:   ' + (storeInfo.address || '-'));
+        lines.push('주    소:   ' + (storeInfo.address || '-').replace(' | ', ' '));
         lines.push('전화번호:   ' + (storeInfo.tel || '-'));
         lines.push(SEP);
 
@@ -656,7 +656,7 @@ const ReceiptEngine = {
         // 매장 정보 (법적 필수)
         lines.push('사업자번호: ' + (storeInfo.business_number || '000-00-00000'));
         lines.push('대 표 자:   ' + (storeInfo.representative_name || '-'));
-        lines.push('주    소:   ' + (storeInfo.address || '-'));
+        lines.push('주    소:   ' + (storeInfo.address || '-').replace(' | ', ' '));
         lines.push('전화번호:   ' + (storeInfo.tel || '-'));
         lines.push(SEP);
 

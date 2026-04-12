@@ -11,6 +11,8 @@
   <link rel="stylesheet" href="/static/css/reset.css">
   <link rel="stylesheet" href="/static/css/common.css">
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <!-- 다음 우편번호 서비스 (무료, API키 불필요) -->
+  <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 
   <style>
     body {
@@ -24,7 +26,7 @@
       height: 56px;
       padding: 0 20px;
       background: #fff;
-      border-bottom: 1px solid #e9ecef;
+      border-bottom: 1px solid #e0e0e0;
       gap: 12px;
     }
 
@@ -34,16 +36,15 @@
       justify-content: center;
       width: 36px;
       height: 36px;
-      border-radius: 8px;
+      border-radius: 6px;
       cursor: pointer;
       font-size: 20px;
       color: #333;
       text-decoration: none;
+      transition: background .15s;
     }
 
-    .back-btn:hover {
-      background: #f1f3f5;
-    }
+    .back-btn:hover { background: #f1f3f5; }
 
     .page-title {
       font-size: 17px;
@@ -59,77 +60,119 @@
 
     .info-card {
       background: #fff;
-      border-radius: 12px;
-      border: 1px solid #e9ecef;
+      border-radius: 10px;
+      border: 1px solid #e0e0e0;
       padding: 24px;
       display: flex;
       flex-direction: column;
       gap: 20px;
     }
 
+    /* ── 필드 공통 ── */
     .field-row {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 7px;
     }
 
     .field-label {
       font-size: 13px;
-      font-weight: 600;
-      color: #555;
+      font-weight: 700;
+      color: #495057;
     }
 
     .field-input {
       width: 100%;
-      padding: 12px 14px;
-      border: 1px solid #dee2e6;
-      border-radius: 8px;
+      padding: 12px;
+      border: 1px solid #CCC;
+      border-radius: 6px;
       font-size: 15px;
       color: #222;
       background: #fff;
       box-sizing: border-box;
-      transition: border-color .2s;
+      transition: border-color .2s, box-shadow .2s;
     }
 
     .field-input:focus {
       outline: none;
-      border-color: #333;
+      border-color: #1FAA9C;
+      box-shadow: 0 0 0 3px rgba(31, 170, 156, 0.12);
     }
 
-    .field-input::placeholder {
-      color: #adb5bd;
+    .field-input::placeholder { color: #ADB5BD; }
+
+    .field-input.error {
+      border-color: #F43E25;
+      box-shadow: 0 0 0 3px rgba(244, 62, 37, 0.1);
     }
 
+    .field-error {
+      font-size: 12px;
+      color: #F43E25;
+      display: none;
+    }
+
+    .field-error.show { display: block; }
+
+    /* ── 주소 필드 ── */
+    .address-search-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .address-search-row .field-input {
+      flex: 1;
+      background: #F8F9FA;
+      cursor: pointer;
+    }
+
+    .btn-address-search {
+      flex-shrink: 0;
+      padding: 0 16px;
+      height: 46px;
+      background: #fff;
+      color: #1FAA9C;
+      border: 1.5px solid #1FAA9C;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .15s, color .15s;
+    }
+
+    .btn-address-search:hover {
+      background: #1FAA9C;
+      color: #fff;
+    }
+
+    /* ── 저장 버튼 ── */
     .save-btn {
       width: 100%;
-      padding: 15px;
-      background: #222;
+      padding: 14px;
+      background: #1FAA9C;
       color: #fff;
       border: none;
-      border-radius: 10px;
+      border-radius: 6px;
       font-size: 16px;
       font-weight: 700;
       cursor: pointer;
-      margin-top: 8px;
-      transition: background .2s;
+      margin-top: 4px;
+      transition: background .15s;
     }
 
-    .save-btn:hover {
-      background: #000;
-    }
+    .save-btn:hover { background: #178f83; }
+    .save-btn:active { background: #12766d; }
 
-    .save-btn:active {
-      background: #444;
-    }
-
+    /* ── 토스트 ── */
     .toast {
       position: fixed;
       bottom: 32px;
       left: 50%;
-      transform: translateX(-50%) translateY(20px);
+      transform: translateX(-50%) translateY(16px);
       background: #222;
       color: #fff;
-      padding: 12px 24px;
+      padding: 12px 22px;
       border-radius: 8px;
       font-size: 14px;
       font-weight: 500;
@@ -157,17 +200,23 @@
 
   <main>
     <div class="info-card">
+
+      <!-- 사업자 번호 -->
       <div class="field-row">
         <label class="field-label" for="input-business-number">사업자 번호</label>
         <input
           class="field-input"
           id="input-business-number"
           type="text"
+          inputmode="numeric"
           placeholder="000-00-00000"
+          maxlength="12"
           value="{{ store_data.business_number }}"
         >
+        <span class="field-error" id="err-business-number">올바른 사업자 번호 형식으로 입력해주세요 (예: 123-45-67890)</span>
       </div>
 
+      <!-- 대표자 -->
       <div class="field-row">
         <label class="field-label" for="input-representative">대표자</label>
         <input
@@ -175,30 +224,51 @@
           id="input-representative"
           type="text"
           placeholder="대표자명"
+          maxlength="30"
           value="{{ store_data.representative_name }}"
         >
+        <span class="field-error" id="err-representative">한글 또는 영문만 입력해주세요</span>
       </div>
 
+      <!-- 주소 -->
       <div class="field-row">
-        <label class="field-label" for="input-address">주소</label>
+        <label class="field-label">주소</label>
+        <div class="address-search-row">
+          <input
+            class="field-input"
+            id="input-address-road"
+            type="text"
+            placeholder="도로명 주소 검색"
+            readonly
+            onclick="openAddressSearch()"
+          >
+          <button class="btn-address-search" type="button" onclick="openAddressSearch()">
+            <i class="ph ph-magnifying-glass"></i> 검색
+          </button>
+        </div>
         <input
           class="field-input"
-          id="input-address"
+          id="input-address-detail"
           type="text"
-          placeholder="매장 주소"
-          value="{{ store_data.address }}"
+          placeholder="상세 주소 입력"
+          maxlength="100"
         >
+        <span class="field-error" id="err-address">도로명 주소를 검색해주세요</span>
       </div>
 
+      <!-- 전화번호 -->
       <div class="field-row">
         <label class="field-label" for="input-tel">전화번호</label>
         <input
           class="field-input"
           id="input-tel"
           type="text"
-          placeholder="000-0000-0000"
+          inputmode="numeric"
+          placeholder="02-1234-5678"
+          maxlength="14"
           value="{{ store_data.tel }}"
         >
+        <span class="field-error" id="err-tel">올바른 전화번호 형식으로 입력해주세요 (예: 02-1234-5678)</span>
       </div>
 
       <button class="save-btn" onclick="saveStoreInfo()">저장</button>
@@ -208,19 +278,139 @@
   <div class="toast" id="toast"></div>
 
   <script>
+    /* ── 초기값 주소 분리 세팅 ──
+       저장된 address를 "도로명주소 | 상세주소" 구분자로 처리 */
+    (() => {
+      const saved = '{{ store_data.address | e }}';
+      if (!saved) return;
+      const sep = saved.indexOf(' | ');
+      if (sep !== -1) {
+        document.getElementById('input-address-road').value = saved.slice(0, sep);
+        document.getElementById('input-address-detail').value = saved.slice(sep + 3);
+      } else {
+        document.getElementById('input-address-road').value = saved;
+      }
+    })();
+
+    /* ── 다음 우편번호 서비스 ── */
+    const openAddressSearch = () => {
+      new daum.Postcode({
+        oncomplete: (data) => {
+          // 도로명 주소 우선, 없으면 지번 주소
+          const road = data.roadAddress || data.jibunAddress;
+          document.getElementById('input-address-road').value = road;
+          document.getElementById('input-address-detail').value = '';
+          document.getElementById('input-address-detail').focus();
+          clearError('input-address-road', 'err-address');
+        },
+      }).open();
+    };
+
+    /* ── 사업자 번호 자동 포맷 (000-00-00000) ── */
+    document.getElementById('input-business-number').addEventListener('input', function () {
+      const digits = this.value.replace(/\D/g, '').slice(0, 10);
+      let formatted = digits;
+      if (digits.length > 5) {
+        formatted = digits.slice(0, 3) + '-' + digits.slice(3, 5) + '-' + digits.slice(5);
+      } else if (digits.length > 3) {
+        formatted = digits.slice(0, 3) + '-' + digits.slice(3);
+      }
+      this.value = formatted;
+      clearError('input-business-number', 'err-business-number');
+    });
+
+    /* ── 대표자 : 한글/영문/공백만 허용 ── */
+    document.getElementById('input-representative').addEventListener('input', function () {
+      this.value = this.value.replace(/[^가-힣a-zA-Z\s]/g, '');
+      clearError('input-representative', 'err-representative');
+    });
+
+    /* ── 전화번호 자동 포맷 ── */
+    document.getElementById('input-tel').addEventListener('input', function () {
+      const digits = this.value.replace(/\D/g, '').slice(0, 11);
+      let formatted = digits;
+      if (digits.startsWith('02')) {
+        // 서울 (02): 02-XXX-XXXX 또는 02-XXXX-XXXX
+        if (digits.length > 6) {
+          formatted = digits.slice(0, 2) + '-' + digits.slice(2, digits.length - 4) + '-' + digits.slice(-4);
+        } else if (digits.length > 2) {
+          formatted = digits.slice(0, 2) + '-' + digits.slice(2);
+        }
+      } else {
+        // 그 외 (010, 031, 070 등): XXX-XXXX-XXXX 또는 XXX-XXX-XXXX
+        if (digits.length > 7) {
+          formatted = digits.slice(0, 3) + '-' + digits.slice(3, digits.length - 4) + '-' + digits.slice(-4);
+        } else if (digits.length > 3) {
+          formatted = digits.slice(0, 3) + '-' + digits.slice(3);
+        }
+      }
+      this.value = formatted;
+      clearError('input-tel', 'err-tel');
+    });
+
+    /* ── 유효성 검사 ── */
+    const VALIDATORS = {
+      'input-business-number': {
+        regex: /^\d{3}-\d{2}-\d{5}$/,
+        errId: 'err-business-number',
+        allowEmpty: true,
+      },
+      'input-representative': {
+        regex: /^[가-힣a-zA-Z\s]+$/,
+        errId: 'err-representative',
+        allowEmpty: true,
+      },
+      'input-tel': {
+        regex: /^\d{2,3}-\d{3,4}-\d{4}$/,
+        errId: 'err-tel',
+        allowEmpty: true,
+      },
+    };
+
+    const showError = (inputId, errId) => {
+      document.getElementById(inputId).classList.add('error');
+      document.getElementById(errId).classList.add('show');
+    };
+
+    const clearError = (inputId, errId) => {
+      document.getElementById(inputId).classList.remove('error');
+      document.getElementById(errId).classList.remove('show');
+    };
+
+    const validate = () => {
+      let valid = true;
+      for (const [inputId, rule] of Object.entries(VALIDATORS)) {
+        const val = document.getElementById(inputId).value.trim();
+        if (val === '' && rule.allowEmpty) { clearError(inputId, rule.errId); continue; }
+        if (!rule.regex.test(val)) { showError(inputId, rule.errId); valid = false; }
+        else { clearError(inputId, rule.errId); }
+      }
+      return valid;
+    };
+
+    /* ── 저장 ── */
     const showToast = (msg, isError = false) => {
       const toast = document.getElementById('toast');
       toast.textContent = msg;
-      toast.style.background = isError ? '#e03131' : '#222';
+      toast.style.background = isError ? '#F43E25' : '#222';
       toast.classList.add('show');
       setTimeout(() => toast.classList.remove('show'), 2500);
     };
 
     const saveStoreInfo = () => {
+      if (!validate()) {
+        showToast('입력 내용을 확인해주세요.', true);
+        return;
+      }
+
+      const road = document.getElementById('input-address-road').value.trim();
+      const detail = document.getElementById('input-address-detail').value.trim();
+      const address = road && detail ? `${road} | ${detail}` : road;
+
       const data = {
         business_number: document.getElementById('input-business-number').value.trim(),
         representative_name: document.getElementById('input-representative').value.trim(),
-        address: document.getElementById('input-address').value.trim(),
+        address,
         tel: document.getElementById('input-tel').value.trim(),
       };
 
@@ -231,11 +421,8 @@
       })
         .then(res => res.json())
         .then(result => {
-          if (result.code === 200) {
-            showToast('저장되었습니다.');
-          } else {
-            showToast(result.msg || '저장에 실패했습니다.', true);
-          }
+          if (result.code === 200) showToast('저장되었습니다.');
+          else showToast(result.msg || '저장에 실패했습니다.', true);
         })
         .catch(() => showToast('저장에 실패했습니다.', true));
     };
