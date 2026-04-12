@@ -485,8 +485,8 @@
       <div class="modal_field">
         <label>Baud Rate</label>
         <select id="modal_printer_baud">
-          <option value="9600">9600</option>
-          <option value="19200" selected>19200</option>
+          <option value="9600" selected>9600</option>
+          <option value="19200">19200</option>
           <option value="38400">38400</option>
           <option value="115200">115200</option>
         </select>
@@ -787,7 +787,7 @@
       _printerModal = { mode: 'create', printerId: null };
       document.getElementById('modal_printer_title').textContent = '프린터 추가';
       document.getElementById('modal_printer_name').value = '';
-      document.getElementById('modal_printer_baud').value = '19200';
+      document.getElementById('modal_printer_baud').value = '9600';
       document.getElementById('modal_printer_desc').value = '';
       document.getElementById('modal_printer_confirm').textContent = '추가';
       updateModalPortDisplay();

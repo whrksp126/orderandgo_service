@@ -153,10 +153,13 @@ const PrinterManager = (() => {
       await port.setSignals({ dataTerminalReady: true });
       await new Promise(resolve => setTimeout(resolve, 100)); // 프린터 준비 대기
 
+      const koreanLine = await encodeToEucKR('안녕 프린터\n');
       const payload = concatBytes(
         CMD_INIT,
+        CMD_SET_KOR,
         encodeASCII('===== Test Print =====\n'),
         encodeASCII('Hello Printer\n'),
+        koreanLine,
         encodeASCII('======================\n'),
         CMD_FEED3,
         CMD_CUT
