@@ -153,21 +153,56 @@ const PrinterManager = (() => {
       await port.setSignals({ dataTerminalReady: true });
       await new Promise(resolve => setTimeout(resolve, 100)); // 프린터 준비 대기
 
-      const koreanLine = await encodeToEucKR('안녕 프린터\n');
+      // 날짜/시간
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      const dateStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+      // 한글 포함 라인 전체를 서버 콜 1회로 인코딩 (줄 구분: 0x0A)
+      const korBytes = await encodeToEucKR(
+        '[오더앤고] 프린터 테스트\n' +
+        '일시: ' + dateStr + '\n' +
+        '아메리카노         3,500원\n' +
+        '카페라떼           4,500원\n' +
+        '크루아상           3,800원\n' +
+        '합    계          11,800원\n' +
+        '   정상 출력 완료!'
+      );
+
+      // 0x0A 기준으로 줄 분리
+      const korLines = [];
+      let seg = [];
+      for (const b of korBytes) {
+        if (b === 0x0A) { korLines.push(new Uint8Array(seg)); seg = []; }
+        else seg.push(b);
+      }
+      if (seg.length) korLines.push(new Uint8Array(seg));
+      const [kTitle, kDate, kItem1, kItem2, kItem3, kTotal, kFooter] = korLines;
+
+      const SEP  = encodeASCII('================================\n');
+      const LINE = encodeASCII('--------------------------------\n');
+
       const payload = concatBytes(
-        CMD_INIT,
-        CMD_SET_KOR,
-        encodeASCII('===== Test Print =====\n'),
-        encodeASCII('Hello Printer\n'),
-        koreanLine,
-        encodeASCII('======================\n'),
+        CMD_INIT, CMD_SET_KOR,
+        SEP,
+        kTitle, CMD_LF,
+        SEP,
+        kDate,  CMD_LF,
+        LINE,
+        kItem1, CMD_LF,
+        kItem2, CMD_LF,
+        kItem3, CMD_LF,
+        LINE,
+        kTotal, CMD_LF,
+        SEP,
+        kFooter, CMD_LF,
+        SEP,
         CMD_FEED3,
         CMD_CUT
       );
 
-      console.log('[Printer] DTR 활성화 후 전송. 바이트 수:', payload.length);
+      console.log('[Printer] 전송 바이트 수:', payload.length);
       await sendBytes(port, payload);
-      // 9600bps 기준 69바이트 전송 약 72ms + 여유
       await new Promise(resolve => setTimeout(resolve, 300));
       console.log('[Printer] 전송 완료');
     } finally {
