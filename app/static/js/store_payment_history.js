@@ -460,12 +460,26 @@ async function _doPrint(lines, btn) {
   }
 }
 
+// ─── 최신 매장 정보 fetch (영수증 출력 전 항상 호출) ────────────────────────────
+
+async function _fetchStoreInfo() {
+  try {
+    const res = await fetch('/store/get_receipt_store_info');
+    if (res.ok) {
+      const data = await res.json();
+      window.STORE_INFO = data;
+      return data;
+    }
+  } catch (_) {}
+  return window.STORE_INFO || {};
+}
+
 // ─── 통합 영수증 출력 (시리얼 프린터) ───────────────────────────────────────────
 
 async function _printIntegratedReceipt(btn) {
   if (!_currentItem) return;
   const item = _currentItem;
-  const storeInfo = window.STORE_INFO || {};
+  const storeInfo = await _fetchStoreInfo();
   const orderData = { tableName: item.table_name, items: item.order_items };
 
   const datetimeStr = (item.payment_date || '') + ' ' + (item.payment_time || '');
@@ -489,7 +503,7 @@ async function _printIntegratedReceipt(btn) {
 async function _printPaymentReceipt(payment, btn) {
   if (!_currentItem) return;
   const item = _currentItem;
-  const storeInfo = window.STORE_INFO || {};
+  const storeInfo = await _fetchStoreInfo();
   const orderData = { tableName: item.table_name, items: item.order_items };
   const pi = payment.payment_info || {};
 
@@ -516,7 +530,7 @@ async function _printPaymentReceipt(payment, btn) {
 async function _printCancelReceipt(payment, btn) {
   if (!_currentItem) return;
   const item = _currentItem;
-  const storeInfo = window.STORE_INFO || {};
+  const storeInfo = await _fetchStoreInfo();
   const orderData = { tableName: item.table_name, items: item.order_items };
   const pi = payment.payment_info || {};
   const cancelledAt = pi.toss_cancel_time || pi.cancelled_at || null;

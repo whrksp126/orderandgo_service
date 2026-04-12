@@ -1040,6 +1040,22 @@ def api_update_store_info():
     return jsonify({'code': 200, 'msg': '저장되었습니다.'})
 
 
+@store_bp.route('/get_receipt_store_info', methods=['GET'])
+@login_required
+def api_get_receipt_store_info():
+    """영수증 출력에 필요한 최신 매장 정보 반환"""
+    store = current_user
+    return jsonify({
+        'name': store.name or '',
+        'business_number': store.business_number or '',
+        'representative_name': store.representative_name or '',
+        'address': store.address or '',
+        'tel': store.tel or '',
+        'receipt_header': store.receipt_header or '',
+        'receipt_footer': store.receipt_footer or '',
+    })
+
+
 @store_bp.route('/get_payment_history', methods=['GET'])
 @login_required
 def get_payment_history():
