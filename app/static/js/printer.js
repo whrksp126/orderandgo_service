@@ -90,15 +90,17 @@ const PrinterManager = (() => {
   }
 
   /**
-   * 포트에 바이트 배열 전송 후 스트림 닫기 (버퍼 완전 플러시 보장)
-   * writer.close()는 write 큐가 모두 전송될 때까지 대기 후 writable 스트림을 닫음
+   * 포트에 바이트 배열 전송
    * @param {SerialPort} port
    * @param {Uint8Array} bytes
    */
   async function sendBytes(port, bytes) {
     const writer = port.writable.getWriter();
-    await writer.write(bytes);
-    await writer.close(); // 전송 완료까지 대기 + writable 스트림 닫기
+    try {
+      await writer.write(bytes);
+    } finally {
+      writer.releaseLock();
+    }
   }
 
   /**
@@ -159,7 +161,9 @@ const PrinterManager = (() => {
 
       console.log('[Printer] 전송 바이트 수:', payload.length);
       await sendBytes(port, payload);
-      console.log('[Printer] 전송 완료');
+      console.log('[Printer] 전송 완료 - 물리 전송 대기 중 (500ms)');
+      // RS-232는 물리 전송에 시간이 걸림. FTDI TX 버퍼가 비워질 때까지 대기
+      await new Promise(resolve => setTimeout(resolve, 500));
     } finally {
       try { await port.close(); } catch (_) {}
       console.log('[Printer] 포트 닫힘');
