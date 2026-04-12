@@ -90,17 +90,15 @@ const PrinterManager = (() => {
   }
 
   /**
-   * 포트에 바이트 배열 전송
+   * 포트에 바이트 배열 전송 후 스트림 닫기 (버퍼 완전 플러시 보장)
+   * writer.close()는 write 큐가 모두 전송될 때까지 대기 후 writable 스트림을 닫음
    * @param {SerialPort} port
    * @param {Uint8Array} bytes
    */
   async function sendBytes(port, bytes) {
     const writer = port.writable.getWriter();
-    try {
-      await writer.write(bytes);
-    } finally {
-      writer.releaseLock();
-    }
+    await writer.write(bytes);
+    await writer.close(); // 전송 완료까지 대기 + writable 스트림 닫기
   }
 
   /**
@@ -165,11 +163,8 @@ const PrinterManager = (() => {
 
       await sendBytes(port, payload);
     } finally {
-      // 쓰기가 완료된 후 포트 닫기
-      if (port.readable) {
-        // 읽기 스트림이 열려있으면 닫기
-        try { await port.readable.cancel(); } catch (_) {}
-      }
+      // sendBytes 내부에서 writable 스트림은 이미 닫힘
+      // port.close()만 호출하면 됨
       try { await port.close(); } catch (_) {}
     }
   }
