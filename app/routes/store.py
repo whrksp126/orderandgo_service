@@ -607,6 +607,177 @@ def get_table_id_yn():
 def printer_mgmt():
     return render_template('store_printer_mgmt.html')
 
+# 프린터 환경 목록 조회 (환경 없으면 포스용 기본 생성)
+@store_bp.route('/get_printer_environments', methods=['GET'])
+@login_required
+def api_get_printer_environments():
+    from app.models import PrinterEnvironment, Printer
+    store_id = current_user.id
+
+    envs = PrinterEnvironment.query.filter_by(store_id=store_id).order_by(PrinterEnvironment.position).all()
+    if not envs:
+        default_env = PrinterEnvironment(store_id=store_id, name='포스용', is_default=True, position=0)
+        db.session.add(default_env)
+        db.session.commit()
+        envs = [default_env]
+
+    result = []
+    for env in envs:
+        printers = []
+        for p in env.printers:
+            printers.append({
+                'id': p.id,
+                'name': p.name,
+                'baud_rate': p.baud_rate,
+                'description': p.description or '',
+                'position': p.position
+            })
+        result.append({
+            'id': env.id,
+            'name': env.name,
+            'is_default': env.is_default,
+            'position': env.position,
+            'printers': printers
+        })
+
+    return jsonify({'environments': result}), 200
+
+# 프린터 환경 생성
+@store_bp.route('/create_printer_environment', methods=['POST'])
+@login_required
+def api_create_printer_environment():
+    from app.models import PrinterEnvironment
+    store_id = current_user.id
+    data = request.get_json()
+    name = (data.get('name') or '').strip()
+    if not name:
+        return jsonify({'message': '환경 이름을 입력해주세요.'}), 400
+
+    count = PrinterEnvironment.query.filter_by(store_id=store_id).count()
+    env = PrinterEnvironment(store_id=store_id, name=name, is_default=False, position=count)
+    db.session.add(env)
+    db.session.commit()
+    return jsonify({'message': 'Success', 'id': env.id}), 201
+
+# 프린터 환경 수정
+@store_bp.route('/update_printer_environment', methods=['PATCH'])
+@login_required
+def api_update_printer_environment():
+    from app.models import PrinterEnvironment
+    store_id = current_user.id
+    data = request.get_json()
+    env_id = data.get('env_id')
+    name = (data.get('name') or '').strip()
+    if not name:
+        return jsonify({'message': '환경 이름을 입력해주세요.'}), 400
+
+    env = PrinterEnvironment.query.filter_by(id=env_id, store_id=store_id).first()
+    if not env:
+        return jsonify({'message': '환경을 찾을 수 없습니다.'}), 404
+
+    env.name = name
+    db.session.commit()
+    return jsonify({'message': 'Success'}), 200
+
+# 프린터 환경 삭제
+@store_bp.route('/delete_printer_environment', methods=['DELETE'])
+@login_required
+def api_delete_printer_environment():
+    from app.models import PrinterEnvironment
+    store_id = current_user.id
+    data = request.get_json()
+    env_id = data.get('env_id')
+
+    env = PrinterEnvironment.query.filter_by(id=env_id, store_id=store_id).first()
+    if not env:
+        return jsonify({'message': '환경을 찾을 수 없습니다.'}), 404
+    if env.is_default:
+        return jsonify({'message': '기본 환경(포스용)은 삭제할 수 없습니다.'}), 400
+
+    db.session.delete(env)
+    db.session.commit()
+    return jsonify({'message': 'Success'}), 200
+
+# 프린터 추가
+@store_bp.route('/create_printer', methods=['POST'])
+@login_required
+def api_create_printer():
+    from app.models import Printer, PrinterEnvironment
+    store_id = current_user.id
+    data = request.get_json()
+    env_id = data.get('environment_id')
+    name = (data.get('name') or '').strip()
+    baud_rate = int(data.get('baud_rate') or 19200)
+    description = (data.get('description') or '').strip()
+
+    if not name:
+        return jsonify({'message': '프린터 이름을 입력해주세요.'}), 400
+
+    env = PrinterEnvironment.query.filter_by(id=env_id, store_id=store_id).first()
+    if not env:
+        return jsonify({'message': '환경을 찾을 수 없습니다.'}), 404
+
+    count = Printer.query.filter_by(environment_id=env_id).count()
+    printer = Printer(store_id=store_id, environment_id=env_id, name=name,
+                      baud_rate=baud_rate, description=description, position=count)
+    db.session.add(printer)
+    db.session.commit()
+    return jsonify({'message': 'Success', 'id': printer.id}), 201
+
+# 프린터 수정
+@store_bp.route('/update_printer', methods=['PATCH'])
+@login_required
+def api_update_printer():
+    from app.models import Printer
+    store_id = current_user.id
+    data = request.get_json()
+    printer_id = data.get('printer_id')
+    name = (data.get('name') or '').strip()
+    baud_rate = int(data.get('baud_rate') or 19200)
+    description = (data.get('description') or '').strip()
+
+    if not name:
+        return jsonify({'message': '프린터 이름을 입력해주세요.'}), 400
+
+    printer = Printer.query.filter_by(id=printer_id, store_id=store_id).first()
+    if not printer:
+        return jsonify({'message': '프린터를 찾을 수 없습니다.'}), 404
+
+    printer.name = name
+    printer.baud_rate = baud_rate
+    printer.description = description
+    db.session.commit()
+    return jsonify({'message': 'Success'}), 200
+
+# 프린터 삭제
+@store_bp.route('/delete_printer', methods=['DELETE'])
+@login_required
+def api_delete_printer():
+    from app.models import Printer
+    store_id = current_user.id
+    data = request.get_json()
+    printer_id = data.get('printer_id')
+
+    printer = Printer.query.filter_by(id=printer_id, store_id=store_id).first()
+    if not printer:
+        return jsonify({'message': '프린터를 찾을 수 없습니다.'}), 404
+
+    db.session.delete(printer)
+    db.session.commit()
+    return jsonify({'message': 'Success'}), 200
+
+# 한글→EUC-KR 인코딩 API (Web Serial API용)
+@store_bp.route('/encode_euckr', methods=['POST'])
+@login_required
+def api_encode_euckr():
+    data = request.get_json()
+    text = data.get('text', '')
+    try:
+        encoded = text.encode('euc-kr')
+    except (UnicodeEncodeError, LookupError):
+        encoded = text.encode('utf-8')
+    return jsonify({'bytes': list(encoded)}), 200
+
 # 직원 호출 항목 관리 페이지
 @store_bp.route('/staff_call_mgmt')
 @login_required

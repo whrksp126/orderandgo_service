@@ -341,3 +341,28 @@ class TerminalToken(db.Model):
     store_id = db.Column(db.Integer, db.ForeignKey('store.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
     last_polled_at = db.Column(db.DateTime, nullable=True)  # 단말기 마지막 폴링 시각
+
+
+class PrinterEnvironment(db.Model):
+    __tablename__ = 'printer_environment'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    store_id = db.Column(db.Integer, db.ForeignKey('store.id'), nullable=False)
+    name = db.Column(db.String(50), nullable=False)
+    is_default = db.Column(db.Boolean, default=False)
+    position = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    printers = db.relationship('Printer', backref='environment', lazy=True,
+                               cascade='all, delete-orphan',
+                               order_by='Printer.position')
+
+
+class Printer(db.Model):
+    __tablename__ = 'printer'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    store_id = db.Column(db.Integer, db.ForeignKey('store.id'), nullable=False)
+    environment_id = db.Column(db.Integer, db.ForeignKey('printer_environment.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    baud_rate = db.Column(db.Integer, default=19200)
+    description = db.Column(db.String(200), nullable=True)
+    position = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.now)
