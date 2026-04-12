@@ -1012,6 +1012,35 @@ def payment_history_page():
     return render_template('store_payment_history.html', store_id=store_id, store_info=store_info)
 
 
+@store_bp.route('/store_info', methods=['GET'])
+@login_required
+def store_info_page():
+    store = Store.query.filter_by(user_id=current_user.id).first()
+    store_data = {
+        'name': store.name or '',
+        'business_number': store.business_number or '',
+        'representative_name': store.representative_name or '',
+        'address': store.address or '',
+        'tel': store.tel or '',
+    } if store else {}
+    return render_template('store_info.html', store_data=store_data)
+
+
+@store_bp.route('/update_store_info', methods=['POST'])
+@login_required
+def api_update_store_info():
+    store = Store.query.filter_by(user_id=current_user.id).first()
+    if not store:
+        return jsonify({'code': 404, 'msg': '매장 정보를 찾을 수 없습니다.'}), 404
+    data = request.get_json() or {}
+    store.business_number = data.get('business_number', '').strip() or None
+    store.representative_name = data.get('representative_name', '').strip() or None
+    store.address = data.get('address', '').strip() or None
+    store.tel = data.get('tel', '').strip() or None
+    db.session.commit()
+    return jsonify({'code': 200, 'msg': '저장되었습니다.'})
+
+
 @store_bp.route('/get_payment_history', methods=['GET'])
 @login_required
 def get_payment_history():

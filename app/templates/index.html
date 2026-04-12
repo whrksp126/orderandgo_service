@@ -29,7 +29,28 @@
         <img src="/static/images/common/logo-order&go-color.png" alt="">
       </h1>
     </a>
-    <a onclick="clickLogout(event)">로그아웃</a>
+    <div class="header-settings-wrap">
+      <button class="btn-settings" onclick="toggleSettingsDropdown(event)">
+        <i class="ph ph-gear"></i>
+      </button>
+      <ul class="settings-dropdown-list" id="settingsDropdown">
+        <li onclick="location.href='/store/store_info'">
+          <i class="ph ph-storefront"></i> 매장 정보 관리
+        </li>
+        <li class="logout-item" onclick="clickLogout(event)">
+          <i class="ph ph-sign-out"></i> 로그아웃
+        </li>
+        <li class="disabled">
+          <i class="ph ph-file-text"></i> 이용약관 · 개인정보처리방침
+        </li>
+        <li class="disabled">
+          <i class="ph ph-book-open"></i> 사용 메뉴얼
+        </li>
+        <li class="disabled">
+          <i class="ph ph-megaphone"></i> 공지사항 · Q&A
+        </li>
+      </ul>
+    </div>
   </header>
   <main>
     <ul>
@@ -63,20 +84,22 @@
   <!-- <script src="static/js/main.js"></script> -->
   <script>
     const clickLogout = (event) => {
-      console.log('로그아웃 클릭함')
-      fetch(`/logout`, {
-        method: 'GET',
-      })
+      fetch(`/logout`, { method: 'GET' })
         .then(response => response.json())
         .then(data => {
-          if (data.code == 200) {
-            window.location.href = '/login'
-          }
+          if (data.code == 200) window.location.href = '/login';
         })
-        .catch(error => {
-          console.error('Error:', error);
-        });
-    }
+        .catch(error => console.error('Error:', error));
+    };
+
+    const toggleSettingsDropdown = (event) => {
+      event.stopPropagation();
+      document.getElementById('settingsDropdown').classList.toggle('active');
+    };
+
+    document.addEventListener('click', () => {
+      document.getElementById('settingsDropdown').classList.remove('active');
+    });
   </script>
 </body>
 
