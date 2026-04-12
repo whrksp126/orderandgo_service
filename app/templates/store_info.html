@@ -319,8 +319,17 @@
       clearError('input-business-number', 'err-business-number');
     });
 
-    /* ── 대표자 : 한글/영문/공백만 허용 ── */
-    document.getElementById('input-representative').addEventListener('input', function () {
+    /* ── 대표자 : 한글/영문/공백만 허용 (IME 조합 중에는 필터 건너뜀) ── */
+    let isComposing = false;
+    const repInput = document.getElementById('input-representative');
+    repInput.addEventListener('compositionstart', () => { isComposing = true; });
+    repInput.addEventListener('compositionend', function () {
+      isComposing = false;
+      this.value = this.value.replace(/[^가-힣a-zA-Z\s]/g, '');
+      clearError('input-representative', 'err-representative');
+    });
+    repInput.addEventListener('input', function () {
+      if (isComposing) return;
       this.value = this.value.replace(/[^가-힣a-zA-Z\s]/g, '');
       clearError('input-representative', 'err-representative');
     });
