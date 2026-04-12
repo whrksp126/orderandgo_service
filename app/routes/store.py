@@ -607,6 +607,19 @@ def get_table_id_yn():
 def printer_mgmt():
     return render_template('store_printer_mgmt.html')
 
+# 프린터 진단 출력용 매장/서버 정보
+@store_bp.route('/get_diagnostic_info', methods=['GET'])
+@login_required
+def api_get_diagnostic_info():
+    import os
+    return jsonify({
+        'store_name': current_user.name or '',
+        'store_id': current_user.store_id or '',
+        'address': current_user.address or '',
+        'tel': current_user.tel or '',
+        'representative': current_user.representative_name or '',
+    }), 200
+
 # 프린터 환경 목록 조회 (환경 없으면 포스용 기본 생성)
 @store_bp.route('/get_printer_environments', methods=['GET'])
 @login_required

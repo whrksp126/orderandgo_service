@@ -104,99 +104,139 @@ const PrinterManager = (() => {
   }
 
   /**
-   * 테스트 출력
-   * 1. 저장된 usbVendorId/usbProductId가 있으면 getPorts()로 자동 매칭 시도
-   * 2. 매칭 실패 시 requestPort()로 사용자 선택 (사용자 제스처 필요)
-   * 3. 포트 오픈 → 인쇄 내용 전송 + 자동 절단 → 포트 닫기
+   * 진단 테스트 출력
+   * 매장 정보, 서버 환경, 네트워크 상태, 프린터 포트 정보 등을 인쇄
    *
-   * @param {number} baudRate - 프린터 보드레이트
-   * @param {number|null} usbVendorId - 저장된 USB Vendor ID (없으면 null)
-   * @param {number|null} usbProductId - 저장된 USB Product ID (없으면 null)
+   * @param {number} baudRate
+   * @param {number|null} usbVendorId
+   * @param {number|null} usbProductId
    */
   async function testPrint(baudRate, usbVendorId, usbProductId) {
     if (!isSupported()) {
       throw new Error('이 브라우저는 Web Serial API를 지원하지 않습니다.\nChrome 또는 Edge를 사용해주세요.');
     }
 
+    // ── 1. 포트 선택 (사용자 제스처 컨텍스트에서 먼저 호출) ────────
     let port = null;
-
-    // 저장된 포트 정보가 있으면 기존 권한 포트에서 자동 매칭 시도
     if (usbVendorId !== null && usbVendorId !== undefined) {
       try {
         const ports = await navigator.serial.getPorts();
         for (const p of ports) {
           const info = p.getInfo();
           if (info.usbVendorId === usbVendorId && info.usbProductId === usbProductId) {
-            port = p;
-            break;
+            port = p; break;
           }
         }
       } catch (_) {}
     }
-
-    // 자동 매칭 실패 시 사용자 제스처(클릭) 컨텍스트에서 requestPort() 호출
     if (!port) {
       try {
         port = await navigator.serial.requestPort();
       } catch (e) {
-        if (e.name === 'NotFoundError') return; // 사용자가 취소
+        if (e.name === 'NotFoundError') return;
         throw new Error('포트 선택 실패: ' + e.message);
       }
     }
 
+    // ── 2. 진단 정보 수집 (포트 열기 전 — port.open()은 사용자 제스처 불필요) ──
+
+    // 날짜/시간
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const dateStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ` +
+                    `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+    // 매장/서버 정보 + 응답속도 측정
+    let store = { store_name: '', store_id: '', address: '', tel: '', representative: '' };
+    let latencyMs = '-';
+    try {
+      const t0 = performance.now();
+      const r = await fetch('/store/get_diagnostic_info');
+      latencyMs = Math.round(performance.now() - t0) + 'ms';
+      if (r.ok) store = await r.json();
+    } catch (_) { latencyMs = '요청실패'; }
+
+    // 서버 환경
+    const hostname = window.location.hostname;
+    let env = 'PRODUCTION';
+    if (/^(localhost|127\.|192\.|10\.)/.test(hostname)) env = 'LOCAL';
+    else if (hostname.startsWith('dev-')) env = 'DEV';
+    else if (hostname.startsWith('stg-')) env = 'STAGING';
+
+    // 네트워크 정보 (NetworkInformation API — Chrome 지원)
+    const online = navigator.onLine ? '온라인' : '오프라인';
+    const conn = navigator.connection || {};
+    const connType    = conn.type          || '알 수 없음';
+    const effType     = conn.effectiveType || '알 수 없음';
+    const downlink    = conn.downlink  != null ? conn.downlink  + ' Mbps' : '알 수 없음';
+    const rtt         = conn.rtt       != null ? conn.rtt       + ' ms'   : '알 수 없음';
+
+    // 브라우저/OS 정보
+    const ua = navigator.userAgent;
+    const chromeVer = (ua.match(/Chrome\/(\d+)/) || [])[1];
+    const browser = chromeVer ? 'Chrome ' + chromeVer : ua.split(' ').pop();
+    const osRaw = (ua.match(/\(([^)]+)\)/) || ['', ''])[1];
+    const os = osRaw.split(';')[0] || '알 수 없음';
+
+    // 프린터 포트 정보
+    const pInfo = port.getInfo();
+    const toHex = v => v != null ? '0x' + v.toString(16).toUpperCase().padStart(4, '0') : '-';
+    const vendorHex  = toHex(pInfo.usbVendorId);
+    const productHex = toHex(pInfo.usbProductId);
+
+    // ── 3. 영수증 내용 구성 + 일괄 EUC-KR 인코딩 (서버 콜 1회) ────
+    const lines = [
+      '================================',
+      '   [오더앤고] 프린터 진단 출력',
+      '================================',
+      '출력: ' + dateStr,
+      '',
+      '[매장 정보]',
+      '매장명: '   + (store.store_name   || '미등록'),
+      '매장ID: '   + (store.store_id     || '-'),
+      '대표자: '   + (store.representative || '미등록'),
+      '주소: '     + (store.address      || '미등록'),
+      '연락처: '   + (store.tel          || '미등록'),
+      '',
+      '[서비스 / 서버]',
+      '서버: '     + hostname,
+      '환경: '     + env,
+      '응답속도: ' + latencyMs,
+      '',
+      '[네트워크]',
+      '상태: '     + online,
+      '연결유형: ' + connType,
+      '속도등급: ' + effType,
+      '다운링크: ' + downlink,
+      '지연RTT: '  + rtt,
+      '',
+      '[프린터 포트]',
+      'USB Vendor:  ' + vendorHex,
+      'USB Product: ' + productHex,
+      '전송속도: '    + (baudRate || 9600) + ' bps',
+      'Data/Parity: 8N1  Flow: DTR/DSR',
+      '',
+      '[브라우저 / OS]',
+      browser,
+      os,
+      '================================',
+    ];
+
+    // 전체 내용 한 번에 EUC-KR 인코딩 (\n이 0x0A로 인코딩 = 프린터 LF)
+    const receiptBytes = await encodeToEucKR(lines.join('\n'));
+
+    // ── 4. 포트 열고 전송 ────────────────────────────────────────────
     try {
       await port.open({ baudRate: baudRate || 9600, dataBits: 8, stopBits: 1, parity: 'none' });
-      console.log('[Printer] 포트 열림. info:', port.getInfo(), '/ baudRate:', baudRate);
+      console.log('[Printer] 포트 열림. info:', pInfo, '/ baudRate:', baudRate);
 
-      // DTR 신호 활성화 (POS BANK A11: HANDSHAKING = DTR/DSR)
-      // DTR이 HIGH가 되어야 프린터가 데이터 수신 준비 상태로 전환됨
       await port.setSignals({ dataTerminalReady: true });
-      await new Promise(resolve => setTimeout(resolve, 100)); // 프린터 준비 대기
-
-      // 날짜/시간
-      const now = new Date();
-      const pad = n => String(n).padStart(2, '0');
-      const dateStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
-
-      // 한글 포함 라인 전체를 서버 콜 1회로 인코딩 (줄 구분: 0x0A)
-      const korBytes = await encodeToEucKR(
-        '[오더앤고] 프린터 테스트\n' +
-        '일시: ' + dateStr + '\n' +
-        '아메리카노         3,500원\n' +
-        '카페라떼           4,500원\n' +
-        '크루아상           3,800원\n' +
-        '합    계          11,800원\n' +
-        '   정상 출력 완료!'
-      );
-
-      // 0x0A 기준으로 줄 분리
-      const korLines = [];
-      let seg = [];
-      for (const b of korBytes) {
-        if (b === 0x0A) { korLines.push(new Uint8Array(seg)); seg = []; }
-        else seg.push(b);
-      }
-      if (seg.length) korLines.push(new Uint8Array(seg));
-      const [kTitle, kDate, kItem1, kItem2, kItem3, kTotal, kFooter] = korLines;
-
-      const SEP  = encodeASCII('================================\n');
-      const LINE = encodeASCII('--------------------------------\n');
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       const payload = concatBytes(
         CMD_INIT, CMD_SET_KOR,
-        SEP,
-        kTitle, CMD_LF,
-        SEP,
-        kDate,  CMD_LF,
-        LINE,
-        kItem1, CMD_LF,
-        kItem2, CMD_LF,
-        kItem3, CMD_LF,
-        LINE,
-        kTotal, CMD_LF,
-        SEP,
-        kFooter, CMD_LF,
-        SEP,
+        receiptBytes,
+        CMD_LF,
         CMD_FEED3,
         CMD_CUT
       );
