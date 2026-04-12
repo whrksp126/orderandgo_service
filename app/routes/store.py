@@ -620,6 +620,31 @@ def api_get_diagnostic_info():
         'representative': current_user.representative_name or '',
     }), 200
 
+# 기본 프린터 정보 조회 (영수증 출력용)
+@store_bp.route('/get_default_printer', methods=['GET'])
+@login_required
+def api_get_default_printer():
+    from app.models import PrinterEnvironment, Printer
+    store_id = current_user.id
+
+    # is_default 환경 우선, 없으면 첫 번째 환경
+    env = PrinterEnvironment.query.filter_by(store_id=store_id, is_default=True).first()
+    if not env:
+        env = PrinterEnvironment.query.filter_by(store_id=store_id).order_by(PrinterEnvironment.position).first()
+
+    if not env or not env.printers:
+        return jsonify({'has_printer': False}), 200
+
+    printer = env.printers[0]
+    return jsonify({
+        'has_printer': True,
+        'name': printer.name or '',
+        'baud_rate': printer.baud_rate or 9600,
+        'usb_vendor_id': printer.usb_vendor_id,
+        'usb_product_id': printer.usb_product_id,
+    }), 200
+
+
 # 프린터 환경 목록 조회 (환경 없으면 포스용 기본 생성)
 @store_bp.route('/get_printer_environments', methods=['GET'])
 @login_required

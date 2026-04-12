@@ -258,10 +258,81 @@ const PrinterManager = (() => {
     }
   }
 
+  /**
+   * 영수증 라인 배열을 시리얼 프린터로 출력
+   * testPrint()와 동일한 흐름이지만 진단 정보 수집 없이 lines 배열을 직접 출력
+   *
+   * @param {string[]} lines - 출력할 텍스트 줄 배열
+   * @param {number} baudRate
+   * @param {number|null} usbVendorId
+   * @param {number|null} usbProductId
+   */
+  async function printReceipt(lines, baudRate, usbVendorId, usbProductId) {
+    if (!isSupported()) {
+      throw new Error('이 브라우저는 Web Serial API를 지원하지 않습니다.\nChrome 또는 Edge를 사용해주세요.');
+    }
+
+    // ── 1. 포트 선택 (사용자 제스처 컨텍스트에서 먼저 호출) ────────
+    let port = null;
+    if (usbVendorId !== null && usbVendorId !== undefined) {
+      try {
+        const ports = await navigator.serial.getPorts();
+        for (const p of ports) {
+          const info = p.getInfo();
+          if (info.usbVendorId === usbVendorId && info.usbProductId === usbProductId) {
+            port = p; break;
+          }
+        }
+      } catch (_) {}
+    }
+    if (!port) {
+      try {
+        port = await navigator.serial.requestPort();
+      } catch (e) {
+        if (e.name === 'NotFoundError') return;
+        throw new Error('포트 선택 실패: ' + e.message);
+      }
+    }
+
+    // ── 2. EUC-KR 인코딩 (서버 콜 1회) ──────────────────────────────
+    const receiptBytes = await encodeToEucKR(lines.join('\n'));
+
+    // ── 3. 포트 열고 전송 ────────────────────────────────────────────
+    try {
+      await port.open({ baudRate: baudRate || 9600, dataBits: 8, stopBits: 1, parity: 'none' });
+      console.log('[Printer] 포트 열림. baudRate:', baudRate);
+
+      await port.setSignals({ dataTerminalReady: true });
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const payload = concatBytes(
+        CMD_INIT, CMD_SET_KOR,
+        receiptBytes,
+        CMD_LF,
+        CMD_FEED3,
+        CMD_CUT
+      );
+
+      console.log('[Printer] 영수증 전송 바이트 수:', payload.length);
+      await sendBytes(port, payload);
+
+      const waitMs = Math.max(Math.ceil(payload.length / ((baudRate || 9600) / 10) * 1000 * 1.5), 500);
+      console.log('[Printer] 전송 완료 대기:', waitMs + 'ms');
+      await new Promise(resolve => setTimeout(resolve, waitMs));
+    } finally {
+      try {
+        await port.setSignals({ dataTerminalReady: false });
+        await port.close();
+      } catch (_) {}
+      console.log('[Printer] 포트 닫힘');
+    }
+  }
+
   return {
     isSupported,
     selectPort,
     testPrint,
+    printReceipt,
     encodeToEucKR,
     encodeASCII,
     concatBytes,

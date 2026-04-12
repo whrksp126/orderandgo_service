@@ -1964,9 +1964,13 @@ section ul li .submit_btn {
   cursor: pointer !important;
   transition: background 0.12s, color 0.12s;
 }
-.payment-detail-modal .btn-receipt:hover {
+.payment-detail-modal .btn-receipt:hover:not(:disabled) {
   background: #EBEBEB !important;
   color: #222 !important;
+}
+.payment-detail-modal .btn-receipt:disabled {
+  opacity: 0.6;
+  cursor: not-allowed !important;
 }
 
 @keyframes ph-spin {
@@ -2215,11 +2219,16 @@ section ul li .submit_btn {
   gap: 6px;
 }
 
-.payment-detail-modal .btn-receipt {
-  background: #F5F5F5;
-  color: #BBB;
-  border: 1px solid #E0E0E0 !important;
-  cursor: not-allowed !important;
+.payment-detail-modal .btn-receipt-preview {
+  background: #FFF;
+  color: #888;
+  border: 1px solid #DDD !important;
+  cursor: pointer !important;
+  transition: background 0.12s, color 0.12s;
+}
+.payment-detail-modal .btn-receipt-preview:hover {
+  background: #F5F5F5 !important;
+  color: #444 !important;
 }
 
 .payment-detail-modal .btn-cancel {

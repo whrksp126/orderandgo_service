@@ -172,8 +172,11 @@
       </div>
 
       <div class="modal-actions">
-        <button class="btn-receipt" onclick="_openReceipt()">
-          <i class="ph ph-printer"></i> 영수증 출력
+        <button class="btn-receipt" onclick="_printIntegratedReceipt(this)">
+          <i class="ph ph-printer"></i> 통합 영수증 출력
+        </button>
+        <button class="btn-receipt-preview" onclick="_openReceipt()">
+          <i class="ph ph-eye"></i> 미리보기
         </button>
       </div>
     </div>
@@ -184,8 +187,9 @@
   <script>const STORE_ID = {{ store_id | tojson }};</script>
   <script>const STORE_INFO = {{ store_info | tojson }};</script>
   <script src="/static/js/common.js?v=2"></script>
-  <script src="/static/js/receipt.js?v=1"></script>
-  <script src="/static/js/store_payment_history.js?v=10"></script>
+  <script src="/static/js/printer.js?v=1"></script>
+  <script src="/static/js/receipt.js?v=2"></script>
+  <script src="/static/js/store_payment_history.js?v=11"></script>
 </body>
 
 </html>

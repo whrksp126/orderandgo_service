@@ -285,14 +285,14 @@ function _openDetailModal(item) {
     if (cancelReceiptBtn) {
       const paymentId = parseInt(cancelReceiptBtn.dataset.paymentId);
       const payment = _currentItem.payments.find(p => p.id === paymentId);
-      if (payment) _openCancelPaymentReceipt(payment);
+      if (payment) _printCancelReceipt(payment, cancelReceiptBtn);
       return;
     }
     const receiptBtn = e.target.closest('.btn-item-receipt');
     if (receiptBtn) {
       const paymentId = parseInt(receiptBtn.dataset.paymentId);
       const payment = _currentItem.payments.find(p => p.id === paymentId);
-      if (payment) _openPaymentReceipt(payment);
+      if (payment) _printPaymentReceipt(payment, receiptBtn);
       return;
     }
     const refundBtn = e.target.closest('.refund-item-btn');
@@ -398,6 +398,7 @@ function closeDetailModal() {
 
 // ─── 영수증 출력 ────────────────────────────────────────────────────────────────
 
+/** 기존 브라우저 미리보기 모달 (미리보기 버튼용) */
 function _openReceipt() {
   if (!_currentItem) return;
   const item = _currentItem;
@@ -414,31 +415,124 @@ function _openReceipt() {
   ReceiptEngine.openReceiptModal(storeInfo, orderData, paymentInfo);
 }
 
-function _openPaymentReceipt(payment) {
+// ─── 시리얼 프린터 출력 공통 헬퍼 ───────────────────────────────────────────────
+
+async function _fetchDefaultPrinter() {
+  const res = await fetch('/store/get_default_printer');
+  if (!res.ok) throw new Error('프린터 정보 조회 실패');
+  return res.json();
+}
+
+function _setBtnPrinting(btn, printing) {
+  if (!btn) return;
+  if (printing) {
+    btn.dataset.origText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ph ph-circle-notch"></i> 출력 중...';
+  } else {
+    btn.disabled = false;
+    btn.innerHTML = btn.dataset.origText || btn.innerHTML;
+  }
+}
+
+async function _doPrint(lines, btn) {
+  if (!PrinterManager.isSupported()) {
+    alert('이 브라우저는 Web Serial API를 지원하지 않습니다.\nChrome 또는 Edge를 사용해주세요.');
+    return;
+  }
+  _setBtnPrinting(btn, true);
+  try {
+    const printer = await _fetchDefaultPrinter();
+    await PrinterManager.printReceipt(
+      lines,
+      printer.baud_rate,
+      printer.usb_vendor_id,
+      printer.usb_product_id
+    );
+    showToast('영수증이 출력되었습니다.', 'success');
+  } catch (e) {
+    console.error('[Receipt Print]', e);
+    if (e.message && !e.message.includes('NotFoundError')) {
+      alert('영수증 출력 오류: ' + e.message);
+    }
+  } finally {
+    _setBtnPrinting(btn, false);
+  }
+}
+
+// ─── 통합 영수증 출력 (시리얼 프린터) ───────────────────────────────────────────
+
+async function _printIntegratedReceipt(btn) {
   if (!_currentItem) return;
   const item = _currentItem;
   const storeInfo = window.STORE_INFO || {};
   const orderData = { tableName: item.table_name, items: item.order_items };
-  const paymentInfo = {
-    price: payment.amount,
-    method: payment.method.includes('현금') ? 1 : 2,
+
+  const datetimeStr = (item.payment_date || '') + ' ' + (item.payment_time || '');
+  const meta = {
+    tplId: item.id,
+    datetimeStr: datetimeStr.trim(),
+    discount: item.discount || 0,
+    extra_charge: item.extra_charge || 0,
+    totalPaid: item.total_paid || 0,
+    totalCancelled: item.total_cancelled || 0,
   };
-  ReceiptEngine.openReceiptModal(storeInfo, orderData, paymentInfo);
+
+  const lines = ReceiptEngine.generateIntegratedSerialReceiptLines(
+    storeInfo, orderData, item.payments, meta
+  );
+  await _doPrint(lines, btn);
 }
 
-function _openCancelPaymentReceipt(payment) {
+// ─── 개별 결제 영수증 출력 (시리얼 프린터) ──────────────────────────────────────
+
+async function _printPaymentReceipt(payment, btn) {
+  if (!_currentItem) return;
+  const item = _currentItem;
+  const storeInfo = window.STORE_INFO || {};
+  const orderData = { tableName: item.table_name, items: item.order_items };
+  const pi = payment.payment_info || {};
+
+  const datetimeStr = (item.payment_date || '') + ' ' + (payment.datetime || '');
+  const paymentInfo = {
+    receiptId: payment.id,
+    price: payment.amount,
+    method: payment.method.includes('현금') ? 1 : 2,
+    discount: item.discount || 0,
+    extra_charge: item.extra_charge || 0,
+    datetimeStr: datetimeStr.trim(),
+    approvalNo: pi.toss_approval_no || null,
+    cardNumber: pi.toss_details && pi.toss_details.card
+      ? '****-****-****-' + (pi.toss_details.card.number || '').slice(-4)
+      : null,
+  };
+
+  const lines = ReceiptEngine.generateSerialReceiptLines(storeInfo, orderData, paymentInfo);
+  await _doPrint(lines, btn);
+}
+
+// ─── 취소 영수증 출력 (시리얼 프린터) ───────────────────────────────────────────
+
+async function _printCancelReceipt(payment, btn) {
   if (!_currentItem) return;
   const item = _currentItem;
   const storeInfo = window.STORE_INFO || {};
   const orderData = { tableName: item.table_name, items: item.order_items };
   const pi = payment.payment_info || {};
   const cancelledAt = pi.toss_cancel_time || pi.cancelled_at || null;
+  const origDatetimeStr = (item.payment_date || '') + ' ' + (payment.datetime || '');
+
   const cancelInfo = {
+    receiptId: payment.id,
     price: payment.amount,
     method: payment.method.includes('현금') ? 1 : 2,
     cancelledAt,
+    datetimeStr: origDatetimeStr.trim(),
+    approvalNo: pi.toss_approval_no || null,
   };
-  ReceiptEngine.openCancelReceiptModal(storeInfo, orderData, cancelInfo);
+
+  const lines = ReceiptEngine.generateSerialCancelReceiptLines(storeInfo, orderData, cancelInfo);
+  await _doPrint(lines, btn);
 }
 
 // ─── 개별 결제 환불 ─────────────────────────────────────────────────────────────

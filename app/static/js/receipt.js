@@ -368,6 +368,344 @@ const ReceiptEngine = {
         return `<pre>${text}</pre>`;
     },
 
+    // ─── 시리얼 프린터(ESC/POS) 영수증 라인 생성 ───────────────────────────────
+
+    /**
+     * 32자 폭 고정 텍스트 줄 포맷 헬퍼
+     */
+    _rpad(str, width) {
+        str = String(str);
+        return str.length >= width ? str.slice(0, width) : str + ' '.repeat(width - str.length);
+    },
+    _rjust(str, width) {
+        str = String(str);
+        return str.length >= width ? str.slice(0, width) : ' '.repeat(width - str.length) + str;
+    },
+    _twoCol(left, right, width) {
+        left = String(left);
+        right = String(right);
+        const gap = width - left.length - right.length;
+        return gap > 0 ? left + ' '.repeat(gap) + right : (left + ' ' + right).slice(0, width);
+    },
+    _center(str, width) {
+        str = String(str);
+        if (str.length >= width) return str;
+        const pad = Math.floor((width - str.length) / 2);
+        return ' '.repeat(pad) + str;
+    },
+
+    /**
+     * 개별 결제 영수증 라인 배열 생성 (32자 폭)
+     * @param {object} storeInfo  - { name, business_number, representative_name, address, tel }
+     * @param {object} orderData  - { tableName, items: [{name, price, count, options}] }
+     * @param {object} paymentInfo - {
+     *   receiptId,       // 영수증 번호 (payment.id)
+     *   price,           // 결제 금액
+     *   method,          // 1=현금, 2=카드
+     *   discount,        // 할인금액 (optional)
+     *   extra_charge,    // 추가금액 (optional)
+     *   datetimeStr,     // 거래일시 문자열 "YYYY-MM-DD HH:MM:SS"
+     *   approvalNo,      // 카드 승인번호 (optional)
+     *   cardNumber,      // 카드번호 마스킹 (optional)
+     * }
+     */
+    generateSerialReceiptLines(storeInfo, orderData, paymentInfo) {
+        const W = 32;
+        const SEP = '='.repeat(W);
+        const SEP2 = '-'.repeat(W);
+        const lines = [];
+
+        const fmt = (n) => Number(n || 0).toLocaleString();
+        const price = paymentInfo.price || 0;
+        const discount = paymentInfo.discount || 0;
+        const extra = paymentInfo.extra_charge || 0;
+        const orderTotal = price + discount - extra;
+        const vat = Math.round(price / 11);
+        const supply = price - vat;
+
+        // 헤더
+        lines.push(SEP);
+        lines.push(this._center(storeInfo.name || 'Order & Go', W));
+        lines.push(this._center('영  수  증', W));
+        lines.push(SEP);
+
+        // 매장 정보 (법적 필수)
+        lines.push('사업자번호: ' + (storeInfo.business_number || '000-00-00000'));
+        lines.push('대 표 자:   ' + (storeInfo.representative_name || '-'));
+        lines.push('주    소:   ' + (storeInfo.address || '-'));
+        lines.push('전화번호:   ' + (storeInfo.tel || '-'));
+        lines.push(SEP);
+
+        // 거래 정보
+        lines.push('영수증번호: PMT-' + (paymentInfo.receiptId || '-'));
+        lines.push('거래일시:   ' + (paymentInfo.datetimeStr || '-'));
+        lines.push('테이블:     ' + (orderData.tableName || '-'));
+        lines.push(SEP);
+
+        // 품목 (법적 필수)
+        lines.push(this._twoCol('품목', '수량   금액', W));
+        lines.push(SEP2);
+        (orderData.items || []).forEach(item => {
+            const itemTotal = (item.price || 0) * (item.count || 1);
+            lines.push(this._twoCol(
+                item.name.slice(0, 16),
+                'x' + item.count + '  ' + this._rjust(fmt(itemTotal), 7),
+                W
+            ));
+            (item.options || []).forEach(opt => {
+                const optTotal = (opt.price || 0) * (opt.count || 1);
+                lines.push(this._twoCol(
+                    ' -' + opt.name.slice(0, 14),
+                    'x' + (opt.count || 1) + '  ' + this._rjust(fmt(optTotal), 7),
+                    W
+                ));
+            });
+        });
+        lines.push(SEP2);
+
+        // 금액 소계
+        lines.push(this._twoCol('주문금액:', fmt(orderTotal) + '원', W));
+        if (discount > 0) lines.push(this._twoCol('할인금액:', '-' + fmt(discount) + '원', W));
+        if (extra > 0)    lines.push(this._twoCol('추가금액:', '+' + fmt(extra) + '원', W));
+        lines.push(SEP);
+
+        // 세금 (법적 필수)
+        lines.push(this._twoCol('공 급 가 액:', fmt(supply) + '원', W));
+        lines.push(this._twoCol('부가가치세(10%):', fmt(vat) + '원', W));
+        lines.push(SEP);
+
+        // 합계 (법적 필수)
+        lines.push(this._twoCol('합 계 금 액:', fmt(price) + '원', W));
+        lines.push(SEP);
+
+        // 결제 수단 (법적 필수)
+        const methodName = paymentInfo.method === 1 ? '현금' : '카드';
+        lines.push(this._twoCol('결 제 수 단:', methodName, W));
+        if (paymentInfo.method !== 1) {
+            if (paymentInfo.approvalNo)  lines.push(this._twoCol('승 인 번 호:', paymentInfo.approvalNo, W));
+            if (paymentInfo.cardNumber)  lines.push(this._twoCol('카 드 번 호:', paymentInfo.cardNumber, W));
+        }
+        lines.push(SEP);
+
+        // 푸터
+        if (storeInfo.receipt_footer) {
+            lines.push(storeInfo.receipt_footer);
+        } else {
+            lines.push(this._center('이용해 주셔서 감사합니다.', W));
+            lines.push(this._center('Order & Go POS', W));
+        }
+        lines.push(SEP);
+
+        return lines;
+    },
+
+    /**
+     * 통합 영수증 라인 배열 생성 — 전체 주문 + 모든 결제 내역 포함
+     * @param {object} storeInfo
+     * @param {object} orderData  - { tableName, items }
+     * @param {object[]} allPayments - payment 배열 (status 1=완료, 2=취소)
+     * @param {object} meta - {
+     *   tplId,          // TablePaymentList ID (영수증번호)
+     *   datetimeStr,    // 거래일시
+     *   discount,
+     *   extra_charge,
+     *   totalPaid,
+     *   totalCancelled,
+     * }
+     */
+    generateIntegratedSerialReceiptLines(storeInfo, orderData, allPayments, meta) {
+        const W = 32;
+        const SEP = '='.repeat(W);
+        const SEP2 = '-'.repeat(W);
+        const lines = [];
+
+        const fmt = (n) => Number(n || 0).toLocaleString();
+        const discount = meta.discount || 0;
+        const extra = meta.extra_charge || 0;
+        const totalPaid = meta.totalPaid || 0;
+        const vat = Math.round(totalPaid / 11);
+        const supply = totalPaid - vat;
+
+        // 주문 소계 (메뉴 합계 + 할인 역산)
+        const itemsTotal = (orderData.items || []).reduce((s, i) => s + (i.price || 0) * (i.count || 1), 0);
+
+        // 헤더
+        lines.push(SEP);
+        lines.push(this._center(storeInfo.name || 'Order & Go', W));
+        lines.push(this._center('통  합  영  수  증', W));
+        lines.push(SEP);
+
+        // 매장 정보 (법적 필수)
+        lines.push('사업자번호: ' + (storeInfo.business_number || '000-00-00000'));
+        lines.push('대 표 자:   ' + (storeInfo.representative_name || '-'));
+        lines.push('주    소:   ' + (storeInfo.address || '-'));
+        lines.push('전화번호:   ' + (storeInfo.tel || '-'));
+        lines.push(SEP);
+
+        // 거래 정보
+        lines.push('영수증번호: ORD-' + (meta.tplId || '-'));
+        lines.push('거래일시:   ' + (meta.datetimeStr || '-'));
+        lines.push('테이블:     ' + (orderData.tableName || '-'));
+        lines.push(SEP);
+
+        // 품목 (법적 필수)
+        lines.push(this._twoCol('품목', '수량   금액', W));
+        lines.push(SEP2);
+        (orderData.items || []).forEach(item => {
+            const itemTotal = (item.price || 0) * (item.count || 1);
+            lines.push(this._twoCol(
+                item.name.slice(0, 16),
+                'x' + item.count + '  ' + this._rjust(fmt(itemTotal), 7),
+                W
+            ));
+            (item.options || []).forEach(opt => {
+                const optTotal = (opt.price || 0) * (opt.count || 1);
+                lines.push(this._twoCol(
+                    ' -' + opt.name.slice(0, 14),
+                    'x' + (opt.count || 1) + '  ' + this._rjust(fmt(optTotal), 7),
+                    W
+                ));
+            });
+        });
+        lines.push(SEP2);
+        lines.push(this._twoCol('주문금액:', fmt(itemsTotal) + '원', W));
+        if (discount > 0) lines.push(this._twoCol('할인금액:', '-' + fmt(discount) + '원', W));
+        if (extra > 0)    lines.push(this._twoCol('추가금액:', '+' + fmt(extra) + '원', W));
+        lines.push(SEP);
+
+        // 결제 내역
+        lines.push('[ 결 제 내 역 ]');
+        lines.push(SEP2);
+        (allPayments || []).forEach((p, idx) => {
+            const isCancelled = p.status === 2;
+            const methodName = (p.method || '').includes('현금') ? '현금' : '카드';
+            const label = (idx + 1) + '. ' + methodName + (isCancelled ? '(취소)' : '');
+            lines.push(this._twoCol(label, fmt(p.amount) + '원', W));
+            // 카드 승인번호
+            const pi = p.payment_info || {};
+            if (pi.toss_approval_no) lines.push('   승인번호: ' + pi.toss_approval_no);
+        });
+        lines.push(SEP2);
+
+        // 세금 (법적 필수) - 실 결제 합계 기준
+        lines.push(this._twoCol('공 급 가 액:', fmt(supply) + '원', W));
+        lines.push(this._twoCol('부가가치세(10%):', fmt(vat) + '원', W));
+        lines.push(SEP);
+
+        // 합계
+        lines.push(this._twoCol('합 계 결제금액:', fmt(totalPaid) + '원', W));
+        if (meta.totalCancelled > 0) {
+            lines.push(this._twoCol('취 소 금 액:', '-' + fmt(meta.totalCancelled) + '원', W));
+        }
+        lines.push(SEP);
+
+        // 푸터
+        if (storeInfo.receipt_footer) {
+            lines.push(storeInfo.receipt_footer);
+        } else {
+            lines.push(this._center('이용해 주셔서 감사합니다.', W));
+            lines.push(this._center('Order & Go POS', W));
+        }
+        lines.push(SEP);
+
+        return lines;
+    },
+
+    /**
+     * 취소 영수증 라인 배열 생성
+     * @param {object} storeInfo
+     * @param {object} orderData  - { tableName, items }
+     * @param {object} cancelInfo - {
+     *   receiptId,      // payment.id
+     *   price,          // 취소 금액
+     *   method,         // 1=현금, 2=카드
+     *   cancelledAt,    // 취소 일시 문자열
+     *   approvalNo,     // 원 승인번호 (optional)
+     *   datetimeStr,    // 원 거래일시
+     * }
+     */
+    generateSerialCancelReceiptLines(storeInfo, orderData, cancelInfo) {
+        const W = 32;
+        const SEP = '='.repeat(W);
+        const SEP2 = '-'.repeat(W);
+        const lines = [];
+
+        const fmt = (n) => Number(n || 0).toLocaleString();
+        const price = cancelInfo.price || 0;
+        const vat = Math.round(price / 11);
+        const supply = price - vat;
+        const cancelledAt = cancelInfo.cancelledAt
+            ? new Date(cancelInfo.cancelledAt).toLocaleString('ko-KR')
+            : new Date().toLocaleString('ko-KR');
+
+        // 헤더
+        lines.push(SEP);
+        lines.push(this._center(storeInfo.name || 'Order & Go', W));
+        lines.push(this._center('취  소  영  수  증', W));
+        lines.push(SEP);
+
+        // 매장 정보 (법적 필수)
+        lines.push('사업자번호: ' + (storeInfo.business_number || '000-00-00000'));
+        lines.push('대 표 자:   ' + (storeInfo.representative_name || '-'));
+        lines.push('주    소:   ' + (storeInfo.address || '-'));
+        lines.push('전화번호:   ' + (storeInfo.tel || '-'));
+        lines.push(SEP);
+
+        // 거래 정보
+        lines.push('영수증번호: PMT-' + (cancelInfo.receiptId || '-'));
+        lines.push('원거래일시: ' + (cancelInfo.datetimeStr || '-'));
+        lines.push('취소일시:   ' + cancelledAt);
+        lines.push('테이블:     ' + (orderData.tableName || '-'));
+        lines.push(SEP);
+
+        // 취소 품목
+        lines.push(this._twoCol('품목', '수량   금액', W));
+        lines.push(SEP2);
+        (orderData.items || []).forEach(item => {
+            const itemTotal = (item.price || 0) * (item.count || 1);
+            lines.push(this._twoCol(
+                item.name.slice(0, 16),
+                'x' + item.count + '  ' + this._rjust(fmt(itemTotal), 7),
+                W
+            ));
+            (item.options || []).forEach(opt => {
+                const optTotal = (opt.price || 0) * (opt.count || 1);
+                lines.push(this._twoCol(
+                    ' -' + opt.name.slice(0, 14),
+                    'x' + (opt.count || 1) + '  ' + this._rjust(fmt(optTotal), 7),
+                    W
+                ));
+            });
+        });
+        lines.push(SEP2);
+
+        // 세금 (법적 필수)
+        lines.push(this._twoCol('공 급 가 액:', fmt(supply) + '원', W));
+        lines.push(this._twoCol('부가가치세(10%):', fmt(vat) + '원', W));
+        lines.push(SEP);
+
+        // 취소 합계
+        lines.push(this._twoCol('취 소 금 액:', fmt(price) + '원', W));
+        lines.push(SEP);
+
+        // 결제 수단
+        const methodName = cancelInfo.method === 1 ? '현금' : '카드';
+        lines.push(this._twoCol('결 제 수 단:', methodName + ' (취소)', W));
+        if (cancelInfo.approvalNo) lines.push(this._twoCol('원 승인번호:', cancelInfo.approvalNo, W));
+        lines.push(SEP);
+
+        // 푸터
+        if (storeInfo.receipt_footer) {
+            lines.push(storeInfo.receipt_footer);
+        } else {
+            lines.push(this._center('이용해 주셔서 감사합니다.', W));
+            lines.push(this._center('Order & Go POS', W));
+        }
+        lines.push(SEP);
+
+        return lines;
+    },
+
     // HTML을 이미지로 변환하여 다운로드/전송하는 기능
     async saveAsImage(elementId, fileName) {
         if (typeof htmlToImage === 'undefined') {
