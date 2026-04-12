@@ -997,9 +997,8 @@ def api_update_terminal_info():
 @store_bp.route('/payment_history', methods=['GET'])
 @login_required
 def payment_history_page():
-    from app.models import Store
-    store = Store.query.filter_by(user_id=current_user.id).first()
-    store_id = store.id if store else None
+    store = current_user
+    store_id = store.id
     store_info = {
         'name': store.name or '',
         'business_number': store.business_number or '',
@@ -1008,28 +1007,28 @@ def payment_history_page():
         'tel': store.tel or '',
         'receipt_header': store.receipt_header or '',
         'receipt_footer': store.receipt_footer or '',
-    } if store else {}
+    }
     return render_template('store_payment_history.html', store_id=store_id, store_info=store_info)
 
 
 @store_bp.route('/store_info', methods=['GET'])
 @login_required
 def store_info_page():
-    store = Store.query.filter_by(user_id=current_user.id).first()
+    store = current_user
     store_data = {
         'name': store.name or '',
         'business_number': store.business_number or '',
         'representative_name': store.representative_name or '',
         'address': store.address or '',
         'tel': store.tel or '',
-    } if store else {}
+    }
     return render_template('store_info.html', store_data=store_data)
 
 
 @store_bp.route('/update_store_info', methods=['POST'])
 @login_required
 def api_update_store_info():
-    store = Store.query.filter_by(user_id=current_user.id).first()
+    store = Store.query.filter_by(id=current_user.id).first()
     if not store:
         return jsonify({'code': 404, 'msg': '매장 정보를 찾을 수 없습니다.'}), 404
     data = request.get_json() or {}
