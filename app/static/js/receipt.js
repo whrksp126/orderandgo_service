@@ -371,26 +371,36 @@ const ReceiptEngine = {
     // ─── 시리얼 프린터(ESC/POS) 영수증 라인 생성 ───────────────────────────────
 
     /**
-     * 32자 폭 고정 텍스트 줄 포맷 헬퍼
+     * 프린터 시각적 폭 계산: ASCII=1, 한글/다바이트=2
      */
+    _vw(str) {
+        let w = 0;
+        for (const ch of String(str)) {
+            w += ch.charCodeAt(0) > 0x7F ? 2 : 1;
+        }
+        return w;
+    },
     _rpad(str, width) {
         str = String(str);
-        return str.length >= width ? str.slice(0, width) : str + ' '.repeat(width - str.length);
+        const vw = this._vw(str);
+        return vw >= width ? str : str + ' '.repeat(width - vw);
     },
     _rjust(str, width) {
         str = String(str);
-        return str.length >= width ? str.slice(0, width) : ' '.repeat(width - str.length) + str;
+        const vw = this._vw(str);
+        return vw >= width ? str : ' '.repeat(width - vw) + str;
     },
     _twoCol(left, right, width) {
         left = String(left);
         right = String(right);
-        const gap = width - left.length - right.length;
-        return gap > 0 ? left + ' '.repeat(gap) + right : (left + ' ' + right).slice(0, width);
+        const gap = width - this._vw(left) - this._vw(right);
+        return gap > 0 ? left + ' '.repeat(gap) + right : left + ' ' + right;
     },
     _center(str, width) {
         str = String(str);
-        if (str.length >= width) return str;
-        const pad = Math.floor((width - str.length) / 2);
+        const vw = this._vw(str);
+        if (vw >= width) return str;
+        const pad = Math.floor((width - vw) / 2);
         return ' '.repeat(pad) + str;
     },
 
@@ -410,7 +420,7 @@ const ReceiptEngine = {
      * }
      */
     generateSerialReceiptLines(storeInfo, orderData, paymentInfo) {
-        const W = 32;
+        const W = 42;
         const SEP = '='.repeat(W);
         const SEP2 = '-'.repeat(W);
         const lines = [];
@@ -514,7 +524,7 @@ const ReceiptEngine = {
      * }
      */
     generateIntegratedSerialReceiptLines(storeInfo, orderData, allPayments, meta) {
-        const W = 32;
+        const W = 42;
         const SEP = '='.repeat(W);
         const SEP2 = '-'.repeat(W);
         const lines = [];
@@ -523,15 +533,15 @@ const ReceiptEngine = {
         const discount = meta.discount || 0;
         const extra = meta.extra_charge || 0;
         const totalPaid = meta.totalPaid || 0;
-        const vat = Math.round(totalPaid / 11);
-        const supply = totalPaid - vat;
+        const vatBase = totalPaid > 0 ? totalPaid : (meta.totalCancelled || 0);
+        const vat = Math.round(vatBase / 11);
+        const supply = vatBase - vat;
 
         // 주문 소계 (메뉴 합계 + 할인 역산)
         const itemsTotal = (orderData.items || []).reduce((s, i) => s + (i.price || 0) * (i.count || 1), 0);
 
         // 헤더
         lines.push(SEP);
-        lines.push(this._center(storeInfo.name || 'Order & Go', W));
         lines.push(this._center('통  합  영  수  증', W));
         lines.push(SEP);
 
@@ -604,7 +614,6 @@ const ReceiptEngine = {
             lines.push(storeInfo.receipt_footer);
         } else {
             lines.push(this._center('이용해 주셔서 감사합니다.', W));
-            lines.push(this._center('Order & Go POS', W));
         }
         lines.push(SEP);
 
@@ -625,7 +634,7 @@ const ReceiptEngine = {
      * }
      */
     generateSerialCancelReceiptLines(storeInfo, orderData, cancelInfo) {
-        const W = 32;
+        const W = 42;
         const SEP = '='.repeat(W);
         const SEP2 = '-'.repeat(W);
         const lines = [];
