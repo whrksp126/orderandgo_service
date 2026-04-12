@@ -243,8 +243,12 @@ const PrinterManager = (() => {
 
       console.log('[Printer] 전송 바이트 수:', payload.length);
       await sendBytes(port, payload);
-      await new Promise(resolve => setTimeout(resolve, 300));
-      console.log('[Printer] 전송 완료');
+
+      // baud rate 기준 전송 완료 예상 시간 + 여유 50% 대기
+      // 9600 baud = 960 bytes/sec (8N1: 10 bits/byte)
+      const waitMs = Math.max(Math.ceil(payload.length / (baudRate / 10) * 1000 * 1.5), 500);
+      console.log('[Printer] 전송 완료 대기:', waitMs + 'ms');
+      await new Promise(resolve => setTimeout(resolve, waitMs));
     } finally {
       try {
         await port.setSignals({ dataTerminalReady: false });
