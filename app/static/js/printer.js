@@ -143,29 +143,26 @@ const PrinterManager = (() => {
     }
 
     try {
-      await port.open({ baudRate: baudRate || 19200 });
+      // dataBits/stopBits/parity 명시 (RS-232 계열 프린터 필수)
+      await port.open({ baudRate: baudRate || 19200, dataBits: 8, stopBits: 1, parity: 'none' });
+      console.log('[Printer] 포트 열림. info:', port.getInfo(), '/ baudRate:', baudRate);
 
-      // 한글 라인을 서버에서 EUC-KR로 인코딩
-      const koreanLine = await encodeToEucKR('안녕 세상');
-
+      // 테스트 출력은 ASCII만 사용 (서버 네트워크 콜 제거)
       const payload = concatBytes(
         CMD_INIT,
-        CMD_SET_KOR,
-        encodeASCII('Hello World'),
-        CMD_LF,
-        koreanLine,
-        CMD_LF,
-        encodeASCII('----------'),
-        CMD_LF,
+        encodeASCII('===== Test Print =====\n'),
+        encodeASCII('Hello Printer\n'),
+        encodeASCII('======================\n'),
         CMD_FEED3,
         CMD_CUT
       );
 
+      console.log('[Printer] 전송 바이트 수:', payload.length);
       await sendBytes(port, payload);
+      console.log('[Printer] 전송 완료');
     } finally {
-      // sendBytes 내부에서 writable 스트림은 이미 닫힘
-      // port.close()만 호출하면 됨
       try { await port.close(); } catch (_) {}
+      console.log('[Printer] 포트 닫힘');
     }
   }
 
