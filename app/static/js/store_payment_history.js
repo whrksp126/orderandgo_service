@@ -546,6 +546,9 @@ async function _printCancelReceipt(payment, btn) {
     cancelledAt,
     datetimeStr: origDatetimeStr.trim(),
     approvalNo: pi.toss_approval_no || null,
+    cardNumber: pi.toss_details?.card?.maskedCardNumber
+      ? ReceiptEngine._formatCardNumber(pi.toss_details.card.maskedCardNumber)
+      : null,
   };
 
   const lines = ReceiptEngine.generateSerialCancelReceiptLines(storeInfo, orderData, cancelInfo);

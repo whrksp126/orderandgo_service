@@ -617,9 +617,11 @@ const ReceiptEngine = {
             const methodName = (p.method || '').includes('현금') ? '현금' : '카드';
             const label = (idx + 1) + '. ' + methodName + (isCancelled ? '(취소)' : '');
             lines.push(this._twoCol(label, fmt(p.amount) + '원', W));
-            // 카드 승인번호
+            // 카드 승인번호 / 카드번호
             const pi = p.payment_info || {};
             if (pi.toss_approval_no) lines.push('   승인번호: ' + pi.toss_approval_no);
+            const cardNum = pi.toss_details?.card?.maskedCardNumber;
+            if (cardNum) lines.push('   카드번호: ' + this._formatCardNumber(cardNum));
         });
         lines.push(SEP2);
 
@@ -727,6 +729,7 @@ const ReceiptEngine = {
         const methodName = cancelInfo.method === 1 ? '현금' : '카드';
         lines.push(this._twoCol('결 제 수 단:', methodName + ' (취소)', W));
         if (cancelInfo.approvalNo) lines.push(this._twoCol('원 승인번호:', cancelInfo.approvalNo, W));
+        if (cancelInfo.cardNumber) lines.push(this._twoCol('카 드 번 호:', cancelInfo.cardNumber, W));
         lines.push(SEP);
 
         // 푸터
