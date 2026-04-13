@@ -1523,3 +1523,103 @@ def api_confirm_staff_call():
     if confirm_staff_call(log_id):
         return jsonify({'message': 'Success'}), 200
     return jsonify({'message': 'Not Found'}), 404
+
+
+# ── KDS 스테이션 관리 ──────────────────────────────────────────────────────────
+
+@store_bp.route('/kds_station_mgmt')
+@login_required
+def kds_station_mgmt():
+    return render_template('kds_station_mgmt.html')
+
+
+@store_bp.route('/get_kds_stations', methods=['GET'])
+@login_required
+def api_get_kds_stations():
+    from app.models import KdsStation, KdsStationMenu, KdsStationStaffCall
+    store_id = current_user.id
+    stations = KdsStation.query.filter_by(store_id=store_id).order_by(KdsStation.position).all()
+    result = []
+    for s in stations:
+        menu_ids = [r.menu_id for r in KdsStationMenu.query.filter_by(station_id=s.id).all()]
+        staff_call_ids = [r.staff_call_item_id for r in KdsStationStaffCall.query.filter_by(station_id=s.id).all()]
+        result.append({
+            'id': s.id,
+            'name': s.name,
+            'show_all': s.show_all,
+            'position': s.position,
+            'menu_ids': menu_ids,
+            'staff_call_ids': staff_call_ids
+        })
+    return jsonify(result)
+
+
+@store_bp.route('/set_kds_station', methods=['POST', 'PATCH', 'DELETE'])
+@login_required
+def api_set_kds_station():
+    from app.models import KdsStation, KdsStationMenu, KdsStationStaffCall
+    store_id = current_user.id
+
+    if request.method == 'POST':
+        data = request.get_json()
+        name = data.get('name', '').strip()
+        show_all = bool(data.get('show_all', False))
+        if not name:
+            return jsonify({'message': '스테이션명을 입력해주세요.', 'code': 400}), 400
+        count = KdsStation.query.filter_by(store_id=store_id).count()
+        station = KdsStation(store_id=store_id, name=name, show_all=show_all, position=count)
+        db.session.add(station)
+        db.session.commit()
+        return jsonify({'message': 'Success', 'id': station.id, 'code': 201}), 201
+
+    if request.method == 'PATCH':
+        data = request.get_json()
+        station_id = data.get('id')
+        station = KdsStation.query.filter_by(id=station_id, store_id=store_id).first()
+        if not station:
+            return jsonify({'message': 'Not Found', 'code': 404}), 404
+        name = data.get('name', '').strip()
+        if not name:
+            return jsonify({'message': '스테이션명을 입력해주세요.', 'code': 400}), 400
+        station.name = name
+        station.show_all = bool(data.get('show_all', False))
+        db.session.commit()
+        return jsonify({'message': 'Success', 'code': 200})
+
+    if request.method == 'DELETE':
+        station_id = request.args.get('id')
+        station = KdsStation.query.filter_by(id=station_id, store_id=store_id).first()
+        if not station:
+            return jsonify({'message': 'Not Found', 'code': 404}), 404
+        KdsStationMenu.query.filter_by(station_id=station.id).delete()
+        KdsStationStaffCall.query.filter_by(station_id=station.id).delete()
+        db.session.delete(station)
+        db.session.commit()
+        return jsonify({'message': 'Success', 'code': 200})
+
+
+@store_bp.route('/set_kds_station_items', methods=['POST'])
+@login_required
+def api_set_kds_station_items():
+    from app.models import KdsStation, KdsStationMenu, KdsStationStaffCall
+    store_id = current_user.id
+    data = request.get_json()
+    station_id = data.get('station_id')
+    menu_ids = data.get('menu_ids', [])
+    staff_call_ids = data.get('staff_call_ids', [])
+
+    station = KdsStation.query.filter_by(id=station_id, store_id=store_id).first()
+    if not station:
+        return jsonify({'message': 'Not Found', 'code': 404}), 404
+
+    # 전체 교체
+    KdsStationMenu.query.filter_by(station_id=station_id).delete()
+    KdsStationStaffCall.query.filter_by(station_id=station_id).delete()
+
+    for mid in menu_ids:
+        db.session.add(KdsStationMenu(station_id=station_id, menu_id=mid))
+    for scid in staff_call_ids:
+        db.session.add(KdsStationStaffCall(station_id=station_id, staff_call_item_id=scid))
+
+    db.session.commit()
+    return jsonify({'message': 'Success', 'code': 200})

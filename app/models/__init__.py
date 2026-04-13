@@ -368,3 +368,27 @@ class Printer(db.Model):
     usb_product_id = db.Column(db.Integer, nullable=True)
     position = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.now)
+
+
+class KdsStation(db.Model):
+    __tablename__ = 'kds_station'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    store_id = db.Column(db.Integer, db.ForeignKey('store.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    show_all = db.Column(db.Boolean, default=False)  # True면 전체 주문 내역 표시
+    position = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+
+
+class KdsStationMenu(db.Model):
+    __tablename__ = 'kds_station_menu'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    station_id = db.Column(db.Integer, db.ForeignKey('kds_station.id'), nullable=False)
+    menu_id = db.Column(db.Integer, db.ForeignKey('menu.id'), nullable=False)
+
+
+class KdsStationStaffCall(db.Model):
+    __tablename__ = 'kds_station_staff_call'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    station_id = db.Column(db.Integer, db.ForeignKey('kds_station.id'), nullable=False)
+    staff_call_item_id = db.Column(db.Integer, db.ForeignKey('staff_call_item.id'), nullable=False)
