@@ -617,7 +617,8 @@ const ReceiptEngine = {
             const methodName = (p.method || '').includes('현금') ? '현금' : '카드';
             const label = (idx + 1) + '. ' + methodName + (isCancelled ? '(취소)' : '');
             lines.push(this._twoCol(label, fmt(p.amount) + '원', W));
-            // 카드 승인번호 / 카드번호
+            // 영수증번호 / 카드 승인번호 / 카드번호
+            if (p.id) lines.push('   영수증번호: PMT-' + p.id);
             const pi = p.payment_info || {};
             if (pi.toss_approval_no) lines.push('   승인번호: ' + pi.toss_approval_no);
             const cardNum = pi.toss_details?.card?.maskedCardNumber;
