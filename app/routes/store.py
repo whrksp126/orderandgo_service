@@ -1068,12 +1068,26 @@ def get_payment_history():
     sort = request.args.get('sort', 'time_desc')     # time_desc, time_asc, amount_desc, amount_asc
     page = max(1, int(request.args.get('page', 1)))
     per_page = max(1, min(100, int(request.args.get('per_page', 20))))
+    receipt_id_str = request.args.get('receipt_id', '').strip()
 
     base_query = db.session.query(TablePaymentList, Table.name)\
         .outerjoin(Table, Table.id == TablePaymentList.table_id)\
         .filter(TablePaymentList.store_id == store_id)
 
-    if date_str:
+    # 영수증 번호 검색 (payment.id 기반)
+    if receipt_id_str:
+        try:
+            receipt_id_int = int(receipt_id_str)
+            matched_payment = Payment.query.filter_by(id=receipt_id_int).first()
+            if matched_payment:
+                base_query = base_query.filter(TablePaymentList.id == matched_payment.table_payment_list_id)
+            else:
+                return jsonify({'list': [], 'has_more': False, 'summary': {'count': 0, 'total_paid': 0, 'total_cancelled': 0}})
+        except ValueError:
+            return jsonify({'list': [], 'has_more': False, 'summary': {'count': 0, 'total_paid': 0, 'total_cancelled': 0}})
+        tpl_list = base_query.all()
+        has_more = False
+    elif date_str:
         try:
             target_date = datetime.strptime(date_str, '%Y-%m-%d')
         except ValueError:

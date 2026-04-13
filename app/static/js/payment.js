@@ -5,6 +5,8 @@ let payment_history = undefined;
 let _currentCardPayment = null; // { payment_id, store_id }
 // 현금 결제 단말기 payment_id (null = 오프라인)
 let _cashPaymentId = null;
+// 마지막 저장된 Payment DB ID (영수증 번호용)
+let _lastSavedPaymentId = null;
 
 // ─── Toss 단말기 소켓 이벤트 ──────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
@@ -69,6 +71,9 @@ window.addEventListener('DOMContentLoaded', () => {
           paymentData.payment.payment_history.toss_cash_receipt = resp.cash;
         }
         fetchData(`/pos/payment_history/${lastPath}`, 'POST', paymentData, (responseData) => {
+          if (responseData.payment_id) {
+            _lastSavedPaymentId = responseData.payment_id;
+          }
           if (responseData.is_finished) {
             createCompletedPaymentModal({ preventDefault: () => {} }, 'CASH');
           } else {
@@ -95,6 +100,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
       if (!_saved?.table_payment_list_id) {
         showToast('결제 정보 저장 실패. 관리자에게 문의하세요.', 'error');
+      }
+      if (_saved?.payment_id) {
+        _lastSavedPaymentId = _saved.payment_id;
       }
 
       // 단말기 폴링 종료용 confirm_approval 전송 (승인 모달 없이 바로 완료)
@@ -1098,6 +1106,9 @@ function _onCashAmountReady() {
     if (cashBtn) { cashBtn.disabled = false; cashBtn.style.opacity = ''; }
     _cashTablePaymentListId = responseData.table_payment_list_id || null;
     _cashReceiptIsFinished = !!responseData.is_finished;
+    if (responseData.payment_id) {
+      _lastSavedPaymentId = responseData.payment_id;
+    }
     _openCashReceiptModal();
   });
 }
@@ -1513,6 +1524,7 @@ const printReceiptFromPayment = async (btn, type) => {
     const pad = n => String(n).padStart(2, '0');
     const datetimeStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
     const paymentInfo = {
+      receiptId: _lastSavedPaymentId || null,
       price: payment_history.curPaymentPrice,
       method: type === 'CASH' ? 1 : 2,
       discount: payment_history.discount,

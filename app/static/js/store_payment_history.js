@@ -89,9 +89,12 @@ function fetchPaymentHistory(append = false) {
   const date = document.querySelector('#date-picker').value;
   const filter = document.querySelector('#filter-select .btn-dropdown')?.dataset.id ?? 'all';
   const sort = document.querySelector('#sort-select .btn-dropdown')?.dataset.id ?? 'time_desc';
+  const receiptId = document.querySelector('#receipt-id-input')?.value.trim() || '';
 
   let url = `/store/get_payment_history?filter=${filter}&sort=${sort}`;
-  if (date) {
+  if (receiptId) {
+    url += `&receipt_id=${encodeURIComponent(receiptId)}`;
+  } else if (date) {
     url += `&date=${date}`;
   } else {
     url += `&page=${_currentPage}&per_page=20`;

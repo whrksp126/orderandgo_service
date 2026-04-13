@@ -70,6 +70,10 @@
             </ul>
           </div>
         </li>
+        <li>
+          <h2>영수증 번호</h2>
+          <input type="number" id="receipt-id-input" class="input_box" placeholder="PMT- 뒤 숫자 입력" min="1" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+        </li>
         <li class="btn-li">
           <button class="submit_btn" onclick="fetchPaymentHistory()">조회</button>
         </li>
