@@ -1531,8 +1531,8 @@ const printReceiptFromPayment = async (btn, type, receiptId) => {
       extra_charge: payment_history.extra_charge,
       datetimeStr,
       approvalNo: ph.toss_approval_no || null,
-      cardNumber: ph.toss_details?.card?.number
-        ? ReceiptEngine._formatCardNumber(ph.toss_details.card.number)
+      cardNumber: ph.toss_details?.card?.maskedCardNumber
+        ? ReceiptEngine._formatCardNumber(ph.toss_details.card.maskedCardNumber)
         : null,
     };
 
