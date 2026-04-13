@@ -199,8 +199,8 @@ const ReceiptEngine = {
     // 취소 영수증 텍스트 생성
     generateCancelReceiptText(storeInfo, orderData, cancelInfo) {
         const cancelledAt = cancelInfo.cancelledAt
-            ? new Date(cancelInfo.cancelledAt).toLocaleString('ko-KR')
-            : new Date().toLocaleString('ko-KR');
+            ? this._fmtDateStr(cancelInfo.cancelledAt)
+            : this._fmtDateStr(new Date());
         const totalPrice = cancelInfo.price;
         const vat = Math.round(totalPrice / 11);
         const supplyPrice = totalPrice - vat;
@@ -273,8 +273,8 @@ const ReceiptEngine = {
         const vat = Math.round(totalPrice / 11);
         const supplyPrice = totalPrice - vat;
         const cancelledAt = cancelInfo.cancelledAt
-            ? new Date(cancelInfo.cancelledAt).toLocaleString('ko-KR')
-            : new Date().toLocaleString('ko-KR');
+            ? this._fmtDateStr(cancelInfo.cancelledAt)
+            : this._fmtDateStr(new Date());
 
         const itemsListHtml = orderData.items.map(item => `
             <div class="summary-item">
@@ -369,6 +369,32 @@ const ReceiptEngine = {
     },
 
     // ─── 시리얼 프린터(ESC/POS) 영수증 라인 생성 ───────────────────────────────
+
+    /** ISO 날짜 문자열 → 'YYYY-MM-DD HH:MM:SS' 형식 */
+    _fmtDateStr(iso) {
+        try {
+            const d = new Date(iso);
+            if (isNaN(d)) return String(iso);
+            const pad = n => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ` +
+                   `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        } catch(e) { return String(iso); }
+    },
+
+    /**
+     * 카드번호 포맷: 앞 4자리 + ****-**** + 뒤 4자리
+     * 이미 '-'나 '*'가 포함된 형식이면 그대로 반환
+     */
+    _formatCardNumber(num) {
+        if (!num) return null;
+        const s = String(num).trim();
+        if (s.includes('*')) return s;  // 이미 마스킹된 형식이면 그대로
+        const digits = s.replace(/\D/g, '');
+        if (digits.length >= 8) {
+            return digits.slice(0, 4) + '-****-****-' + digits.slice(-4);
+        }
+        return s;
+    },
 
     /**
      * 프린터 시각적 폭 계산: ASCII=1, 한글/다바이트=2
@@ -644,8 +670,8 @@ const ReceiptEngine = {
         const vat = Math.round(price / 11);
         const supply = price - vat;
         const cancelledAt = cancelInfo.cancelledAt
-            ? new Date(cancelInfo.cancelledAt).toLocaleString('ko-KR')
-            : new Date().toLocaleString('ko-KR');
+            ? this._fmtDateStr(cancelInfo.cancelledAt)
+            : this._fmtDateStr(new Date());
 
         // 헤더
         lines.push(SEP);

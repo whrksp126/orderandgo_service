@@ -519,8 +519,8 @@ async function _printPaymentReceipt(payment, btn) {
     extra_charge: item.extra_charge || 0,
     datetimeStr: datetimeStr.trim(),
     approvalNo: pi.toss_approval_no || null,
-    cardNumber: pi.toss_details && pi.toss_details.card
-      ? '****-****-****-' + (pi.toss_details.card.number || '').slice(-4)
+    cardNumber: pi.toss_details?.card?.number
+      ? ReceiptEngine._formatCardNumber(pi.toss_details.card.number)
       : null,
   };
 

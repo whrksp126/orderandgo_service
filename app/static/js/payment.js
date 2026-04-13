@@ -75,7 +75,7 @@ window.addEventListener('DOMContentLoaded', () => {
             _lastSavedPaymentId = responseData.payment_id;
           }
           if (responseData.is_finished) {
-            createCompletedPaymentModal({ preventDefault: () => {} }, 'CASH');
+            createCompletedPaymentModal({ preventDefault: () => {} }, 'CASH', responseData.payment_id ?? null);
           } else {
             location.reload();
           }
@@ -113,7 +113,7 @@ window.addEventListener('DOMContentLoaded', () => {
       }).catch(() => {});
 
       if (_saved?.is_finished) {
-        createCompletedPaymentModal({ preventDefault: () => {} }, 'CARD');
+        createCompletedPaymentModal({ preventDefault: () => {} }, 'CARD', _saved?.payment_id ?? null);
       } else {
         location.reload();
       }
@@ -1185,7 +1185,7 @@ function _closeCashReceiptModal() {
   _cashTablePaymentListId = null;
   _cashReceiptIsFinished = false;
   if (isFinished) {
-    createCompletedPaymentModal({ preventDefault: () => {} }, 'CASH');
+    createCompletedPaymentModal({ preventDefault: () => {} }, 'CASH', _lastSavedPaymentId ?? null);
   } else {
     location.reload();
   }
@@ -1261,7 +1261,7 @@ function _doCloseCashReceiptFlow() {
   _cashTablePaymentListId = null;
   _cashReceiptIsFinished = false;
   if (isFinished) {
-    createCompletedPaymentModal({ preventDefault: () => {} }, 'CASH');
+    createCompletedPaymentModal({ preventDefault: () => {} }, 'CASH', _lastSavedPaymentId ?? null);
   } else {
     location.reload();
   }
@@ -1422,7 +1422,7 @@ const clickPayment = async (event) => {
 
 
 // 결제 성공 모달
-const createCompletedPaymentModal = async (event, type) => {
+const createCompletedPaymentModal = async (event, type, receiptId) => {
   openModalFun(event)
   const _modal = document.querySelector('.modal');
   const _modalTitle = document.querySelector('.modal-content h1');
@@ -1461,7 +1461,7 @@ const createCompletedPaymentModal = async (event, type) => {
       <span>${type == 'CASH' ? `현금` : `카드`} 결제가 완료되었습니다.</span>
     </div>
     <div class="bottom">
-      <button class="print_receipt" onclick="printReceiptFromPayment(this, '${type}')">영수증 출력</button>
+      <button class="print_receipt" onclick="printReceiptFromPayment(this, '${type}', ${receiptId != null ? receiptId : 'null'})">영수증 출력</button>
       <button class="close" onclick="window.location.href='/pos/tableList'">확인</button>
     </div>
   `
@@ -1495,7 +1495,7 @@ const openReceiptDetailModal = async (type) => {
 }
 
 // 결제 완료 후 시리얼 프린터로 영수증 출력
-const printReceiptFromPayment = async (btn, type) => {
+const printReceiptFromPayment = async (btn, type, receiptId) => {
   if (!PrinterManager.isSupported()) {
     alert('이 브라우저는 Web Serial API를 지원하지 않습니다.\nChrome 또는 Edge를 사용해주세요.');
     return;
@@ -1524,7 +1524,7 @@ const printReceiptFromPayment = async (btn, type) => {
     const pad = n => String(n).padStart(2, '0');
     const datetimeStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
     const paymentInfo = {
-      receiptId: _lastSavedPaymentId || null,
+      receiptId: (receiptId != null) ? receiptId : (_lastSavedPaymentId || null),
       price: payment_history.curPaymentPrice,
       method: type === 'CASH' ? 1 : 2,
       discount: payment_history.discount,
@@ -1532,7 +1532,7 @@ const printReceiptFromPayment = async (btn, type) => {
       datetimeStr,
       approvalNo: ph.toss_approval_no || null,
       cardNumber: ph.toss_details?.card?.number
-        ? '****-****-****-' + String(ph.toss_details.card.number).slice(-4)
+        ? ReceiptEngine._formatCardNumber(ph.toss_details.card.number)
         : null,
     };
 
