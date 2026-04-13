@@ -1450,7 +1450,7 @@ const createCompletedPaymentModal = async (event, type) => {
       <span>${type == 'CASH' ? `현금` : `카드`} 결제가 완료되었습니다.</span>
     </div>
     <div class="bottom">
-      <button class="view_receipt" onclick="openReceiptDetailModal('${type}')">영수증 보기</button>
+      <button class="print_receipt" onclick="printReceiptFromPayment(this, '${type}')">영수증 출력</button>
       <button class="close" onclick="window.location.href='/pos/tableList'">확인</button>
     </div>
   `
@@ -1482,6 +1482,70 @@ const openReceiptDetailModal = async (type) => {
 
   ReceiptEngine.openReceiptModal(storeInfoResult, orderData, paymentInfo);
 }
+
+// 결제 완료 후 시리얼 프린터로 영수증 출력
+const printReceiptFromPayment = async (btn, type) => {
+  if (!PrinterManager.isSupported()) {
+    alert('이 브라우저는 Web Serial API를 지원하지 않습니다.\nChrome 또는 Edge를 사용해주세요.');
+    return;
+  }
+
+  if (btn) {
+    btn.dataset.origText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ph ph-circle-notch"></i> 출력 중...';
+  }
+
+  try {
+    const storeInfo = await fetch('/store/get_receipt_store_info')
+      .then(r => r.ok ? r.json() : {}).catch(() => ({}));
+
+    const tableName = document.querySelector('header h1')?.innerText || String(lastPath);
+    const orderData = {
+      tableName,
+      items: order_history.map(item => ({
+        name: item.name, price: item.price, count: item.count, options: item.options
+      }))
+    };
+
+    const ph = payment_history.payment_history || {};
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const datetimeStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    const paymentInfo = {
+      price: payment_history.curPaymentPrice,
+      method: type === 'CASH' ? 1 : 2,
+      discount: payment_history.discount,
+      extra_charge: payment_history.extra_charge,
+      datetimeStr,
+      approvalNo: ph.toss_approval_no || null,
+      cardNumber: ph.toss_details?.card?.number
+        ? '****-****-****-' + String(ph.toss_details.card.number).slice(-4)
+        : null,
+    };
+
+    const lines = ReceiptEngine.generateSerialReceiptLines(storeInfo, orderData, paymentInfo);
+
+    const printer = await fetch('/store/get_default_printer')
+      .then(r => r.ok ? r.json() : {}).catch(() => ({}));
+
+    await PrinterManager.printReceipt(
+      lines, printer.baud_rate, printer.usb_vendor_id, printer.usb_product_id
+    );
+    showToast('영수증이 출력되었습니다.', 'success');
+
+  } catch (e) {
+    console.error('[Receipt Print]', e);
+    if (e.message && !e.message.includes('NotFoundError')) {
+      alert('영수증 출력 오류: ' + e.message);
+    }
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = btn.dataset.origText || '영수증 출력';
+    }
+  }
+};
 
 const setOrderList = () => { // 결제 전 주문 내역 정리
   const items = deepCopy(setBasketData(order_history));
