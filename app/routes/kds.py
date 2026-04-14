@@ -118,6 +118,10 @@ def api_complete_batch():
         socketio.emit('kds_order_completed', {
             'order_ids': order_ids,
         }, room=f'store_{store_id}_kds')
+        # POS 테이블 목록 실시간 갱신
+        socketio.emit('kds_order_completed', {
+            'order_ids': order_ids,
+        }, room='pos_group')
 
         return jsonify({'code': 200, 'message': 'Success'})
     except Exception as e:

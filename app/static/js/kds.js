@@ -41,13 +41,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     socket.on('kds_orders_cancelled', (data) => {
-      const cancelledIds = data.order_ids || [];
-      pendingBatches = pendingBatches.filter(b =>
-        !b.order_ids.some(id => cancelledIds.includes(id))
-      );
-      renderPendingBoard();
-      updateCounts();
-      loadOrders();
+      const cancelledIds = new Set(data.order_ids || []);
+      let hasCancelled = false;
+
+      pendingBatches.forEach(batch => {
+        batch.items.forEach(item => {
+          const cancelCount = item.order_ids.filter(id => cancelledIds.has(id)).length;
+          if (cancelCount > 0) {
+            item.cancelled = true;
+            item.cancelledQty = cancelCount;
+            hasCancelled = true;
+          }
+        });
+        batch.hasCancelledItems = batch.items.some(i => i.cancelled);
+      });
+
+      if (hasCancelled) {
+        renderPendingBoard();
+        // 10초 후 서버에서 최신 상태로 재로드 (취소된 항목 제거)
+        setTimeout(() => { loadOrders(); }, 10000);
+      }
     });
 
     socket.on('staff_call_notification', (data) => {
@@ -151,10 +164,27 @@ function renderCard(batch, isDone = false) {
   const orderedDate = new Date(batch.ordered_at);
   const orderedTimeText = `${String(orderedDate.getHours()).padStart(2, '0')}:${String(orderedDate.getMinutes()).padStart(2, '0')}`;
 
+  const cancelBanner = (!isDone && batch.hasCancelledItems)
+    ? `<div class="card-cancel-banner"><i class="ph ph-x-circle"></i> 주문 취소 발생</div>`
+    : '';
+
   const itemsHtml = batch.items.map(item => {
     const optionsHtml = item.options.length > 0
       ? `<div class="card-item-options">${item.options.map(o => `<span class="card-option-tag">${escHtml(o)}</span>`).join('')}</div>`
       : '';
+
+    if (item.cancelled) {
+      return `
+        <div>
+          <div class="card-item cancelled-item">
+            <span class="card-item-name">${escHtml(item.menu_name)}</span>
+            <span class="card-item-qty">x${item.cancelledQty || item.quantity}</span>
+            <span class="item-cancel-badge">취소</span>
+          </div>
+          ${optionsHtml}
+        </div>`;
+    }
+
     const itemCompleteBtn = isDone
       ? ''
       : `<button class="btn-item-complete" onclick="event.stopPropagation(); completeBatch(${JSON.stringify(item.order_ids)})" title="이 메뉴만 완료"><i class="ph ph-check"></i></button>`;
@@ -173,8 +203,11 @@ function renderCard(batch, isDone = false) {
     ? `<div class="card-footer"><button class="btn-complete" disabled><i class="ph ph-check"></i> 완료됨</button></div>`
     : `<div class="card-footer"><button class="btn-complete" onclick="completeBatch(${JSON.stringify(batch.order_ids)})"><i class="ph ph-check"></i> 완료처리</button></div>`;
 
+  const cancelledClass = (!isDone && batch.hasCancelledItems) ? ' has-cancelled' : '';
+
   return `
-    <div class="order-card ${urgencyClass}" data-batch-key="${escHtml(batch.batch_key)}" data-ordered-at="${escHtml(batch.ordered_at)}">
+    <div class="order-card ${urgencyClass}${cancelledClass}" data-batch-key="${escHtml(batch.batch_key)}" data-ordered-at="${escHtml(batch.ordered_at)}">
+      ${cancelBanner}
       <div class="card-top">
         <span class="card-table-name">${escHtml(batch.table_name)}</span>
         <div class="card-time-info">
