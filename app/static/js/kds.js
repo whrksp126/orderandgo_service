@@ -8,6 +8,8 @@ const STAFF_CALL_IDS = window.KDS_STAFF_CALL_IDS || [];
 
 let pendingBatches = [];
 let doneBatches = [];
+let cancelledBatches = [];
+let cancelledOrderIds = new Set();
 let currentTab = 'pending';
 let elapsedInterval = null;
 
@@ -41,25 +43,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     socket.on('kds_orders_cancelled', (data) => {
-      const cancelledIds = new Set(data.order_ids || []);
-      let hasCancelled = false;
+      (data.order_ids || []).forEach(id => cancelledOrderIds.add(id));
 
+      let hasCancelled = false;
       pendingBatches.forEach(batch => {
         batch.items.forEach(item => {
-          const cancelCount = item.order_ids.filter(id => cancelledIds.has(id)).length;
-          if (cancelCount > 0) {
-            item.cancelled = true;
-            item.cancelledQty = cancelCount;
-            hasCancelled = true;
-          }
+          const cnt = item.order_ids.filter(id => cancelledOrderIds.has(id)).length;
+          if (cnt > 0) { item.cancelled = true; item.cancelledQty = cnt; hasCancelled = true; }
         });
         batch.hasCancelledItems = batch.items.some(i => i.cancelled);
       });
 
       if (hasCancelled) {
+        // 완전 취소 배치 → cancelledBatches로 이동
+        const fullyCancelled = pendingBatches.filter(b => b.items.every(i => i.cancelled));
+        pendingBatches = pendingBatches.filter(b => !b.items.every(i => i.cancelled));
+        fullyCancelled.forEach(b => {
+          b.isCancelled = true;
+          if (!cancelledBatches.find(cb => cb.batch_key === b.batch_key)) {
+            cancelledBatches.push(b);
+          }
+        });
         renderPendingBoard();
-        // 10초 후 서버에서 최신 상태로 재로드 (취소된 항목 제거)
-        setTimeout(() => { loadOrders(); }, 10000);
       }
     });
 
@@ -90,6 +95,20 @@ async function loadOrders() {
   try {
     const res = await fetch(`/kds/api/orders?station_id=${STATION_ID}`);
     pendingBatches = await res.json();
+
+    // 기존에 취소된 항목 상태 재적용
+    if (cancelledOrderIds.size > 0) {
+      pendingBatches.forEach(batch => {
+        batch.items.forEach(item => {
+          const cnt = item.order_ids.filter(id => cancelledOrderIds.has(id)).length;
+          if (cnt > 0) { item.cancelled = true; item.cancelledQty = cnt; }
+        });
+        batch.hasCancelledItems = batch.items.some(i => i.cancelled);
+      });
+      // 완전 취소 배치는 pending에서 제거 (cancelledBatches에 보관 중)
+      pendingBatches = pendingBatches.filter(b => !b.items.every(i => i.cancelled));
+    }
+
     renderPendingBoard();
     updateCounts();
   } catch (e) {
@@ -129,7 +148,7 @@ function renderPendingBoard() {
   const board = document.getElementById('kdsBoard');
   if (currentTab !== 'pending') return;
 
-  if (pendingBatches.length === 0) {
+  if (pendingBatches.length === 0 && cancelledBatches.length === 0) {
     board.innerHTML = `
       <div class="kds-empty-state">
         <i class="ph ph-check-circle"></i>
@@ -138,7 +157,9 @@ function renderPendingBoard() {
     return;
   }
 
-  board.innerHTML = `<div class="kds-grid">${pendingBatches.map(renderCard).join('')}</div>`;
+  const pendingHtml = pendingBatches.map(b => renderCard(b)).join('');
+  const cancelledHtml = cancelledBatches.map(b => renderCancelledCard(b)).join('');
+  board.innerHTML = `<div class="kds-grid">${pendingHtml}${cancelledHtml}</div>`;
 }
 
 function renderDoneBoard() {
@@ -163,10 +184,6 @@ function renderCard(batch, isDone = false) {
   const elapsedText = formatElapsed(elapsed);
   const orderedDate = new Date(batch.ordered_at);
   const orderedTimeText = `${String(orderedDate.getHours()).padStart(2, '0')}:${String(orderedDate.getMinutes()).padStart(2, '0')}`;
-
-  const cancelBanner = (!isDone && batch.hasCancelledItems)
-    ? `<div class="card-cancel-banner"><i class="ph ph-x-circle"></i> 주문 취소 발생</div>`
-    : '';
 
   const itemsHtml = batch.items.map(item => {
     const optionsHtml = item.options.length > 0
@@ -207,7 +224,6 @@ function renderCard(batch, isDone = false) {
 
   return `
     <div class="order-card ${urgencyClass}${cancelledClass}" data-batch-key="${escHtml(batch.batch_key)}" data-ordered-at="${escHtml(batch.ordered_at)}">
-      ${cancelBanner}
       <div class="card-top">
         <span class="card-table-name">${escHtml(batch.table_name)}</span>
         <div class="card-time-info">
@@ -243,6 +259,49 @@ async function completeBatch(orderIds) {
   } catch (e) {
     showToast('서버와의 통신에 실패했습니다.', 'error');
   }
+}
+
+// ── 취소 카드 렌더 및 닫기 ───────────────────────────────────────────────
+
+function renderCancelledCard(batch) {
+  const orderedDate = new Date(batch.ordered_at);
+  const orderedTimeText = `${String(orderedDate.getHours()).padStart(2, '0')}:${String(orderedDate.getMinutes()).padStart(2, '0')}`;
+
+  const itemsHtml = batch.items.map(item => {
+    const optionsHtml = item.options && item.options.length > 0
+      ? `<div class="card-item-options">${item.options.map(o => `<span class="card-option-tag">${escHtml(o)}</span>`).join('')}</div>`
+      : '';
+    return `
+      <div>
+        <div class="card-item cancelled-item">
+          <span class="card-item-name">${escHtml(item.menu_name)}</span>
+          <span class="card-item-qty">x${item.quantity}</span>
+          <span class="item-cancel-badge">취소</span>
+        </div>
+        ${optionsHtml}
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="order-card has-cancelled cancelled-card" data-batch-key="${escHtml(batch.batch_key)}">
+      <div class="card-top">
+        <span class="card-table-name">${escHtml(batch.table_name)}</span>
+        <div class="card-time-info">
+          <span class="card-ordered-time">${orderedTimeText}</span>
+        </div>
+      </div>
+      <div class="card-items">${itemsHtml}</div>
+      <div class="card-footer">
+        <button class="btn-complete btn-cancel-confirm" onclick="dismissCancelledBatch('${escHtml(batch.batch_key)}')">
+          <i class="ph ph-check"></i> 확인
+        </button>
+      </div>
+    </div>`;
+}
+
+function dismissCancelledBatch(batchKey) {
+  cancelledBatches = cancelledBatches.filter(b => b.batch_key !== batchKey);
+  renderPendingBoard();
 }
 
 // ── 카운트 뱃지 업데이트 ──────────────────────────────────────────────────

@@ -446,11 +446,16 @@ body:not(.set_table_position) #table-canvas {
   border-color: #d5d8de;
 }
 
-/* 주문 있음 */
-.table-card.view-card[data-status="1"],
-.table-card.view-card[data-status="2"] {
+/* 조리 중 */
+.table-card.view-card[data-status="1"] {
   background: #fff8ec;
   border-color: #f0a500;
+}
+
+/* 조리완료 */
+.table-card.view-card[data-status="2"] {
+  background: #e6f7f6;
+  border-color: #1FAA9C;
 }
 
 /* Group border */

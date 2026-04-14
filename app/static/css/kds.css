@@ -411,32 +411,23 @@ body.kds-page {
   margin-left: 4px;
 }
 
-/* ── 취소 알림 배너 ── */
-.card-cancel-banner {
-  background: #C53030;
-  color: #fff;
-  padding: 8px 16px;
-  font-size: 13px;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  animation: cancel-flash 0.7s ease-in-out 4;
-}
-
-.card-cancel-banner i {
-  font-size: 15px;
-  flex-shrink: 0;
-}
-
-@keyframes cancel-flash {
-  0%, 100% { background: #C53030; }
-  50%       { background: #E53E3E; }
-}
-
-/* 취소된 카드 테두리 */
+/* 취소된 카드 */
 .order-card.has-cancelled {
   border-color: #C53030;
+}
+
+.order-card.cancelled-card {
+  background: #1e1515;
+  opacity: 0.85;
+}
+
+.btn-cancel-confirm {
+  background: #555 !important;
+  color: #fff !important;
+}
+
+.btn-cancel-confirm:hover {
+  background: #666 !important;
 }
 
 /* 취소된 아이템 */
