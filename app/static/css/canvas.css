@@ -446,16 +446,11 @@ body:not(.set_table_position) #table-canvas {
   border-color: #d5d8de;
 }
 
-/* 조리 중 */
-.table-card.view-card[data-status="1"] {
-  background: #fff8ec;
-  border-color: #f0a500;
-}
-
-/* 조리완료 */
+/* 조리 중 / 조리완료: 빈 테이블과 동일한 흰색, 상태배지로만 구분 */
+.table-card.view-card[data-status="1"],
 .table-card.view-card[data-status="2"] {
-  background: #e6f7f6;
-  border-color: #1FAA9C;
+  background: #ffffff;
+  border-color: #d5d8de;
 }
 
 /* Group border */
