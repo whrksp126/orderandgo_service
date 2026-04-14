@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>OrderAndGo - 주방 주문 관리</title>
+  <link rel="icon" type="image/x-icon" href="/static/images/common/logo.png">
+
+  <link rel="stylesheet" href="/static/css/reset.css">
+  <link rel="stylesheet" href="/static/css/common.css">
+  <link rel="stylesheet" href="/static/css/animation.css">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <link rel="stylesheet" href="/static/css/store.css">
+  <style>
+    .kds-select body,
+    body.kds-select {
+      background: #F5F5F5;
+    }
+
+    body.kds-select main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 40px);
+      padding: 40px 20px;
+      background: #F5F5F5;
+    }
+
+    .kds-select-wrap {
+      width: 100%;
+      max-width: 800px;
+    }
+
+    .kds-select-title {
+      font-size: 22px;
+      font-weight: 900;
+      color: #111;
+      margin-bottom: 8px;
+    }
+
+    .kds-select-sub {
+      font-size: 14px;
+      color: #999;
+      margin-bottom: 32px;
+    }
+
+    .kds-station-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    .kds-station-card {
+      background: #fff;
+      border: 2px solid #E0E0E0;
+      border-radius: 16px;
+      padding: 28px 24px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .kds-station-card:hover {
+      border-color: #1FAA9C;
+      background: #F3FAFA;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(31, 170, 156, 0.15);
+    }
+
+    .kds-station-icon {
+      width: 48px;
+      height: 48px;
+      background: #F0FAFA;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #1FAA9C;
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+
+    .kds-station-name {
+      font-size: 18px;
+      font-weight: 900;
+      color: #111;
+    }
+
+    .kds-station-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .kds-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: #F1F3F5;
+      color: #666;
+    }
+
+    .kds-badge.show-all {
+      background: #1FAA9C;
+      color: #fff;
+    }
+
+    .kds-station-arrow {
+      margin-top: auto;
+      color: #CCC;
+      font-size: 20px;
+      align-self: flex-end;
+      transition: color 0.2s;
+    }
+
+    .kds-station-card:hover .kds-station-arrow {
+      color: #1FAA9C;
+    }
+
+    /* 빈 상태 */
+    .kds-empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: #CCC;
+    }
+
+    .kds-empty i {
+      font-size: 56px;
+      display: block;
+      margin-bottom: 16px;
+    }
+
+    .kds-empty p {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #BBB;
+    }
+
+    .kds-empty small {
+      font-size: 13px;
+      color: #CCC;
+    }
+
+    .btn-goto-mgmt {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 20px;
+      padding: 12px 24px;
+      background: #1FAA9C;
+      color: #fff;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 800;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+
+    .btn-goto-mgmt:hover {
+      background: #178a7e;
+    }
+  </style>
+</head>
+
+<body class="kds-select set_menu_product">
+  <div id="container">
+    <header>
+      <a class="back_btn" onclick="history.back();">
+        <i class="ph-bold ph-caret-left"></i>
+      </a>
+      <div class="center">
+        <a onclick="location.reload();">
+          <h1>
+            <img src="/static/images/common/logo-order&go-white.png" alt="">
+          </h1>
+        </a>
+        <div class="header_info">
+          <span class="cur_time"></span>
+          <span class="store_state" data-state="open">영업중</span>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <div class="kds-select-wrap">
+        <p class="kds-select-title">주방 주문 관리</p>
+        <p class="kds-select-sub">접속할 스테이션을 선택하세요</p>
+
+        {% if stations %}
+        <div class="kds-station-grid">
+          {% for s in stations %}
+          <div class="kds-station-card" onclick="location.href='/kds/station/{{ s.id }}'">
+            <div class="kds-station-icon">
+              <i class="ph ph-cooking-pot"></i>
+            </div>
+            <div class="kds-station-name">{{ s.name }}</div>
+            <div class="kds-station-meta">
+              {% if s.show_all %}
+              <span class="kds-badge show-all">전체내역</span>
+              {% else %}
+              <span class="kds-badge">메뉴 {{ s.menu_count }}개</span>
+              {% if s.staff_count > 0 %}
+              <span class="kds-badge">직원호출 {{ s.staff_count }}개</span>
+              {% endif %}
+              {% endif %}
+            </div>
+            <i class="ph-bold ph-arrow-right kds-station-arrow"></i>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="kds-empty">
+          <i class="ph ph-cooking-pot"></i>
+          <p>등록된 스테이션이 없습니다</p>
+          <small>매장 관리에서 KDS 스테이션을 먼저 설정해주세요</small><br>
+          <a href="/store/kds_station_mgmt" class="btn-goto-mgmt">
+            <i class="ph ph-gear"></i>
+            스테이션 설정하기
+          </a>
+        </div>
+        {% endif %}
+      </div>
+    </main>
+  </div>
+
+  <script src="/static/js/common.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      updateTime();
+      setInterval(updateTime, 1000);
+    });
+
+    function updateTime() {
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      document.querySelector('.cur_time').textContent =
+        `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    }
+  </script>
+</body>
+
+</html>

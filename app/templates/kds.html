@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>KDS — {{ station.name }}</title>
+  <link rel="icon" type="image/x-icon" href="/static/images/common/logo.png">
+
+  <link rel="stylesheet" href="/static/css/reset.css">
+  <link rel="stylesheet" href="/static/css/common.css">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <link rel="stylesheet" href="/static/css/kds.css">
+</head>
+
+<body class="kds-page">
+
+  <!-- ── KDS 헤더 ── -->
+  <div class="kds-header">
+    <div class="kds-header-left">
+      <a href="/kds/" class="kds-back-btn">
+        <i class="ph-bold ph-caret-left"></i>
+      </a>
+      <span class="kds-station-name">{{ station.name }}</span>
+    </div>
+
+    <div class="kds-header-center">
+      <span class="kds-clock" id="kdsClock"></span>
+      <div class="kds-count-badges">
+        <span class="kds-count-badge pending" id="pendingCount">대기 0건</span>
+        <span class="kds-count-badge done" id="doneCount">완료 0건</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 탭 ── -->
+  <div class="kds-tabs">
+    <div class="kds-tab active" data-tab="pending" onclick="switchTab('pending')">대기중</div>
+    <div class="kds-tab" data-tab="done" onclick="switchTab('done')">완료</div>
+  </div>
+
+  <!-- ── 주문 보드 ── -->
+  <div class="kds-board" id="kdsBoard">
+    <div class="kds-empty-state">
+      <i class="ph ph-spinner"></i>
+      <p>불러오는 중...</p>
+    </div>
+  </div>
+
+  <!-- ── 직원 호출 팝업 ── -->
+  <div class="staff-call-popup" id="staffCallPopup">
+    <div class="staff-call-popup-inner">
+      <i class="ph-bold ph-bell-ringing"></i>
+      <span id="popupTable"></span>
+      <span id="popupItem"></span>
+      <button class="popup-close" onclick="closeStaffCallPopup()">✕</button>
+    </div>
+  </div>
+
+  <!-- SocketIO -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+
+  <!-- 전역 변수 주입 -->
+  <script>
+    window.KDS_STATION_ID = {{ station.id | tojson }};
+    window.KDS_STORE_ID = {{ current_user.id | tojson }};
+    window.KDS_STAFF_CALL_IDS = {{ staff_call_ids | tojson }};
+  </script>
+
+  <!-- 공통 스크립트 (socket 전역 초기화 포함) -->
+  <script src="/static/js/common.js"></script>
+
+  <!-- KDS 전용 스크립트 -->
+  <script src="/static/js/kds.js"></script>
+</body>
+
+</html>

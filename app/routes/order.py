@@ -27,6 +27,11 @@ def menu_order():
             }, room='pos_group')
         # 테이블 오더(손님)에게 알림 전송
         socketio.emit('new_order_notification', {'message': '새로운 주문이 등록되었습니다.'}, room=f'table_{store_id}_{table_id}')
+        # KDS에 새 주문 알림
+        socketio.emit('kds_new_order', {
+            'table_id': table_id,
+            'store_id': store_id,
+        }, room=f'store_{store_id}_kds')
     except Exception as e:
         print(f"Error making order: {e}")
         traceback.print_exc()

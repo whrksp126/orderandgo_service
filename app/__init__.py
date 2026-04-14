@@ -45,7 +45,8 @@ def create_app():
     from app.routes.store import store_bp
     from app.routes.payment import payment_bp
     from app.routes.table_order import table_order_bp
-    
+    from app.routes.kds import kds_bp
+
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(pos_bp)
@@ -54,5 +55,6 @@ def create_app():
     app.register_blueprint(store_bp)
     app.register_blueprint(payment_bp)
     app.register_blueprint(table_order_bp)
+    app.register_blueprint(kds_bp, url_prefix='/kds')
     
     return app
