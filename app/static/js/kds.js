@@ -10,6 +10,7 @@ let pendingBatches = [];
 let doneBatches = [];
 let cancelledBatches = [];
 let cancelledOrderIds = new Set();
+let doneItemOrderIds = new Set();  // 개별 완료 처리된 item의 order_ids 키 (시각적 상태)
 let currentTab = 'pending';
 let elapsedInterval = null;
 
@@ -19,8 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
   updateClock();
   setInterval(updateClock, 1000);
 
-  // 경과 시간 업데이트 (5초마다)
-  elapsedInterval = setInterval(updateElapsed, 5000);
+  // 경과 시간 업데이트 (1초마다)
+  elapsedInterval = setInterval(updateElapsed, 1000);
 
   loadOrders();
   loadCompleted();
@@ -95,6 +96,10 @@ async function loadOrders() {
   try {
     const res = await fetch(`/kds/api/orders?station_id=${STATION_ID}`);
     pendingBatches = await res.json();
+
+    // 타이머 기준 시각 기록 (서버 elapsed_seconds + 이후 경과시간으로 계산)
+    const loadedAt = Date.now();
+    pendingBatches.forEach(b => { b._loadedAt = loadedAt; });
 
     // 기존에 취소된 항목 상태 재적용
     if (cancelledOrderIds.size > 0) {
@@ -179,9 +184,13 @@ function renderDoneBoard() {
 }
 
 function renderCard(batch, isDone = false) {
-  const elapsed = calcElapsed(batch.ordered_at);
+  // 타이머: 서버 elapsed_seconds + 로드 후 경과시간 (타임존 무관)
+  const serverElapsed = batch.elapsed_seconds || 0;
+  const loadedAt = batch._loadedAt || Date.now();
+  const elapsed = isDone ? serverElapsed : serverElapsed + Math.floor((Date.now() - loadedAt) / 1000);
   const urgencyClass = isDone ? 'done-card' : getUrgencyClass(elapsed);
   const elapsedText = formatElapsed(elapsed);
+
   const orderedDate = new Date(batch.ordered_at);
   const orderedTimeText = `${String(orderedDate.getHours()).padStart(2, '0')}:${String(orderedDate.getMinutes()).padStart(2, '0')}`;
 
@@ -202,15 +211,31 @@ function renderCard(batch, isDone = false) {
         </div>`;
     }
 
-    const itemCompleteBtn = isDone
-      ? ''
-      : `<button class="btn-item-complete" onclick="event.stopPropagation(); completeBatch(${JSON.stringify(item.order_ids)})" title="이 메뉴만 완료"><i class="ph ph-check"></i></button>`;
+    if (isDone) {
+      return `
+        <div>
+          <div class="card-item">
+            <span class="card-item-name">${escHtml(item.menu_name)}</span>
+            <span class="card-item-qty">x${item.quantity}</span>
+          </div>
+          ${optionsHtml}
+        </div>`;
+    }
+
+    // 개별 완료 여부 확인
+    const itemKey = item.order_ids.join(',');
+    const isItemDone = doneItemOrderIds.has(itemKey);
+
     return `
       <div>
-        <div class="card-item">
+        <div class="card-item${isItemDone ? ' item-done' : ''}">
           <span class="card-item-name">${escHtml(item.menu_name)}</span>
           <span class="card-item-qty">x${item.quantity}</span>
-          ${itemCompleteBtn}
+          <button class="btn-item-complete${isItemDone ? ' checked' : ''}"
+            onclick="event.stopPropagation(); toggleItemDone(${JSON.stringify(itemKey)})"
+            title="${isItemDone ? '완료 취소' : '이 메뉴 완료'}">
+            <i class="ph ph-check"></i>
+          </button>
         </div>
         ${optionsHtml}
       </div>`;
@@ -223,17 +248,30 @@ function renderCard(batch, isDone = false) {
   const cancelledClass = (!isDone && batch.hasCancelledItems) ? ' has-cancelled' : '';
 
   return `
-    <div class="order-card ${urgencyClass}${cancelledClass}" data-batch-key="${escHtml(batch.batch_key)}" data-ordered-at="${escHtml(batch.ordered_at)}">
+    <div class="order-card ${urgencyClass}${cancelledClass}" data-batch-key="${escHtml(batch.batch_key)}">
       <div class="card-top">
         <span class="card-table-name">${escHtml(batch.table_name)}</span>
         <div class="card-time-info">
           <span class="card-ordered-time">${orderedTimeText}</span>
-          <span class="card-elapsed" data-ordered-at="${escHtml(batch.ordered_at)}">⏱ ${elapsedText}</span>
+          <span class="card-elapsed"
+            data-server-elapsed="${serverElapsed}"
+            data-loaded-at="${loadedAt}">⏱ ${elapsedText}</span>
         </div>
       </div>
       <div class="card-items">${itemsHtml}</div>
       ${footerHtml}
     </div>`;
+}
+
+// ── 개별 메뉴 완료 토글 ───────────────────────────────────────────────────
+
+function toggleItemDone(itemKey) {
+  if (doneItemOrderIds.has(itemKey)) {
+    doneItemOrderIds.delete(itemKey);
+  } else {
+    doneItemOrderIds.add(itemKey);
+  }
+  renderPendingBoard();
 }
 
 // ── 완료 처리 ─────────────────────────────────────────────────────────────
@@ -247,9 +285,8 @@ async function completeBatch(orderIds) {
     });
     const data = await res.json();
     if (data.code === 200) {
-      // 즉시 UI 반영
+      // 즉시 UI에서 해당 배치 제거
       pendingBatches = pendingBatches.filter(b => !orderIds.some(id => b.order_ids.includes(id)));
-      loadOrders();
       renderPendingBoard();
       updateCounts();
       loadCompleted();
@@ -313,15 +350,18 @@ function updateCounts() {
   if (doneEl) doneEl.textContent = `완료 ${doneBatches.length}건`;
 }
 
-// ── 경과 시간 실시간 갱신 ─────────────────────────────────────────────────
+// ── 경과 시간 실시간 갱신 (1초마다) ──────────────────────────────────────
 
 function updateElapsed() {
-  document.querySelectorAll('.card-elapsed[data-ordered-at]').forEach(el => {
-    const elapsed = calcElapsed(el.dataset.orderedAt);
+  const now = Date.now();
+  document.querySelectorAll('.card-elapsed[data-server-elapsed]').forEach(el => {
+    const serverElapsed = parseInt(el.dataset.serverElapsed || '0');
+    const loadedAt = parseInt(el.dataset.loadedAt || now);
+    const elapsed = serverElapsed + Math.floor((now - loadedAt) / 1000);
     el.textContent = `⏱ ${formatElapsed(elapsed)}`;
 
     const card = el.closest('.order-card');
-    if (card && !card.classList.contains('done-card')) {
+    if (card && !card.classList.contains('done-card') && !card.classList.contains('cancelled-card')) {
       card.classList.remove('warning', 'urgent');
       const cls = getUrgencyClass(elapsed);
       if (cls) card.classList.add(cls);
@@ -329,13 +369,8 @@ function updateElapsed() {
   });
 }
 
-function calcElapsed(orderedAt) {
-  const now = new Date();
-  const ordered = new Date(orderedAt);
-  return Math.floor((now - ordered) / 1000);
-}
-
 function formatElapsed(seconds) {
+  if (seconds < 0) seconds = 0;
   if (seconds < 60) return `${seconds}초`;
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;

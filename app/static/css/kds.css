@@ -333,6 +333,20 @@ body.kds-page {
   color: #fff;
 }
 
+/* 개별 완료된 버튼 상태 */
+.btn-item-complete.checked {
+  background: #1FAA9C;
+  border-color: #1FAA9C;
+  color: #fff;
+}
+
+/* 개별 완료된 아이템 행 */
+.card-item.item-done .card-item-name,
+.card-item.item-done .card-item-qty {
+  text-decoration: line-through;
+  opacity: 0.45;
+}
+
 /* ── 빈 상태 ── */
 .kds-empty-state {
   display: flex;
