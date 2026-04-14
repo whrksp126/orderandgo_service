@@ -667,10 +667,9 @@ def get_table_page():
             if table.id in dict(orders_by_table):
                 # print("있음")
                 orders = orders_by_table[table.id]
-                statusId = 1
                 orderList = []
                 for order in orders:
-                    
+
                     optionList = []
                     options = json.loads(order.menu_options) if order.menu_options else []
                     for option_data in options:
@@ -691,8 +690,9 @@ def get_table_page():
                         "count" : 1,
                         "optionList" : optionList
                     })
-                    if order.order_status_id == 2:
-                        statusId = 2
+                # 미완료 주문이 하나라도 있으면 '조리 중'(1), 모두 완료면 '조리완료'(2)
+                pending_count = sum(1 for o in orders if o.order_status_id == 1)
+                statusId = 1 if pending_count > 0 else 2
                 return {
                     "tableId": table.id,
                     "table": table.name,

@@ -192,7 +192,7 @@ def _group_orders(orders, limit_batches=None):
             'batch_key': batch_key,
             'table_id': first.table_id,
             'table_name': table_name,
-            'ordered_at': first.ordered_at.strftime('%Y-%m-%dT%H:%M:%S'),
+            'ordered_at': first.ordered_at.strftime('%Y-%m-%dT%H:%M:%SZ'),
             'elapsed_seconds': elapsed,
             'items': items,
             'status': 'done' if all_done else 'pending',

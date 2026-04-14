@@ -37,7 +37,7 @@
         <div class="header_info">
           <span class="cur_time">2023-05-01(월) 14:00</span>
           <span class="store_state" data-state="open">영업중</span>
-          <button class="btn_alarm" onclick="toggleNotificationSidebar()">
+          <button class="btn_alarm" onclick="toggleNotificationSidebar()" style="display:none">
             <i class="ph ph-bell"></i>
           </button>
         </div>
@@ -191,9 +191,9 @@
     </main>
   </div>
 
-  <!-- 알림 내역 사이드바 -->
-  <div id="notificationOverlay" class="notification-overlay" onclick="toggleNotificationSidebar()"></div>
-  <aside id="notificationSidebar" class="notification-sidebar">
+  <!-- 알림 내역 사이드바 (임시 숨김) -->
+  <div id="notificationOverlay" class="notification-overlay" onclick="toggleNotificationSidebar()" style="display:none"></div>
+  <aside id="notificationSidebar" class="notification-sidebar" style="display:none">
     <div class="sidebar-header">
       <h2>알림 <span class="dot"></span></h2>
       <button class="close-btn" onclick="toggleNotificationSidebar()">

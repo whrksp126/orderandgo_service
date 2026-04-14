@@ -40,6 +40,16 @@ document.addEventListener('DOMContentLoaded', () => {
       loadCompleted();
     });
 
+    socket.on('kds_orders_cancelled', (data) => {
+      const cancelledIds = data.order_ids || [];
+      pendingBatches = pendingBatches.filter(b =>
+        !b.order_ids.some(id => cancelledIds.includes(id))
+      );
+      renderPendingBoard();
+      updateCounts();
+      loadOrders();
+    });
+
     socket.on('staff_call_notification', (data) => {
       // 이 스테이션과 연동된 항목만 알림
       const itemId = data.staff_call_item_id;
@@ -138,7 +148,8 @@ function renderCard(batch, isDone = false) {
   const elapsed = calcElapsed(batch.ordered_at);
   const urgencyClass = isDone ? 'done-card' : getUrgencyClass(elapsed);
   const elapsedText = formatElapsed(elapsed);
-  const orderedTimeText = batch.ordered_at.substring(11, 16); // HH:MM
+  const orderedDate = new Date(batch.ordered_at);
+  const orderedTimeText = `${String(orderedDate.getHours()).padStart(2, '0')}:${String(orderedDate.getMinutes()).padStart(2, '0')}`;
 
   const itemsHtml = batch.items.map(item => {
     const optionsHtml = item.options.length > 0
@@ -228,7 +239,7 @@ function updateElapsed() {
 
 function calcElapsed(orderedAt) {
   const now = new Date();
-  const ordered = new Date(orderedAt.replace('T', ' '));
+  const ordered = new Date(orderedAt);
   return Math.floor((now - ordered) / 1000);
 }
 

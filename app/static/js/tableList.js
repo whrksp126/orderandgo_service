@@ -5,6 +5,14 @@ function onOrderUpdate(data) {
   loadTableData();
 }
 
+// KDS 완료/취소 시 테이블 상태 갱신
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof socket !== 'undefined') {
+    socket.on('kds_order_completed', () => { loadTableData(); });
+    socket.on('kds_orders_cancelled', () => { loadTableData(); });
+  }
+});
+
 // =============================================
 //  Canvas constants (view mode) — set_table과 동일한 그리드
 // =============================================
@@ -160,7 +168,7 @@ const createViewCard = (table) => {
   card.dataset.status = table.statusId;
 
   const stateLabel = table.statusId === 1 ? '조리 중'
-    : table.statusId === 2 ? '조리대기' : '';
+    : table.statusId === 2 ? '조리완료' : '';
 
   if (table.groupId && table.groupId !== 0) {
     card.style.border = `2px solid ${table.groupColor}`;

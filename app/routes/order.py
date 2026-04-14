@@ -47,18 +47,16 @@ def menu_order():
 
 # 테이블 주문 취소
 @order_bp.route('/delete_order', methods=['POST'])
+@login_required
 def api_delete_order():
-    order_id_list = request.get_json(force=True)
     order_id_list = request.get_json()['order_id_list']
     print("order###", order_id_list)
     res = delete_order(order_id_list)
-    if res:  
-        response = jsonify({
-        'message': 'Success',
-        'code' : 200
-        })
-        response.status_code = 200
-        return response
+    if res:
+        from app import socketio
+        store_id = current_user.id
+        socketio.emit('kds_orders_cancelled', {'order_ids': order_id_list}, room=f'store_{store_id}_kds')
+        return jsonify({'message': 'Success', 'code': 200}), 200
 
 
 # 결제
