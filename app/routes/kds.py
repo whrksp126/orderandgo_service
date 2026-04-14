@@ -7,7 +7,7 @@ from flask_socketio import join_room
 
 from app.models import (
     db, KdsStation, KdsStationMenu, KdsStationStaffCall,
-    Order, Table, Menu, MenuOption
+    Order, Table, TableOrderList, Menu, MenuOption
 )
 from app.models.order import get_orders_by_store_id
 
@@ -108,8 +108,8 @@ def api_complete_batch():
     try:
         orders = Order.query.filter(Order.id.in_(order_ids)).all()
         for o in orders:
-            table = Table.query.get(o.table_id)
-            if not table or table.store_id != store_id:
+            order_list_item = TableOrderList.query.get(o.order_list_id)
+            if not order_list_item or order_list_item.store_id != store_id:
                 return jsonify({'error': 'Unauthorized'}), 403
             o.order_status_id = 2
         db.session.commit()
@@ -159,7 +159,7 @@ def _group_orders(orders, limit_batches=None):
         table_name = table.name if table else f"테이블 {first.table_id}"
 
         # (메뉴명+옵션) 조합별 수량 합산
-        item_map = defaultdict(lambda: {'menu_name': '', 'options': [], 'quantity': 0})
+        item_map = defaultdict(lambda: {'menu_name': '', 'options': [], 'quantity': 0, 'order_ids': []})
         for o in batch_orders:
             menu = Menu.query.get(o.menu_id)
             menu_name = menu.name if menu else f"메뉴 {o.menu_id}"
@@ -178,9 +178,10 @@ def _group_orders(orders, limit_batches=None):
             item_map[item_key]['menu_name'] = menu_name
             item_map[item_key]['options'] = option_names
             item_map[item_key]['quantity'] += 1
+            item_map[item_key]['order_ids'].append(o.id)
 
         items = [
-            {'menu_name': v['menu_name'], 'quantity': v['quantity'], 'options': v['options']}
+            {'menu_name': v['menu_name'], 'quantity': v['quantity'], 'options': v['options'], 'order_ids': v['order_ids']}
             for v in item_map.values()
         ]
 

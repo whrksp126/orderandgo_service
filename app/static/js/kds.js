@@ -25,7 +25,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // SocketIO
   if (typeof socket !== 'undefined') {
-    socket.emit('join_kds', { store_id: STORE_ID });
+    // 연결/재연결 시 항상 KDS 룸에 참여
+    socket.on('connect', () => {
+      socket.emit('join_kds', { store_id: STORE_ID });
+    });
 
     socket.on('kds_new_order', () => {
       loadOrders();
@@ -141,11 +144,15 @@ function renderCard(batch, isDone = false) {
     const optionsHtml = item.options.length > 0
       ? `<div class="card-item-options">${item.options.map(o => `<span class="card-option-tag">${escHtml(o)}</span>`).join('')}</div>`
       : '';
+    const itemCompleteBtn = isDone
+      ? ''
+      : `<button class="btn-item-complete" onclick="event.stopPropagation(); completeBatch(${JSON.stringify(item.order_ids)})" title="이 메뉴만 완료"><i class="ph ph-check"></i></button>`;
     return `
       <div>
         <div class="card-item">
           <span class="card-item-name">${escHtml(item.menu_name)}</span>
           <span class="card-item-qty">x${item.quantity}</span>
+          ${itemCompleteBtn}
         </div>
         ${optionsHtml}
       </div>`;
@@ -182,6 +189,7 @@ async function completeBatch(orderIds) {
     if (data.code === 200) {
       // 즉시 UI 반영
       pendingBatches = pendingBatches.filter(b => !orderIds.some(id => b.order_ids.includes(id)));
+      loadOrders();
       renderPendingBoard();
       updateCounts();
       loadCompleted();

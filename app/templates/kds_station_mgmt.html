@@ -349,14 +349,6 @@
       margin-bottom: 16px;
     }
 
-    .category-group-title {
-      font-weight: 800;
-      font-size: 13px;
-      color: #888;
-      margin-bottom: 8px;
-      padding: 4px 0;
-    }
-
     .item-check-row {
       display: flex;
       align-items: center;
@@ -389,6 +381,56 @@
     .item-check-price {
       font-size: 13px;
       color: #999;
+    }
+
+    /* 일관처리 행 */
+    .bulk-check-row {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      background: #F3FAFA;
+      border: 1px solid #D0EFED;
+      border-radius: 8px;
+    }
+
+    .bulk-check-row label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+      color: #1FAA9C;
+    }
+
+    .bulk-check-row input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      accent-color: #1FAA9C;
+      cursor: pointer;
+    }
+
+    .category-group-title {
+      font-weight: 800;
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 8px;
+      padding: 4px 0;
+    }
+
+    .category-group-title label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .category-group-title input[type="checkbox"] {
+      width: 14px;
+      height: 14px;
+      accent-color: #1FAA9C;
+      cursor: pointer;
     }
 
     .show-all-notice {
@@ -671,6 +713,17 @@
         return;
       }
 
+      // 전체 선택 행
+      const bulkRow = document.createElement('div');
+      bulkRow.className = 'bulk-check-row';
+      bulkRow.innerHTML = `
+        <label>
+          <input type="checkbox" id="checkAllMenus" onchange="toggleAllMenus(this.checked)">
+          <span>전체 선택</span>
+        </label>
+      `;
+      container.appendChild(bulkRow);
+
       // 메인 카테고리별 그룹화
       const grouped = {};
       allMenus.forEach(menu => {
@@ -682,14 +735,23 @@
       Object.keys(grouped).forEach(catName => {
         const group = document.createElement('div');
         group.className = 'category-group';
-        group.innerHTML = `<div class="category-group-title">${catName}</div>`;
+        const safeCatName = catName.replace(/'/g, "\\'");
+        group.innerHTML = `
+          <div class="category-group-title">
+            <label>
+              <input type="checkbox" class="group-check" data-group="${safeCatName}" onchange="toggleGroupMenus('${safeCatName}', this.checked)">
+              ${catName}
+            </label>
+          </div>
+        `;
 
         grouped[catName].forEach(menu => {
           const checked = selectedIds.includes(menu.id);
           const row = document.createElement('label');
           row.className = 'item-check-row';
+          row.dataset.group = catName;
           row.innerHTML = `
-            <input type="checkbox" class="menu-check" value="${menu.id}" ${checked ? 'checked' : ''}>
+            <input type="checkbox" class="menu-check" value="${menu.id}" data-group="${safeCatName}" ${checked ? 'checked' : ''} onchange="syncGroupCheck('${safeCatName}')">
             <span class="item-check-label">${menu.name}</span>
             <span class="item-check-price">${menu.price ? menu.price.toLocaleString() + '원' : ''}</span>
           `;
@@ -698,6 +760,33 @@
 
         container.appendChild(group);
       });
+
+      syncAllCheck();
+    }
+
+    function toggleAllMenus(checked) {
+      document.querySelectorAll('.menu-check').forEach(cb => cb.checked = checked);
+      document.querySelectorAll('.group-check').forEach(cb => cb.checked = checked);
+    }
+
+    function toggleGroupMenus(groupName, checked) {
+      document.querySelectorAll(`.menu-check[data-group="${groupName}"]`).forEach(cb => cb.checked = checked);
+      syncAllCheck();
+    }
+
+    function syncGroupCheck(groupName) {
+      const groupCbs = document.querySelectorAll(`.menu-check[data-group="${groupName}"]`);
+      const allChecked = Array.from(groupCbs).every(cb => cb.checked);
+      const groupCheckbox = document.querySelector(`.group-check[data-group="${groupName}"]`);
+      if (groupCheckbox) groupCheckbox.checked = allChecked;
+      syncAllCheck();
+    }
+
+    function syncAllCheck() {
+      const all = document.querySelectorAll('.menu-check');
+      const allChecked = all.length > 0 && Array.from(all).every(cb => cb.checked);
+      const allCheckbox = document.getElementById('checkAllMenus');
+      if (allCheckbox) allCheckbox.checked = allChecked;
     }
 
     function renderStaffCallChecklist(selectedIds) {

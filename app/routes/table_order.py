@@ -82,6 +82,8 @@ def new_order_pos_update(data):
 
   # 포스기에 주문 업데이트 요청
   emit('update_pos', data, room='pos_group')
+  # KDS에 새 주문 알림
+  socketio.emit('kds_new_order', {'table_id': table_id, 'store_id': store_id}, room=f'store_{store_id}_kds')
 
 @table_order_bp.route('/get_info', methods=['GET'])
 def get_info():
