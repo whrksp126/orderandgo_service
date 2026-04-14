@@ -232,7 +232,7 @@ function renderCard(batch, isDone = false) {
           <span class="card-item-name">${escHtml(item.menu_name)}</span>
           <span class="card-item-qty">x${item.quantity}</span>
           <button class="btn-item-complete${isItemDone ? ' checked' : ''}"
-            onclick="event.stopPropagation(); toggleItemDone(${JSON.stringify(itemKey)})"
+            onclick="event.stopPropagation(); toggleItemDone('${itemKey}')"
             title="${isItemDone ? '완료 취소' : '이 메뉴 완료'}">
             <i class="ph ph-check"></i>
           </button>
