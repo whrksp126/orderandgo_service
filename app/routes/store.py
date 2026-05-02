@@ -1,6 +1,7 @@
 import json
 import os
 from datetime import datetime
+from app.utils.storage import upload_image, delete_image, delete_prefix, menu_image_key, staff_call_image_key, image_url_for_key, url_to_key
 from flask import render_template, request, jsonify
 from flask_login import login_required, current_user
 from sqlalchemy import or_, func
@@ -363,17 +364,12 @@ def set_menu():
         print("[DEBUG] json_data['image']:", json_data.get('image', 'KEY_NOT_FOUND'))
         print("[DEBUG] request.files keys:", list(request.files.keys()))
         for index, menu_name in enumerate(json_data.get('image', [])):
-            UPLOAD_FOLDER = 'app/static/images/store_'
-            upload_path = f'{UPLOAD_FOLDER}{store_id}/menu_{current_menu_id}' # app/static/images/store_16/menu_30
             file = request.files.get(menu_name)
             menu_num = menu_name[9:]
             file_name = f'{name}_{menu_num}.png'
-            db_image_path = '/' + upload_path.replace('app/', '') + '/' + file_name
-            # 서버에 스토어 아이디에 해당하는 폴더 유무 확인 후 생성
-            if not os.path.exists(upload_path):
-                os.makedirs(upload_path)
-            file.save(os.path.join(upload_path, file_name))
-            images.append(db_image_path)
+            key = menu_image_key(store_id, current_menu_id, file_name)
+            image_url = upload_image(file, key)
+            images.append(image_url)
         images_as_string = ', '.join(images)
         # 메뉴 create
         menu = create_menu(name, price, images_as_string, main_description, is_soldout, store_id, menu_category_id, page, position)
@@ -404,11 +400,6 @@ def set_menu():
         
         # # 이미지 저장
         images = []
-        UPLOAD_FOLDER = 'app/static/images/store_'
-        upload_path = f'{UPLOAD_FOLDER}{store_id}/menu_{menu_id}'
-        # 서버에 스토어 아이디에 해당하는 폴더 유무 확인 후 생성
-        if not os.path.exists(upload_path):
-            os.makedirs(upload_path)   
         menu = select_menu(menu_id)[0]
         db_image_list = menu.image.split(', ') if getattr(menu, 'image', None) else []
         # 이미지 저장하기
@@ -416,19 +407,18 @@ def set_menu():
             file = request.files.get(menu_name)
             menu_num = menu_name[9:]
             file_name = f'{name}_{menu_num}.png'
-            db_image_path = '/' + upload_path.replace('app/', '') + '/' + file_name
-            db_image_list = [item for item in db_image_list if item != db_image_path]
+            key = menu_image_key(store_id, menu_id, file_name)
+            image_url = image_url_for_key(key)
+            db_image_list = [item for item in db_image_list if item != image_url]
             if file is None: # 변경된 파일이 없음
-                images.append(db_image_path)
-            else: # 변경된 파일이 있음
-                image_path = os.path.join(upload_path, file_name)
-                if os.path.exists(image_path): # 파일 존재 여부 확인 및 삭제
-                    os.remove(image_path)
-                file.save(os.path.join(upload_path, file_name))
-                images.append(db_image_path)
-        for db_image in db_image_list: # 삭제된 이미지 삭제
-            if os.path.exists('app' + db_image): 
-                os.remove('app' + db_image)
+                images.append(image_url)
+            else: # 변경된 파일이 있음 → 덮어쓰기 업로드
+                image_url = upload_image(file, key)
+                images.append(image_url)
+        for old_url in db_image_list: # 삭제된 이미지 제거
+            old_key = url_to_key(old_url)
+            if old_key:
+                delete_image(old_key)
         # 'image' 키의 값을 리스트에서 문자열로 변환
         images_as_string = ', '.join(images)
 
@@ -457,17 +447,13 @@ def set_menu():
             # 삭제 진행
             is_delete_menu = delete_menu(menu_id)
 
-            import shutil
-            # 서버에 스토어 아이디에 해당하는 폴더 유무 확인 후 있으면 폴더 삭제
+            # ObjectStore에서 해당 메뉴 이미지 폴더 삭제
             store_id = current_user.id
-            UPLOAD_FOLDER = 'app/static/images/store_'
-            upload_path = f'{UPLOAD_FOLDER}{store_id}/menu_{menu_id}'
-            if os.path.exists(upload_path):
-                try:
-                    shutil.rmtree(upload_path)
-                    print('폴더 삭제 완료')
-                except Exception as e:
-                    print(f'폴더 삭제 오류: {str(e)}')
+            try:
+                delete_prefix(f'stores/{store_id}/menus/{menu_id}/')
+                print('ObjectStore 이미지 삭제 완료')
+            except Exception as e:
+                print(f'ObjectStore 이미지 삭제 오류: {str(e)}')
             if is_delete_menu == True:
                 return jsonify({'message': '메뉴가 성공적으로 삭제되었습니다.', 'code': 200}), 200
             else:
@@ -883,16 +869,9 @@ def api_set_staff_call_item():
         # 이미지 파일 처리
         file = request.files.get('image_file')
         if file:
-            UPLOAD_FOLDER = 'app/static/images/staff_call'
-            store_folder = f'{UPLOAD_FOLDER}/store_{store_id}'
-            if not os.path.exists(store_folder):
-                os.makedirs(store_folder)
-            
-            # 임시 아이디 또는 실제 아이디 기반 파일명
             filename = f"item_{item_id or 'new'}_{int(datetime.now().timestamp())}.png"
-            file_path = os.path.join(store_folder, filename)
-            file.save(file_path)
-            image_url = f"/static/images/staff_call/store_{store_id}/{filename}"
+            key = staff_call_image_key(store_id, filename)
+            image_url = upload_image(file, key)
 
         if request.method == 'POST':
             item = create_staff_call_item(store_id, name, image_url, use_quantity, position)
