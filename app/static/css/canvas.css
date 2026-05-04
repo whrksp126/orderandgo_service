@@ -12,8 +12,8 @@
   padding: 0 !important;
 }
 
-/* pos/tableList article 레이아웃 오버라이드 */
-body:not(.set_table_position) main section article {
+/* pos/tableList article 레이아웃 오버라이드 (SPA: .order 없을 때만) */
+#container:not(.order) main section article {
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
@@ -22,7 +22,7 @@ body:not(.set_table_position) main section article {
 }
 
 /* pos/tableList 캔버스 배경 — 흰색으로 */
-body:not(.set_table_position) .canvas-scroll-wrap {
+#container:not(.order) .canvas-scroll-wrap {
   background-color: #f8f9fa;
   padding: 12px;
 }

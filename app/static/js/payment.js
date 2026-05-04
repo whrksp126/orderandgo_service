@@ -1239,7 +1239,7 @@ window.clickCardPayment = async function(event) {
   }
 };
 
-window.clickPayment = async function(event) {
+var _clickPaymentOnPaymentView = async function(event) {
   if (!payment_history?.curPaymentPrice) {
     alert('결제할 금액이 없습니다.');
     return;
