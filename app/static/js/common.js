@@ -3,7 +3,7 @@ function getLastPath() {
   const paths = window.location.pathname.split('/');
   return paths[paths.length - 1];
 }
-const lastPath = getLastPath();
+let lastPath = getLastPath();
 
 // url 파리미터 조회
 function getTableIdFromCurrentUrl(key) {

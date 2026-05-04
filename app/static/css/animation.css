@@ -1,18 +1,78 @@
+/* ─── POS 페이지 전환 슬라이드 애니메이션 ──────────────────────────────────── */
+
+#pos-content {
+  will-change: transform, opacity;
+}
+
+/* 나가는 애니메이션: 왼쪽으로 (forward) */
+#pos-content.pos-exit-left {
+  animation: slideOutLeft 0.15s ease-in forwards;
+}
+
+/* 나가는 애니메이션: 오른쪽으로 (back) */
+#pos-content.pos-exit-right {
+  animation: slideOutRight 0.15s ease-in forwards;
+}
+
+/* 들어오는 시작 위치: 오른쪽에서 (forward) */
+#pos-content.pos-enter-right {
+  transform: translateX(60px);
+  opacity: 0;
+}
+
+/* 들어오는 시작 위치: 왼쪽에서 (back) */
+#pos-content.pos-enter-left {
+  transform: translateX(-60px);
+  opacity: 0;
+}
+
+/* 들어오는 애니메이션 활성 */
+#pos-content.pos-enter-active {
+  transform: translateX(0);
+  opacity: 1;
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+              opacity 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes slideOutLeft {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-60px);
+    opacity: 0;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(60px);
+    opacity: 0;
+  }
+}
+
+/* ─── 기타 애니메이션 ────────────────────────────────────────────────────────── */
+
 @keyframes itemClickAnimation {
-  0% { 
-    background-color: inherit; 
+  0% {
+    background-color: inherit;
     border-color: inherit;
   }
-  25% { 
-    background-color: #F3FAFA; 
+  25% {
+    background-color: #F3FAFA;
     border-color: #1FAA9C;
   }
   75%{
-    background-color: #F3FAFA; 
+    background-color: #F3FAFA;
     border-color: #1FAA9C;
   }
-  100% { 
-    background-color: inherit; 
+  100% {
+    background-color: inherit;
     border-color: inherit;
   }
 }

@@ -616,8 +616,8 @@ def check_terminal_online():
 
 
 @pos_bp.route('/tableList')
-def tableList():    
-    return render_template('pos/table_list.html')
+def tableList():
+    return render_template('pos/pos_shell.html')
 
 
 @pos_bp.route('/set_group', methods=['GET', 'POST'])
@@ -748,10 +748,7 @@ def get_table_page():
 # 테이블 -> 메뉴리스트 페이지
 @pos_bp.route('/menuList/<table_id>', methods=['GET'])
 def menuList(table_id):
-    from app.models import Table
-    table = Table.query.filter_by(id=table_id).first()
-    table_name = table.name if table else str(table_id)
-    return render_template('/pos/menu_list.html', table_name=table_name)
+    return render_template('pos/pos_shell.html')
 
 # 테이블 주문내역 조회
 @pos_bp.route('/get_table_order_list/<table_id>', methods=['GET'])
@@ -984,9 +981,8 @@ def set_table_list():
 
 # 테이블 -> 메뉴리스트 페이지
 @pos_bp.route('/payment/<table_id>', methods=['GET'])
-def payment(table_id): 
-
-    return render_template('/pos/payment.html')
+def payment(table_id):
+    return render_template('pos/pos_shell.html')
 
 # 현금 결제 후 영수증 정보 업데이트
 @pos_bp.route('/payment/update_cash_receipt', methods=['PATCH'])
