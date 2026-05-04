@@ -83,14 +83,24 @@ function _routeTo(path, isPopState) {
   }
 }
 
+// ─── 애니메이션 클래스 일괄 제거 ────────────────────────────────────────────
+var _animClasses = ['pos-exit-left', 'pos-exit-right', 'pos-enter-left', 'pos-enter-right', 'pos-enter-active'];
+function _clearAnimClasses(el) {
+  for (var i = 0; i < _animClasses.length; i++) {
+    el.classList.remove(_animClasses[i]);
+  }
+}
+
 // ─── 슬라이드 전환 애니메이션 ───────────────────────────────────────────────
 function _animateTransition(route, params, direction) {
   var content = document.getElementById('pos-content');
 
+  // 이전 애니메이션 클래스 모두 제거
+  _clearAnimClasses(content);
+
   // 초기 로드 — 애니메이션 없이 바로 렌더
   if (direction === 'none') {
     _initView(route.view, params);
-    content.classList.add('pos-enter-active');
     return;
   }
 
@@ -101,11 +111,11 @@ function _animateTransition(route, params, direction) {
   content.classList.add(exitClass);
 
   setTimeout(function() {
-    // 2) 새 콘텐츠 렌더
+    // 2) 이전 애니메이션 정리 + 새 콘텐츠 렌더
+    _clearAnimClasses(content);
     _initView(route.view, params);
 
-    // 3) 들어오는 애니메이션
-    content.classList.remove(exitClass);
+    // 3) 들어오는 시작 위치 설정
     var enterClass = direction === 'forward' ? 'pos-enter-right' : 'pos-enter-left';
     content.classList.add(enterClass);
 
@@ -119,8 +129,8 @@ function _animateTransition(route, params, direction) {
 
     // 애니메이션 종료 후 클래스 정리
     setTimeout(function() {
-      content.classList.remove('pos-enter-active');
-    }, 280);
+      _clearAnimClasses(content);
+    }, 300);
   }, 150);
 }
 
@@ -172,17 +182,22 @@ function _updateBackButton(view, tableId) {
   var newBtn = btn.cloneNode(true);
   btn.parentNode.replaceChild(newBtn, btn);
 
+  // 이전 뷰에서 설정한 href 제거
+  newBtn.removeAttribute('href');
+
   if (view === 'tableList') {
-    newBtn.setAttribute('href', '/');
-    newBtn.addEventListener('click', function() {
+    newBtn.addEventListener('click', function(e) {
+      e.preventDefault();
       window.location.href = '/';
     });
   } else if (view === 'menuList') {
-    newBtn.addEventListener('click', function() {
+    newBtn.addEventListener('click', function(e) {
+      e.preventDefault();
       navigateTo('/pos/tableList');
     });
   } else if (view === 'payment') {
-    newBtn.addEventListener('click', function() {
+    newBtn.addEventListener('click', function(e) {
+      e.preventDefault();
       navigateTo('/pos/menuList/' + tableId);
     });
   }

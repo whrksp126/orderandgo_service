@@ -1,6 +1,11 @@
 /* ─── POS 페이지 전환 슬라이드 애니메이션 ──────────────────────────────────── */
 
-#pos-content {
+/* 전환 중에만 will-change 적용 (stacking context 부작용 방지) */
+#pos-content.pos-exit-left,
+#pos-content.pos-exit-right,
+#pos-content.pos-enter-left,
+#pos-content.pos-enter-right,
+#pos-content.pos-enter-active {
   will-change: transform, opacity;
 }
 

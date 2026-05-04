@@ -85,7 +85,6 @@ var MENU_LIST_SHELL = `
         <h2>총액</h2>
         <span class="price">원</span>
       </div>
-      <div id="toastContainer" class="toast-container"></div>
       <ul>
         <li class="order" data-iscancel="false" onclick="clickOrder(event)"><button>주문하기</button></li>
         <li class="pay" onclick="clickPayment(event)"><button>결제하기</button></li>
