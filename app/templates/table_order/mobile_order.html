@@ -17,7 +17,7 @@
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
   <!-- 모바일 전용 css -->
-  <link rel="stylesheet" href="/static/css/mobile_order.css?v=4">
+  <link rel="stylesheet" href="/static/css/mobile_order.css?v=5">
   <link rel="stylesheet" href="/static/css/receipt.css">
 
   <script src="/static/js/htmls.js"></script>
@@ -128,17 +128,19 @@
       <div class="mo-modal-close-row">
         <button type="button" class="mo-modal-close" onclick="closeOptionModal()"><i class="ph-bold ph-x"></i></button>
       </div>
-      <div class="mo-option-image" id="moOptionImage">
-        <div class="mo-slider" id="moSlider">
-          <div class="mo-slider-wrapper" id="moSliderWrapper"><!-- JS --></div>
-          <div class="mo-slider-indicators" id="moSliderIndicators"><!-- JS --></div>
+      <div class="mo-option-scroll">
+        <div class="mo-option-image" id="moOptionImage">
+          <div class="mo-slider" id="moSlider">
+            <div class="mo-slider-wrapper" id="moSliderWrapper"><!-- JS --></div>
+            <div class="mo-slider-indicators" id="moSliderIndicators"><!-- JS --></div>
+          </div>
         </div>
-      </div>
-      <div class="mo-option-body">
-        <h2 id="moOptionName">메뉴명</h2>
-        <div class="mo-option-price" id="moOptionPrice">0원</div>
-        <div class="mo-option-desc" id="moOptionDesc"></div>
-        <div id="moOptionGroups"><!-- 옵션 그룹 동적 생성 --></div>
+        <div class="mo-option-body">
+          <h2 id="moOptionName">메뉴명</h2>
+          <div class="mo-option-price" id="moOptionPrice">0원</div>
+          <div class="mo-option-desc" id="moOptionDesc"></div>
+          <div id="moOptionGroups"><!-- 옵션 그룹 동적 생성 --></div>
+        </div>
       </div>
       <div class="mo-modal-actions">
         <button type="button" class="mo-btn-cancel" onclick="closeOptionModal()">취소</button>
@@ -154,11 +156,13 @@
         <h2>직원 호출</h2>
         <button type="button" class="mo-modal-close" onclick="closeStaffCallModal()"><i class="ph-bold ph-x"></i></button>
       </div>
-      <div class="mo-staff-grid scrollbar_hidden" id="moStaffGrid">
-        <div class="mo-loading">항목을 불러오는 중...</div>
-      </div>
-      <div class="mo-staff-selected" id="moStaffSelected">
-        <div class="mo-empty">필요한 항목을 선택하거나, 바로 호출하기를 눌러주세요.</div>
+      <div class="mo-staff-scroll">
+        <div class="mo-staff-grid" id="moStaffGrid">
+          <div class="mo-loading">항목을 불러오는 중...</div>
+        </div>
+        <div class="mo-staff-selected" id="moStaffSelected">
+          <div class="mo-empty">필요한 항목을 선택하거나, 바로 호출하기를 눌러주세요.</div>
+        </div>
       </div>
       <div class="mo-modal-actions">
         <button type="button" class="mo-btn-cancel" onclick="closeStaffCallModal()">닫기</button>
@@ -171,7 +175,7 @@
   <div id="toastContainer" class="toast-container"></div>
 
   <script src="/static/js/common.js?v=2"></script>
-  <script src="/static/js/mobileOrder.js?v=2"></script>
+  <script src="/static/js/mobileOrder.js?v=3"></script>
   <script src="/static/js/receipt.js"></script>
 </body>
 

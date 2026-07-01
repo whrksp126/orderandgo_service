@@ -58,12 +58,8 @@ socket.on('new_order_notification', (data) => {
 });
 
 socket.on('payment_finished', () => {
-  showOverlay({
-    type: 'payment',
-    duration: 10,
-    showTimer: true,
-    onClose: () => resetTableOrder()
-  });
+  showToast('결제가 완료되었습니다. 이용해 주셔서 감사합니다 :)', 'success');
+  resetTableOrder();
 });
 
 // =============================================================
@@ -563,13 +559,10 @@ const clickOrder = async () => {
 
     MO.menuAllData = [];
     updateCartUI();
-    closeSheet();
-    showOverlay({
-      message: '주문이 완료되었습니다.',
-      showCloseBtn: true,
-      showTimer: true,
-      duration: 3
-    });
+    showToast('주문이 완료되었습니다 :)', 'success');
+    // 주문 직후 주문 내역을 갱신해 바로 보여준다
+    await loadOrderHistory();
+    openSheet('history');
   });
 };
 
