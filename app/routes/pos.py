@@ -784,7 +784,14 @@ def get_table_order_list(table_id):
 # pos->테이블 클릭시
 @pos_bp.route('/get_menu_list', methods=['GET'])
 def get_main_sub_menu_list():
-    store_id = current_user.id
+    # 로그인 매장(POS)은 current_user, QR 손님은 세션 쿠키 컨텍스트에서 store_id 확보
+    if current_user.is_authenticated:
+        store_id = current_user.id
+    else:
+        from app.utils.qr_auth import resolve_customer_context
+        store_id, _ = resolve_customer_context()
+    if store_id is None:
+        return jsonify({'error': 'Unauthorized'}), 401
 
     all_menu_list = []
     menu_categories = select_main_category(store_id) # 메인 카테고리 조회

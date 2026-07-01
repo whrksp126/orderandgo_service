@@ -1,0 +1,869 @@
+/* =============================================================
+   mobile_order.css — QR 손님용 모바일 전용 주문 페이지
+   .mo-* 네임스페이스. table_order.css 에 의존하지 않음.
+   ============================================================= */
+
+:root {
+  --mo-primary: #1FAA9C;
+  --mo-text: #222;
+  --mo-sub: #888;
+  --mo-line: #ececec;
+  --mo-bg: #f5f6f7;
+  --mo-header-h: auto;
+  --mo-safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+body.mobile_order {
+  background: var(--mo-bg);
+  color: var(--mo-text);
+  -webkit-tap-highlight-color: transparent;
+}
+
+#moApp {
+  min-height: 100vh;
+  padding-bottom: calc(76px + var(--mo-safe-bottom));
+}
+
+/* ---------- 헤더 ---------- */
+.mo-header {
+  /* 전역 header{display:flex;height:40px;background:#333} 규칙 오버라이드 */
+  display: block;
+  height: auto;
+  width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #fff;
+  color: var(--mo-text);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.mo-header-top {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px 8px;
+}
+
+.mo-store {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.mo-store-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--mo-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mo-table-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--mo-primary);
+  padding: 3px 10px;
+  border-radius: 999px;
+  flex: 0 0 auto;
+}
+
+.mo-actions {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 12px;
+}
+
+.mo-actions button {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 42px;
+  padding: 0 4px;
+  border: 1px solid var(--mo-line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--mo-text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mo-actions button span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mo-actions button i {
+  flex: 0 0 auto;
+  font-size: 16px;
+  color: var(--mo-primary);
+}
+
+.mo-actions button:active {
+  background: #f4f4f4;
+}
+
+/* ---------- 카테고리 탭 ---------- */
+.mo-cats {
+  overflow-x: auto;
+  border-top: 1px solid var(--mo-line);
+}
+
+.mo-cats ul {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px;
+  white-space: nowrap;
+}
+
+.mo-cats li {
+  flex: 0 0 auto;
+}
+
+.mo-cats li button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 999px;
+  background: #f0f1f2;
+  color: #555;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mo-cats li[data-state="active"] button {
+  background: var(--mo-text);
+  color: #fff;
+}
+
+/* ---------- 메뉴 리스트 ---------- */
+.mo-main {
+  padding: 8px 0 0;
+}
+
+.mo-cat-section {
+  scroll-margin-top: 160px;
+}
+
+.mo-cat-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 16px 8px;
+  font-size: 14px;
+  color: var(--mo-sub);
+  font-weight: 700;
+}
+
+.mo-cat-header .main-cat {
+  color: var(--mo-text);
+}
+
+.mo-cat-header .sep {
+  color: #ccc;
+}
+
+.mo-menu-rows {
+  background: #fff;
+}
+
+.mo-menu-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--mo-line);
+  cursor: pointer;
+}
+
+.mo-menu-row:active {
+  background: #fafafa;
+}
+
+.mo-menu-thumb {
+  position: relative;
+  flex: 0 0 auto;
+  width: 76px;
+  height: 76px;
+  border-radius: 12px;
+  background-size: cover;
+  background-position: center;
+  background-color: #eee;
+}
+
+.mo-menu-thumb.no-image {
+  background-size: 60%;
+  background-repeat: no-repeat;
+  opacity: 0.6;
+}
+
+.mo-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--mo-primary);
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.mo-menu-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.mo-menu-name {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mo-menu-price {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.mo-menu-add {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid var(--mo-primary);
+  background: #fff;
+  color: var(--mo-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.mo-menu-add i {
+  font-size: 18px;
+}
+
+/* ---------- 하단 장바구니 바 ---------- */
+.mo-cartbar {
+  display: none;
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + var(--mo-safe-bottom));
+  z-index: 200;
+  align-items: center;
+  gap: 12px;
+  height: 56px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 14px;
+  background: var(--mo-primary);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 6px 20px rgba(31, 170, 156, 0.4);
+  cursor: pointer;
+}
+
+.mo-cartbar.visible {
+  display: flex;
+}
+
+.mo-cartbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+}
+
+.mo-cartbar-count {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--mo-primary);
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mo-cartbar-label {
+  flex: 1;
+  text-align: center;
+  font-size: 15px;
+}
+
+.mo-cartbar-total {
+  font-size: 16px;
+}
+
+/* ---------- 바텀시트 공통 ---------- */
+.mo-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.mo-backdrop.active {
+  display: block;
+}
+
+.mo-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 310;
+  display: flex;
+  flex-direction: column;
+  max-height: 82vh;
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  transform: translateY(101%);
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  padding-bottom: var(--mo-safe-bottom);
+}
+
+.mo-sheet.active {
+  transform: translateY(0);
+}
+
+.mo-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--mo-line);
+}
+
+.mo-sheet-title {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.mo-count {
+  color: var(--mo-primary);
+  font-size: 15px;
+}
+
+.mo-sheet-close,
+.mo-modal-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  color: #555;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.mo-sheet-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 20px;
+}
+
+.mo-sheet-footer {
+  border-top: 1px solid var(--mo-line);
+  padding: 14px 20px calc(16px + var(--mo-safe-bottom));
+}
+
+.mo-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.mo-total-price {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--mo-primary);
+}
+
+.mo-order-btn {
+  width: 100%;
+  height: 52px;
+  border: none;
+  border-radius: 12px;
+  background: var(--mo-primary);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.mo-order-btn:active {
+  opacity: 0.88;
+}
+
+.mo-empty {
+  padding: 48px 20px;
+  text-align: center;
+  color: #aaa;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ---------- 장바구니 아이템 ---------- */
+.mo-cart-item {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--mo-line);
+}
+
+.mo-cart-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mo-cart-name {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.mo-cart-del {
+  border: none;
+  background: none;
+  color: #bbb;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.mo-cart-opts {
+  font-size: 13px;
+  color: var(--mo-sub);
+  margin-top: 4px;
+}
+
+.mo-cart-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.mo-cart-price {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+/* 수량 컨트롤 공통 */
+.mo-qty {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--mo-line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.mo-qty button {
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: #fff;
+  color: var(--mo-text);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.mo-qty span {
+  min-width: 30px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* ---------- 주문/결제 내역 ---------- */
+.mo-history-item {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--mo-line);
+}
+
+.mo-history-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mo-history-name {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.mo-history-time {
+  font-size: 13px;
+  color: var(--mo-sub);
+}
+
+.mo-history-opts {
+  font-size: 13px;
+  color: var(--mo-sub);
+  margin-top: 4px;
+}
+
+.mo-history-price {
+  font-size: 15px;
+  font-weight: 700;
+  margin-top: 6px;
+}
+
+.mo-pay-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  margin-top: 6px;
+}
+
+.mo-pay-row.cancelled {
+  color: #c00;
+  text-decoration: line-through;
+}
+
+/* ---------- 모달 공통 ---------- */
+.mo-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  background: rgba(0, 0, 0, 0.5);
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.mo-modal-overlay.active {
+  display: flex;
+}
+
+.mo-modal {
+  width: 100%;
+  max-height: 92vh;
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: var(--mo-safe-bottom);
+  animation: moSlideUp 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes moSlideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.mo-modal-close-row {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 8px 0;
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  z-index: 2;
+}
+
+.mo-modal-close-row .mo-modal-close {
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  border-radius: 50%;
+}
+
+.mo-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--mo-line);
+}
+
+.mo-modal-header h2 {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.mo-modal-actions {
+  display: flex;
+  gap: 10px;
+  padding: 14px 20px calc(16px + var(--mo-safe-bottom));
+  border-top: 1px solid var(--mo-line);
+}
+
+.mo-btn-cancel,
+.mo-btn-confirm {
+  flex: 1;
+  height: 52px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.mo-btn-cancel {
+  flex: 0 0 34%;
+  border: 1px solid var(--mo-line);
+  background: #fff;
+  color: #666;
+}
+
+.mo-btn-confirm {
+  border: none;
+  background: var(--mo-primary);
+  color: #fff;
+}
+
+/* ---------- 옵션 모달 ---------- */
+.mo-option-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 20px 8px;
+}
+
+.mo-option-image {
+  flex: 0 0 auto;
+}
+
+.mo-slider {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: #f0f0f0;
+}
+
+.mo-slider-wrapper {
+  display: flex;
+  height: 100%;
+  transition: transform 0.3s ease;
+}
+
+.mo-slide {
+  flex: 0 0 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+}
+
+.mo-slide.no-image {
+  background-size: 40%;
+  background-repeat: no-repeat;
+  opacity: 0.5;
+}
+
+.mo-slider-indicators {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.mo-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.mo-indicator.active {
+  background: #fff;
+  width: 16px;
+  border-radius: 3px;
+}
+
+.mo-option-body h2 {
+  font-size: 20px;
+  font-weight: 800;
+  margin-top: 14px;
+}
+
+.mo-option-price {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--mo-primary);
+  margin-top: 6px;
+}
+
+.mo-option-desc {
+  font-size: 14px;
+  color: var(--mo-sub);
+  line-height: 1.5;
+  margin-top: 10px;
+  white-space: pre-line;
+}
+
+.mo-option-group {
+  margin-top: 22px;
+}
+
+.mo-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.mo-group-header h4 {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.mo-required {
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  background: #ff6b6b;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.mo-group-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mo-option-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  border: 1px solid var(--mo-line);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.mo-option-item.active {
+  border-color: var(--mo-primary);
+  background: rgba(31, 170, 156, 0.06);
+}
+
+.mo-check i {
+  font-size: 22px;
+  color: var(--mo-primary);
+}
+
+.mo-option-label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mo-option-label .name {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.mo-option-label .price {
+  font-size: 14px;
+  color: var(--mo-sub);
+}
+
+.mo-option-item.quantity-type {
+  cursor: default;
+}
+
+/* ---------- 직원 호출 모달 ---------- */
+.mo-staff-modal {
+  height: 82vh;
+}
+
+.mo-staff-grid {
+  flex: 1;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 16px 20px;
+}
+
+.mo-staff-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  aspect-ratio: 1 / 1;
+  border: 1px solid var(--mo-line);
+  border-radius: 12px;
+  padding: 8px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.mo-staff-item.active {
+  border-color: var(--mo-primary);
+  background: rgba(31, 170, 156, 0.08);
+}
+
+.mo-staff-item img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+}
+
+.mo-staff-item .name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.mo-staff-item .name.text-only {
+  font-size: 15px;
+}
+
+.mo-loading {
+  grid-column: 1 / -1;
+  padding: 40px 0;
+  text-align: center;
+  color: #aaa;
+}
+
+.mo-staff-selected {
+  flex: 0 0 auto;
+  max-height: 30vh;
+  overflow-y: auto;
+  border-top: 1px solid var(--mo-line);
+  padding: 8px 20px;
+  background: #fafafa;
+}
+
+.mo-staff-selected-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--mo-line);
+}
+
+.mo-staff-selected-item .name {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.mo-staff-del {
+  border: none;
+  background: none;
+  color: #bbb;
+  font-size: 16px;
+  cursor: pointer;
+}

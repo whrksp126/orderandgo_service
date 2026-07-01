@@ -56,7 +56,7 @@ def qr_entry(qr_token):
     if not table or store_id is None:
         return render_template('table_order/invalid_qr.html'), 404
     payload = issue_qr_session(store_id, table.id, qr_token)
-    resp = make_response(redirect(f'/table_order/main?table_id={table.id}'))
+    resp = make_response(redirect(f'/table_order/order?table_id={table.id}'))
     return set_qr_session_cookie(resp, payload)
 
 
@@ -195,22 +195,49 @@ def login():
     return render_template('/table_order/login.html')
 
 
-# 주문 화면 — QR 손님 또는 로그인 매장 모두 접근 가능
-@table_order_bp.route('/main', methods=['GET'])
-def main():
+def _order_context():
+    """주문 화면(main/mobile) 공통 컨텍스트 조회.
+
+    반환: (store_id, table_id, table_name, store_name, mode). 권한 없으면 store_id=None.
+    """
     store_id, ctx_table, mode = _current_context()
     if store_id is None:
-        return render_template('table_order/invalid_qr.html'), 401
+        return None, None, '', '', None
 
     table_id = request.args.get('table_id') or ctx_table
+    from app.models import Table, Store
     table_name = ''
     if table_id:
-        from app.models import Table
         table = Table.query.get(table_id)
         if table:
             table_name = table.name
+    store = Store.query.get(store_id)
+    store_name = store.name if store else ''
+    return store_id, table_id, table_name, store_name, mode
 
-    return render_template('/table_order/main.html', table_name=table_name)
+
+# 주문 화면(데스크톱/POS 매장 프리뷰) — 로그인 매장 전용 레이아웃
+@table_order_bp.route('/main', methods=['GET'])
+def main():
+    store_id, table_id, table_name, store_name, mode = _order_context()
+    if store_id is None:
+        return render_template('table_order/invalid_qr.html'), 401
+
+    # QR 손님이 직접 /main 에 닿으면 모바일 전용 페이지로 보낸다.
+    if mode == 'customer':
+        return redirect(f'/table_order/order?table_id={table_id}' if table_id else '/table_order/order')
+
+    return render_template('/table_order/main.html', table_name=table_name, store_name=store_name)
+
+
+# 주문 화면(QR 손님 모바일 전용) — 개인 휴대폰용 세로 레이아웃
+@table_order_bp.route('/order', methods=['GET'])
+def mobile_order():
+    store_id, table_id, table_name, store_name, mode = _order_context()
+    if store_id is None:
+        return render_template('table_order/invalid_qr.html'), 401
+
+    return render_template('/table_order/mobile_order.html', table_name=table_name, store_name=store_name)
 
 
 @table_order_bp.route('/get_order_history/<int:table_id>', methods=['GET'])

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>orderandgo</title>
+  <link rel="icon" type="image/x-icon" href="/static/images/common/logo.png">
+
+  <!-- 공통 css -->
+  <link rel="stylesheet" href="/static/css/responsive.css">
+  <link rel="stylesheet" href="/static/css/reset.css">
+  <link rel="stylesheet" href="/static/css/common.css">
+  <link rel="stylesheet" href="/static/css/animation.css">
+  <!-- 아이콘 -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <!-- 모바일 전용 css -->
+  <link rel="stylesheet" href="/static/css/mobile_order.css?v=4">
+  <link rel="stylesheet" href="/static/css/receipt.css">
+
+  <script src="/static/js/htmls.js"></script>
+
+  <!-- socket.io -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+</head>
+
+<body class="mobile_order">
+  <div id="moApp">
+    <!-- 상단 헤더 -->
+    <header class="mo-header">
+      <div class="mo-header-top">
+        <div class="mo-store">
+          <span class="mo-store-name">{{ store_name }}</span>
+          {% if table_name %}<span class="mo-table-name" id="moTableName">{{ table_name }}</span>{% endif %}
+        </div>
+      </div>
+      <div class="mo-actions">
+        <button type="button" onclick="openOrderHistory()">
+          <i class="ph ph-receipt"></i><span>주문내역</span>
+        </button>
+        <button type="button" onclick="openPaymentHistory()">
+          <i class="ph ph-credit-card"></i><span>결제내역</span>
+        </button>
+        <button type="button" onclick="clickCallStaff()">
+          <i class="ph ph-bell"></i><span>직원호출</span>
+        </button>
+      </div>
+      <!-- 카테고리 탭 (가로 스크롤) -->
+      <nav class="mo-cats scrollbar_hidden">
+        <ul id="moCategoryTabs">
+          <li data-state="active"><button>로딩 중...</button></li>
+        </ul>
+      </nav>
+    </header>
+
+    <!-- 메뉴 리스트 -->
+    <main class="mo-main">
+      <div class="mo-menu-list" id="moMenuList">
+        <!-- JS 동적 생성 -->
+      </div>
+    </main>
+
+    <!-- 하단 고정 장바구니 바 -->
+    <button type="button" class="mo-cartbar" id="moCartBar" onclick="toggleCart()">
+      <span class="mo-cartbar-left">
+        <i class="ph-bold ph-shopping-cart"></i>
+        <span class="mo-cartbar-count" id="moCartCount">0</span>
+      </span>
+      <span class="mo-cartbar-label">장바구니 보기</span>
+      <span class="mo-cartbar-total" id="moCartTotal">0원</span>
+    </button>
+  </div>
+
+  <!-- 바텀시트 배경 -->
+  <div class="mo-backdrop" id="moBackdrop" onclick="closeSheet()"></div>
+
+  <!-- 장바구니 시트 -->
+  <section class="mo-sheet" id="moCartSheet">
+    <div class="mo-sheet-header">
+      <span class="mo-sheet-title">장바구니 <span class="mo-count" id="moCartItemCount">(0)</span></span>
+      <button type="button" class="mo-sheet-close" onclick="closeSheet()"><i class="ph-bold ph-x"></i></button>
+    </div>
+    <div class="mo-sheet-body" id="moCartList">
+      <div class="mo-empty">장바구니가 비어 있습니다.</div>
+    </div>
+    <div class="mo-sheet-footer">
+      <div class="mo-total-row">
+        <span>합계</span>
+        <span class="mo-total-price" id="moCartTotalPrice">0원</span>
+      </div>
+      <button type="button" class="mo-order-btn" onclick="clickOrder(event)">주문하기</button>
+    </div>
+  </section>
+
+  <!-- 주문내역 시트 -->
+  <section class="mo-sheet" id="moHistorySheet">
+    <div class="mo-sheet-header">
+      <span class="mo-sheet-title">주문 내역</span>
+      <button type="button" class="mo-sheet-close" onclick="closeSheet()"><i class="ph-bold ph-x"></i></button>
+    </div>
+    <div class="mo-sheet-body" id="moHistoryList">
+      <div class="mo-empty">주문 내역이 없습니다.</div>
+    </div>
+    <div class="mo-sheet-footer">
+      <div class="mo-total-row">
+        <span>총 주문 금액</span>
+        <span class="mo-total-price" id="moHistoryTotal">0원</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 결제내역 시트 -->
+  <section class="mo-sheet" id="moPaymentSheet">
+    <div class="mo-sheet-header">
+      <span class="mo-sheet-title">결제 내역</span>
+      <button type="button" class="mo-sheet-close" onclick="closeSheet()"><i class="ph-bold ph-x"></i></button>
+    </div>
+    <div class="mo-sheet-body" id="moPaymentList">
+      <div class="mo-empty">결제 내역이 없습니다.</div>
+    </div>
+  </section>
+
+  <!-- 옵션 선택 모달 -->
+  <div class="mo-modal-overlay" id="moOptionModal">
+    <div class="mo-modal mo-option-modal">
+      <div class="mo-modal-close-row">
+        <button type="button" class="mo-modal-close" onclick="closeOptionModal()"><i class="ph-bold ph-x"></i></button>
+      </div>
+      <div class="mo-option-image" id="moOptionImage">
+        <div class="mo-slider" id="moSlider">
+          <div class="mo-slider-wrapper" id="moSliderWrapper"><!-- JS --></div>
+          <div class="mo-slider-indicators" id="moSliderIndicators"><!-- JS --></div>
+        </div>
+      </div>
+      <div class="mo-option-body">
+        <h2 id="moOptionName">메뉴명</h2>
+        <div class="mo-option-price" id="moOptionPrice">0원</div>
+        <div class="mo-option-desc" id="moOptionDesc"></div>
+        <div id="moOptionGroups"><!-- 옵션 그룹 동적 생성 --></div>
+      </div>
+      <div class="mo-modal-actions">
+        <button type="button" class="mo-btn-cancel" onclick="closeOptionModal()">취소</button>
+        <button type="button" class="mo-btn-confirm" onclick="addToCartFromModal()">장바구니 담기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 직원 호출 모달 -->
+  <div class="mo-modal-overlay" id="moStaffModal">
+    <div class="mo-modal mo-staff-modal">
+      <div class="mo-modal-header">
+        <h2>직원 호출</h2>
+        <button type="button" class="mo-modal-close" onclick="closeStaffCallModal()"><i class="ph-bold ph-x"></i></button>
+      </div>
+      <div class="mo-staff-grid scrollbar_hidden" id="moStaffGrid">
+        <div class="mo-loading">항목을 불러오는 중...</div>
+      </div>
+      <div class="mo-staff-selected" id="moStaffSelected">
+        <div class="mo-empty">필요한 항목을 선택하거나, 바로 호출하기를 눌러주세요.</div>
+      </div>
+      <div class="mo-modal-actions">
+        <button type="button" class="mo-btn-cancel" onclick="closeStaffCallModal()">닫기</button>
+        <button type="button" class="mo-btn-confirm" onclick="requestStaffCall()">호출하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 토스트 컨테이너 -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="/static/js/common.js?v=2"></script>
+  <script src="/static/js/mobileOrder.js?v=2"></script>
+  <script src="/static/js/receipt.js"></script>
+</body>
+
+</html>
