@@ -36,15 +36,16 @@ def broadcast_table_status(store_id):
 def _current_context():
     """현재 요청의 (store_id, table_id, mode) 반환.
 
-    - QR 손님 쿠키가 있으면 우선 사용 → mode='customer' (table_id 포함)
-    - 없고 로그인 매장이면 → mode='store' (table_id=None)
-    - 둘 다 아니면 (None, None, None)
+    - 로그인 매장이면 우선 → mode='store' (테이블 오더 매장 프리뷰/데스크톱).
+      매장 기기가 QR 세션 쿠키를 갖고 있어도 매장으로 취급해 데스크톱 UI를 유지한다.
+    - 로그인 아니고 QR 손님 쿠키가 있으면 → mode='customer' (모바일, table_id 포함).
+    - 둘 다 아니면 (None, None, None).
     """
+    if current_user.is_authenticated:
+        return int(current_user.id), None, 'store'
     store_id, table_id = resolve_customer_context()
     if store_id is not None:
         return store_id, table_id, 'customer'
-    if current_user.is_authenticated:
-        return int(current_user.id), None, 'store'
     return None, None, None
 
 
