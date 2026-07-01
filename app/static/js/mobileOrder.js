@@ -607,45 +607,42 @@ const renderOrderHistory = (historyData) => {
   totalEl.innerText = totalSum.toLocaleString() + '원';
 };
 
+// 결제 내역 = 현재 식사 세션 영수증 (주문총액 · 결제분 · 남은 금액)
 const loadPaymentHistory = async () => {
   try {
-    const result = await fetchDataAsync('/table_order/get_payment_history', 'GET', {});
-    renderPaymentHistory(result.data);
+    const result = await fetchDataAsync('/table_order/get_current_receipt', 'GET', {});
+    renderReceipt(result.data);
   } catch (error) {
-    console.error('Payment history load error:', error);
+    console.error('Receipt load error:', error);
   }
 };
 
-const renderPaymentHistory = (data) => {
+const renderReceipt = (data) => {
   const list = document.getElementById('moPaymentList');
   if (!list) return;
 
-  if (!data || data.length === 0) {
-    list.innerHTML = '<div class="mo-empty">결제 내역이 없습니다.</div>';
+  if (!data || (!data.in_use && !(data.payments && data.payments.length))) {
+    list.innerHTML = '<div class="mo-empty">현재 이용 내역이 없습니다.</div>';
     return;
   }
 
-  list.innerHTML = data.map(pl => {
-    const payRows = (pl.payments || []).map(p => {
-      const amount = (p.amount != null ? p.amount.toLocaleString() : 0) + '원';
-      const method = p.method || '결제';
-      const cancelled = p.status && (p.status.indexOf('취소') > -1);
-      return `
-        <div class="mo-pay-row ${cancelled ? 'cancelled' : ''}">
-          <span>${method}${p.status ? ` · ${p.status}` : ''}</span>
-          <span>${amount}</span>
-        </div>`;
-    }).join('');
+  const won = (n) => (n || 0).toLocaleString() + '원';
+  const rows = [`<div class="mo-rc-row"><span>주문 총액</span><span>${won(data.order_total)}</span></div>`];
+  if (data.discount) rows.push(`<div class="mo-rc-row"><span>할인</span><span class="minus">-${won(data.discount)}</span></div>`);
+  if (data.extra_charge) rows.push(`<div class="mo-rc-row"><span>추가 금액</span><span>+${won(data.extra_charge)}</span></div>`);
 
-    return `
-      <div class="mo-history-item">
-        <div class="mo-history-top">
-          <span class="mo-history-name">${pl.table_name || '테이블'}</span>
-          <span class="mo-history-time">${pl.payment_time ? pl.payment_time.split(' ')[1] : ''}</span>
-        </div>
-        ${payRows || '<div class="mo-history-opts">결제 정보 없음</div>'}
-      </div>`;
-  }).join('');
+  if (data.payments && data.payments.length) {
+    rows.push('<div class="mo-rc-divider"></div>');
+    rows.push('<div class="mo-rc-label">결제한 내역</div>');
+    data.payments.forEach(p => {
+      const t = p.paid_at ? p.paid_at.slice(0, 5) : '';
+      rows.push(`<div class="mo-rc-row"><span>${p.method}${t ? ` <em>${t}</em>` : ''}</span><span class="minus">-${won(p.amount)}</span></div>`);
+    });
+  }
+
+  rows.push('<div class="mo-rc-divider strong"></div>');
+  rows.push(`<div class="mo-rc-total"><span>남은 금액</span><span>${won(data.remaining)}</span></div>`);
+  list.innerHTML = `<div class="mo-receipt">${rows.join('')}</div>`;
 };
 
 // =============================================================

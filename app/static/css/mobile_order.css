@@ -536,6 +536,63 @@ body.mobile_order {
   text-decoration: line-through;
 }
 
+/* ---------- 결제 내역 = 현재 세션 영수증 ---------- */
+.mo-receipt {
+  padding: 8px 0 4px;
+}
+
+.mo-rc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 15px;
+  padding: 9px 0;
+}
+
+.mo-rc-row .minus {
+  color: var(--mo-primary);
+}
+
+.mo-rc-row em {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--mo-sub);
+  margin-left: 4px;
+}
+
+.mo-rc-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--mo-sub);
+  padding: 6px 0 2px;
+}
+
+.mo-rc-divider {
+  height: 1px;
+  background: var(--mo-line);
+  margin: 8px 0;
+}
+
+.mo-rc-divider.strong {
+  height: 2px;
+  background: #333;
+  margin: 12px 0;
+}
+
+.mo-rc-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 18px;
+  font-weight: 800;
+  padding: 6px 0 4px;
+}
+
+.mo-rc-total span:last-child {
+  color: var(--mo-primary);
+  font-size: 22px;
+}
+
 /* ---------- 모달 공통 ---------- */
 .mo-modal-overlay {
   display: none;

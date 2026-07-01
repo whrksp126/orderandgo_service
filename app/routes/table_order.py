@@ -349,6 +349,85 @@ def get_payment_history():
     return jsonify({'message': 'Success', 'code': 200, 'data': result})
 
 
+# 현재 식사 세션 영수증 (손님 자신의 현재 이용분만)
+# 데스크톱 테이블 오더 · QR 주문하기 결제내역에서 공통으로 사용한다.
+@table_order_bp.route('/get_current_receipt', methods=['GET'])
+def get_current_receipt():
+    store_id, ctx_table, mode = _current_context()
+    if store_id is None:
+        return jsonify({'error': 'Unauthorized', 'code': 401}), 401
+    table_id = ctx_table if mode == 'customer' else request.args.get('table_id')
+
+    empty = {
+        'in_use': False, 'order_total': 0, 'discount': 0, 'extra_charge': 0,
+        'final_due': 0, 'paid': 0, 'remaining': 0, 'payments': [],
+    }
+    if not table_id:
+        return jsonify({'message': 'Success', 'code': 200, 'data': empty})
+
+    from app.models import db, Menu, MenuOption, Order, TablePaymentList, Payment, Payment_method
+    from app.models.order import find_order_list
+    from sqlalchemy import func
+
+    # 1) 현재 세션(체크아웃 전) 주문 총액 — 완납 시 주문은 삭제되므로 현재 세션분만 남는다
+    orders = find_order_list(table_id)
+    order_total = 0
+    for order in orders:
+        menu = Menu.query.get(order.menu_id)
+        if not menu:
+            continue
+        line = menu.price
+        for opt in order.get_menu_options():
+            oi = MenuOption.query.get(opt['id'])
+            if oi:
+                line += oi.price * opt['count']
+        order_total += line
+    in_use = len(orders) > 0
+
+    # 2) 현재 세션의 결제분 — first_order_time(현재 주문의 최소 시각)으로 결제목록 특정
+    payments = []
+    paid = 0
+    discount = 0
+    extra_charge = 0
+    first_order_time = db.session.query(func.min(Order.ordered_at))\
+        .filter(Order.table_id == table_id).scalar()
+    if first_order_time:
+        tpl = TablePaymentList.query.filter_by(
+            store_id=store_id, table_id=table_id, first_order_time=first_order_time).first()
+        if tpl:
+            discount = tpl.discount or 0
+            extra_charge = tpl.extra_charge or 0
+            method_map = {'card': '카드', 'cash': '현금'}
+            rows = Payment.query.filter_by(table_payment_list_id=tpl.id)\
+                .filter(Payment.payment_status == 1)\
+                .order_by(Payment.payment_datetime.asc()).all()
+            for p in rows:
+                m = Payment_method.query.get(p.payment_method_id)
+                mname = m.method if m else ''
+                payments.append({
+                    'method': method_map.get(mname, mname or '결제'),
+                    'amount': p.payment_amount,
+                    'paid_at': p.payment_datetime.strftime('%H:%M:%S') if p.payment_datetime else None,
+                })
+                paid += p.payment_amount
+
+    final_due = order_total - discount + extra_charge
+    remaining = final_due - paid
+    if remaining < 0:
+        remaining = 0
+
+    return jsonify({'message': 'Success', 'code': 200, 'data': {
+        'in_use': in_use,
+        'order_total': order_total,
+        'discount': discount,
+        'extra_charge': extra_charge,
+        'final_due': final_due,
+        'paid': paid,
+        'remaining': remaining,
+        'payments': payments,
+    }})
+
+
 # 직원 호출 항목 조회 API (테이블 오더용)
 @table_order_bp.route('/get_staff_call_items', methods=['GET'])
 def api_table_get_staff_call_items():

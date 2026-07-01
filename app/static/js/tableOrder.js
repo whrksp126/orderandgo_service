@@ -1222,46 +1222,42 @@ const renderOrderHistory = (historyData) => {
 };
 
 
-// 결제 내역 (읽기 전용)
+// 결제 내역 = 현재 식사 세션 영수증 (손님 자신의 현재 이용분만: 주문총액·결제분·남은 금액)
 const loadPaymentHistory = async () => {
   try {
-    const result = await fetchDataAsync(`/table_order/get_payment_history`, 'GET', {});
-    renderPaymentHistory(result.data);
+    const result = await fetchDataAsync(`/table_order/get_current_receipt?table_id=${STORE.table_id}`, 'GET', {});
+    renderReceipt(result.data);
   } catch (error) {
-    console.error('Payment history load error:', error);
+    console.error('Receipt load error:', error);
   }
 };
 
-const renderPaymentHistory = (data) => {
+const renderReceipt = (data) => {
   const list = document.getElementById('paymentHistoryList');
   if (!list) return;
 
-  if (!data || data.length === 0) {
-    list.innerHTML = `<div style="padding: 40px; text-align: center; color: #999;">결제 내역이 없습니다.</div>`;
+  if (!data || (!data.in_use && !(data.payments && data.payments.length))) {
+    list.innerHTML = `<div style="padding: 40px; text-align: center; color: #999;">현재 이용 내역이 없습니다.</div>`;
     return;
   }
 
-  list.innerHTML = data.map(pl => {
-    const payRows = (pl.payments || []).map(p => {
-      const amount = (p.amount != null ? p.amount.toLocaleString() : 0) + '원';
-      const method = p.method || '결제';
-      const cancelled = p.status && (p.status.indexOf('취소') > -1);
-      return `
-        <div class="price-row" style="display:flex; justify-content:space-between; ${cancelled ? 'color:#c00; text-decoration:line-through;' : ''}">
-          <span>${method}${p.status ? ` · ${p.status}` : ''}</span>
-          <span>${amount}</span>
-        </div>`;
-    }).join('');
+  const won = (n) => (n || 0).toLocaleString() + '원';
+  const rows = [`<div class="rc-row"><span>주문 총액</span><span>${won(data.order_total)}</span></div>`];
+  if (data.discount) rows.push(`<div class="rc-row"><span>할인</span><span class="minus">-${won(data.discount)}</span></div>`);
+  if (data.extra_charge) rows.push(`<div class="rc-row"><span>추가 금액</span><span>+${won(data.extra_charge)}</span></div>`);
 
-    return `
-      <div class="history-item">
-        <div class="top-row">
-          <span class="menu-name">${pl.table_name || '테이블'}</span>
-          <span class="order-time">${pl.payment_time ? pl.payment_time.split(' ')[1] : ''}</span>
-        </div>
-        ${payRows || '<div class="options-text" style="color:#999;">결제 정보 없음</div>'}
-      </div>`;
-  }).join('');
+  if (data.payments && data.payments.length) {
+    rows.push('<div class="rc-divider"></div>');
+    rows.push('<div class="rc-label">결제한 내역</div>');
+    data.payments.forEach(p => {
+      const t = p.paid_at ? p.paid_at.slice(0, 5) : '';
+      rows.push(`<div class="rc-row"><span>${p.method}${t ? ` <em>${t}</em>` : ''}</span><span class="minus">-${won(p.amount)}</span></div>`);
+    });
+  }
+
+  rows.push('<div class="rc-divider strong"></div>');
+  rows.push(`<div class="rc-total"><span>남은 금액</span><span>${won(data.remaining)}</span></div>`);
+  list.innerHTML = `<div class="receipt">${rows.join('')}</div>`;
 };
 
 
