@@ -16,16 +16,22 @@ from app.utils.qr_auth import (
 
 from datetime import datetime
 
-# 실시간 접속 테이블 추적 (Key: store_id(str), Value: {table_id(str): set(sid)})
-# 한 테이블에 여러 기기(손님)가 동시에 접속할 수 있도록 sid를 Set으로 관리한다.
+# 실시간 접속 테이블 추적
+#   Key: store_id(str), Value: { table_id(str): { sid(str): kind } }
+#   kind ∈ {'store'(테이블 오더 매장 로그인), 'customer'(QR 손님)}
+# 한 테이블에 여러 기기가 동시에 접속할 수 있어 sid 단위로 관리한다.
 CONNECTED_TABLES = {}
 
 
 def get_active_tables(store_id):
+    """'입장 중'으로 표시할 테이블 목록.
+
+    테이블 오더(매장 로그인)로 접속한 경우만 입장으로 본다.
+    QR 손님 접속만 있는 테이블은 입장으로 치지 않는다.
+    """
     store_id = str(store_id)
-    if store_id in CONNECTED_TABLES:
-        return [t for t, sids in CONNECTED_TABLES[store_id].items() if sids]
-    return []
+    tables = CONNECTED_TABLES.get(store_id, {})
+    return [t for t, conns in tables.items() if any(k == 'store' for k in conns.values())]
 
 
 def broadcast_table_status(store_id):
@@ -64,26 +70,29 @@ def qr_entry(qr_token):
 # ── SocketIO ──────────────────────────────────────────────────────────────────
 @socketio.on('join_table_order')
 def on_join_table_order(data):
-    # 손님(QR)이면 쿠키에서 컨텍스트를 강제, 매장 프리뷰(로그인)면 클라이언트 값 사용
-    c_store, c_table = resolve_customer_context()
-    if c_store is not None:
+    # 로그인 매장(테이블 오더 프리뷰)이면 'store', 아니면 QR 손님 'customer'
+    # (_current_context와 동일하게 로그인 매장을 우선 판정)
+    if current_user.is_authenticated:
+        store_id = str(int(current_user.id))
+        table_id = str(data.get('table_id'))
+        kind = 'store'
+    else:
+        c_store, c_table = resolve_customer_context()
+        if c_store is None:
+            return
         store_id = str(c_store)
         table_id = str(c_table)
-    else:
-        if not current_user.is_authenticated:
-            return
-        store_id = str(data.get('store_id'))
-        table_id = str(data.get('table_id'))
+        kind = 'customer'
 
     sid = request.sid
     if not store_id or not table_id or table_id == 'None':
         return
 
-    # 다중 기기 허용: 강제 로그아웃 없이 sid를 Set에 추가
-    CONNECTED_TABLES.setdefault(store_id, {}).setdefault(table_id, set()).add(sid)
+    # 다중 기기 허용: sid 단위로 접속 종류를 기록
+    CONNECTED_TABLES.setdefault(store_id, {}).setdefault(table_id, {})[sid] = kind
 
     join_room(f'table_{store_id}_{table_id}')
-    print(f'Table Order Connected: Store {store_id}, Table {table_id}, SID {sid}')
+    print(f'Table Order Connected: Store {store_id}, Table {table_id}, SID {sid}, kind={kind}')
 
     broadcast_table_status(store_id)
 
@@ -101,10 +110,10 @@ def on_join_login_page(data):
 def on_disconnect():
     sid = request.sid
     for store_id, tables in CONNECTED_TABLES.items():
-        for table_id, sids in list(tables.items()):
-            if sid in sids:
-                sids.discard(sid)
-                if not sids:
+        for table_id, conns in list(tables.items()):
+            if sid in conns:
+                del conns[sid]
+                if not conns:
                     del tables[table_id]
                 print(f'Table Order Disconnected: Store {store_id}, Table {table_id}, SID {sid}')
                 broadcast_table_status(store_id)
