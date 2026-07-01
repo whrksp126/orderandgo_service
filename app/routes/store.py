@@ -972,6 +972,142 @@ def api_update_terminal_info():
     return jsonify({'code': 200, 'msg': '저장되었습니다.'})
 
 
+# ── 테이블 QR 발급 / 지오펜스 관리 ─────────────────────────────────────────────
+@store_bp.route('/table_qr_mgmt', methods=['GET'])
+@login_required
+def table_qr_mgmt():
+    return render_template('store_table_qr_mgmt.html')
+
+
+# QR 발급 페이지용 테이블 목록 (QR 발급 상태 포함)
+@store_bp.route('/get_table_qr_list', methods=['GET'])
+@login_required
+def api_get_table_qr_list():
+    store_id = current_user.id
+    table_categorys = select_table_category(store_id)
+    data = []
+    for table_category in table_categorys:
+        tables = select_table(table_category.id)
+        table_list = [{
+            'id': t.id,
+            'name': t.name,
+            'position': t.position,
+            'has_qr': bool(t.qr_token),
+            'qr_generated_at': t.qr_generated_at.strftime('%Y-%m-%d %H:%M') if t.qr_generated_at else None,
+        } for t in tables]
+        data.append({
+            'id': table_category.id,
+            'name': table_category.category_name,
+            'position': table_category.position,
+            'tables': table_list,
+        })
+    return jsonify(data)
+
+
+# 테이블 QR 생성/재발급 → QR 이미지(PNG data URI) 반환
+@store_bp.route('/generate_table_qr', methods=['POST'])
+@login_required
+def api_generate_table_qr():
+    import io
+    import base64
+    import segno
+    from app.models.table import generate_table_qr_token, get_store_id_by_table_id
+
+    data = request.get_json() or {}
+    table_id = data.get('table_id')
+    if not table_id:
+        return jsonify({'code': 400, 'msg': 'table_id가 필요합니다.'}), 400
+
+    # 소유권 검증: 해당 테이블이 현재 매장 소속인지
+    owner_store_id = get_store_id_by_table_id(table_id)
+    if owner_store_id is None or int(owner_store_id) != int(current_user.id):
+        return jsonify({'code': 403, 'msg': '접근 권한이 없습니다.'}), 403
+
+    token = generate_table_qr_token(table_id)
+    if not token:
+        return jsonify({'code': 404, 'msg': '테이블을 찾을 수 없습니다.'}), 404
+
+    qr_url = request.host_url.rstrip('/') + '/table_order/t/' + token
+    buff = io.BytesIO()
+    segno.make(qr_url, error='m').save(buff, kind='png', scale=8, border=2)
+    b64 = base64.b64encode(buff.getvalue()).decode('ascii')
+    return jsonify({
+        'code': 200,
+        'qr_token': token,
+        'qr_url': qr_url,
+        'qr_png': 'data:image/png;base64,' + b64,
+    })
+
+
+# 특정 테이블 QR 이미지 조회 (이미 발급된 토큰 기준)
+@store_bp.route('/get_table_qr/<int:table_id>', methods=['GET'])
+@login_required
+def api_get_table_qr(table_id):
+    import io
+    import base64
+    import segno
+    from app.models import Table
+    from app.models.table import get_store_id_by_table_id
+
+    owner_store_id = get_store_id_by_table_id(table_id)
+    if owner_store_id is None or int(owner_store_id) != int(current_user.id):
+        return jsonify({'code': 403, 'msg': '접근 권한이 없습니다.'}), 403
+
+    table = Table.query.get(table_id)
+    if not table or not table.qr_token:
+        return jsonify({'code': 404, 'msg': '발급된 QR이 없습니다.'}), 404
+
+    qr_url = request.host_url.rstrip('/') + '/table_order/t/' + table.qr_token
+    buff = io.BytesIO()
+    segno.make(qr_url, error='m').save(buff, kind='png', scale=8, border=2)
+    b64 = base64.b64encode(buff.getvalue()).decode('ascii')
+    return jsonify({
+        'code': 200,
+        'table_name': table.name,
+        'qr_token': table.qr_token,
+        'qr_url': qr_url,
+        'qr_png': 'data:image/png;base64,' + b64,
+    })
+
+
+# 매장 위치/지오펜스 설정 조회
+@store_bp.route('/get_store_location', methods=['GET'])
+@login_required
+def api_get_store_location():
+    store = Store.query.get(current_user.id)
+    if not store:
+        return jsonify({'code': 404, 'msg': '매장 정보를 찾을 수 없습니다.'}), 404
+    return jsonify({
+        'latitude': store.latitude,
+        'longitude': store.longitude,
+        'geofence_radius_m': store.geofence_radius_m or 200,
+        'qr_geofence_enabled': bool(store.qr_geofence_enabled) if store.qr_geofence_enabled is not None else True,
+        'qr_require_open_session': bool(store.qr_require_open_session),
+    })
+
+
+# 매장 위치/지오펜스 설정 저장
+@store_bp.route('/set_store_location', methods=['POST'])
+@login_required
+def api_set_store_location():
+    store = Store.query.get(current_user.id)
+    if not store:
+        return jsonify({'code': 404, 'msg': '매장 정보를 찾을 수 없습니다.'}), 404
+    data = request.get_json() or {}
+    if 'latitude' in data:
+        store.latitude = data['latitude']
+    if 'longitude' in data:
+        store.longitude = data['longitude']
+    if 'geofence_radius_m' in data and data['geofence_radius_m'] is not None:
+        store.geofence_radius_m = int(data['geofence_radius_m'])
+    if 'qr_geofence_enabled' in data:
+        store.qr_geofence_enabled = bool(data['qr_geofence_enabled'])
+    if 'qr_require_open_session' in data:
+        store.qr_require_open_session = bool(data['qr_require_open_session'])
+    db.session.commit()
+    return jsonify({'code': 200, 'msg': '저장되었습니다.'})
+
+
 # 직원 호출 로그 확인(Confirm) API
 @store_bp.route('/payment_history', methods=['GET'])
 @login_required

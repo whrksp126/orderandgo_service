@@ -47,6 +47,10 @@
           <i class="ph-bold ph-receipt"></i>
           주문 내역
         </button>
+        <button class="nav-btn payment-history-btn" onclick="togglePaymentHistory()">
+          <i class="ph-bold ph-credit-card"></i>
+          결제 내역
+        </button>
         <button class="nav-btn cart-toggle-btn" onclick="toggleCart()">
           <i class="ph-bold ph-shopping-cart"></i>
           장바구니
@@ -114,6 +118,19 @@
             <span>총 주문 금액</span>
             <span class="price" id="totalOrderPrice">0원</span>
           </div>
+        </div>
+      </div>
+
+      <div class="panel-container hidden" id="paymentView">
+        <div class="order-header">
+          <span>결제 내역</span>
+          <button class="close-panel-btn" onclick="closeRightPanel()">
+            <i class="ph-bold ph-x"></i>
+          </button>
+        </div>
+        <div class="order-item-list" id="paymentHistoryList">
+          <!-- JS에서 동적 생성 -->
+          <div style="padding: 40px; text-align: center; color: #999;">결제 내역이 없습니다.</div>
         </div>
       </div>
     </aside>

@@ -76,11 +76,7 @@ socket.on('new_order_notification', (data) => {
   loadOrderHistory(); // 주문 내역 갱신
 });
 
-// 강제 로그아웃 수신
-socket.on('force_logout', (data) => {
-  alert(data.message);
-  window.location.href = '/';
-});
+// (다중 기기 허용: 한 테이블에 여러 손님 기기가 동시에 접속할 수 있으므로 강제 로그아웃 제거)
 
 // Payment Finished Notification
 socket.on('payment_finished', () => {
@@ -102,14 +98,19 @@ const initApp = async () => {
     const info = await fetchDataAsync('/table_order/get_info', 'GET', {});
     STORE.store_id = info.store_id;
     window.STORE_ID = info.store_id;
+    STORE.mode = info.mode; // 'customer'(QR 손님) | 'store'(매장 프리뷰)
 
     if (lastPath === 'login') {
       socket.emit('join_login_page', { store_id: STORE.store_id });
       getTableData();
     } else if (lastPath === 'main') {
-      STORE.table_id = getTableIdFromCurrentUrl('table_id');
+      // QR 손님이면 쿠키 컨텍스트의 table_id를 우선 사용, 없으면 URL 파라미터
+      STORE.table_id = info.table_id || getTableIdFromCurrentUrl('table_id');
       window.TABLE_ID = STORE.table_id;
       socket.emit('join_table_order', { store_id: STORE.store_id, table_id: STORE.table_id });
+
+      // 지오펜스용 위치 미리 확보(권한 프롬프트 워밍업)
+      captureGeolocation();
 
       await getMenuListData(); // Wait for menu data
       await loadOrderHistory(); // Wait for history to check if empty
@@ -219,19 +220,9 @@ const changeTableCategory = (event, index) => {
   renderLoginCanvas(tables);
 }
 
-// 테이블 접속 클릭 시
+// 테이블 접속 클릭 시 (매장 프리뷰) — 다중 기기 허용이라 중복 접속 확인 없이 바로 이동
 const clickTableArea = (event, table_id, isActive) => {
-  if (isActive) {
-    const modal = openDefaultModal();
-    modal.top.innerHTML = modalTopHtml('중복 접속 확인');
-    modal.middle.innerHTML = `<p style="text-align:center; padding: 20px 0; font-size: 16px;">이미 접속 중인 기기가 있습니다.<br>기존 접속을 종료하고 새로 접속하시겠습니까?</p>`;
-    modal.bottom.innerHTML = modalBottomHtml([
-      { class: 'brand_fill', text: '접속', fun: `onclick="window.location.href='/table_order/main?table_id=${table_id}'"` },
-      { class: 'close', text: '취소', fun: '' }
-    ]);
-  } else {
-    window.location.href = `/table_order/main?table_id=${table_id}`;
-  }
+  window.location.href = `/table_order/main?table_id=${table_id}`;
 }
 
 // 메뉴판 조회
@@ -837,6 +828,26 @@ const renderOptionItems = () => {
   }).join('');
 }
 
+// 현재 위치 좌표 확보 (지오펜스용). 실패/거부 시 null.
+let _lastCoords = null;
+const captureGeolocation = () => {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(
+    (pos) => { _lastCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude }; },
+    () => { _lastCoords = null; },
+    { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
+  );
+};
+
+const getCurrentCoords = () => new Promise((resolve) => {
+  if (!navigator.geolocation) { resolve(null); return; }
+  navigator.geolocation.getCurrentPosition(
+    (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+    () => resolve(_lastCoords), // 실패 시 직전에 확보한 좌표라도 사용
+    { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
+  );
+});
+
 // 주문하기 클릭 시
 const clickOrder = async (event) => {
   if (STORE.menuAllData.length === 0) {
@@ -844,16 +855,25 @@ const clickOrder = async (event) => {
     return;
   }
 
-  const url = `/order/`;
-  const method = 'POST';
+  // 최신 위치 확보 (지오펜스 검증용)
+  const coords = await getCurrentCoords();
+
   const fetchData = {
     store_id: STORE.store_id,
     table_id: STORE.table_id,
-    order_list: deepCopy(STORE.menuAllData)
+    order_list: deepCopy(STORE.menuAllData),
+    lat: coords ? coords.lat : null,
+    lng: coords ? coords.lng : null
   };
 
   socket.emit('new_order_pos_update', fetchData, async (response) => {
     console.log('Order response:', response);
+
+    // 주문 거부(지오펜스/세션/권한) 시 토스트 안내 후 중단
+    if (response && response.ok === false) {
+      showToast(response.message || '주문할 수 없습니다.');
+      return;
+    }
 
     // 주문 슬립 시뮬레이션 (주방용)
     const storeInfoResult = await fetchDataAsync(`/pos/get_store_info`, 'GET', {});
@@ -1081,10 +1101,21 @@ const requestStaffCall = async () => {
 }
 
 // 토글 상태 관리
+// 우측 패널 3개 뷰(장바구니/주문내역/결제내역) 중 하나만 표시
+const showPanelView = (viewId) => {
+  const panel = document.getElementById('rightPanel');
+  ['cartView', 'historyView', 'paymentView'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (id === viewId) el.classList.remove('hidden');
+    else el.classList.add('hidden');
+  });
+  panel.classList.add('active');
+};
+
 const toggleOrderHistory = async () => {
   const panel = document.getElementById('rightPanel');
   const historyView = document.getElementById('historyView');
-  const cartView = document.getElementById('cartView');
 
   // 이미 열려있고 주문내역인 경우 닫기
   if (panel.classList.contains('active') && !historyView.classList.contains('hidden')) {
@@ -1094,15 +1125,25 @@ const toggleOrderHistory = async () => {
 
   // 주문 내역 데이터 로드 및 렌더링
   await loadOrderHistory();
+  showPanelView('historyView');
+};
 
-  historyView.classList.remove('hidden');
-  cartView.classList.add('hidden');
-  panel.classList.add('active');
+const togglePaymentHistory = async () => {
+  const panel = document.getElementById('rightPanel');
+  const paymentView = document.getElementById('paymentView');
+
+  // 이미 열려있고 결제내역인 경우 닫기
+  if (panel.classList.contains('active') && paymentView && !paymentView.classList.contains('hidden')) {
+    closeRightPanel();
+    return;
+  }
+
+  await loadPaymentHistory();
+  showPanelView('paymentView');
 };
 
 const toggleCart = () => {
   const panel = document.getElementById('rightPanel');
-  const historyView = document.getElementById('historyView');
   const cartView = document.getElementById('cartView');
 
   // 이미 열려있고 장바구니인 경우 닫기
@@ -1115,13 +1156,7 @@ const toggleCart = () => {
 };
 
 const openCart = () => {
-  const panel = document.getElementById('rightPanel');
-  const historyView = document.getElementById('historyView');
-  const cartView = document.getElementById('cartView');
-
-  historyView.classList.add('hidden');
-  cartView.classList.remove('hidden');
-  panel.classList.add('active');
+  showPanelView('cartView');
 };
 
 const closeRightPanel = () => {
@@ -1186,6 +1221,48 @@ const renderOrderHistory = (historyData) => {
   _totalOrderPriceEl.innerText = totalSum.toLocaleString() + '원';
 };
 
+
+// 결제 내역 (읽기 전용)
+const loadPaymentHistory = async () => {
+  try {
+    const result = await fetchDataAsync(`/table_order/get_payment_history`, 'GET', {});
+    renderPaymentHistory(result.data);
+  } catch (error) {
+    console.error('Payment history load error:', error);
+  }
+};
+
+const renderPaymentHistory = (data) => {
+  const list = document.getElementById('paymentHistoryList');
+  if (!list) return;
+
+  if (!data || data.length === 0) {
+    list.innerHTML = `<div style="padding: 40px; text-align: center; color: #999;">결제 내역이 없습니다.</div>`;
+    return;
+  }
+
+  list.innerHTML = data.map(pl => {
+    const payRows = (pl.payments || []).map(p => {
+      const amount = (p.amount != null ? p.amount.toLocaleString() : 0) + '원';
+      const method = p.method || '결제';
+      const cancelled = p.status && (p.status.indexOf('취소') > -1);
+      return `
+        <div class="price-row" style="display:flex; justify-content:space-between; ${cancelled ? 'color:#c00; text-decoration:line-through;' : ''}">
+          <span>${method}${p.status ? ` · ${p.status}` : ''}</span>
+          <span>${amount}</span>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="history-item">
+        <div class="top-row">
+          <span class="menu-name">${pl.table_name || '테이블'}</span>
+          <span class="order-time">${pl.payment_time ? pl.payment_time.split(' ')[1] : ''}</span>
+        </div>
+        ${payRows || '<div class="options-text" style="color:#999;">결제 정보 없음</div>'}
+      </div>`;
+  }).join('');
+};
 
 
 // 관리자 히든 버튼 로직

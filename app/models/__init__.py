@@ -77,6 +77,12 @@ class Store(db.Model):
     terminal_serial = db.Column(db.String(50), nullable=True)   # 토스 프론트 단말기 시리얼 번호
     toss_merchant_id = db.Column(db.BigInteger, nullable=True)      # 토스 가맹점 ID
     toss_business_number = db.Column(db.String(20), nullable=True) # 사업자등록번호
+    # ── QR 셀프 주문 지오펜스(가짜 주문 방지) ──
+    latitude = db.Column(db.Float, nullable=True)                  # 매장 위도
+    longitude = db.Column(db.Float, nullable=True)                 # 매장 경도
+    geofence_radius_m = db.Column(db.Integer, default=200)         # 지오펜스 허용 반경(m)
+    qr_geofence_enabled = db.Column(db.Boolean, default=True)      # QR 주문 시 위치 검증 사용 여부
+    qr_require_open_session = db.Column(db.Boolean, default=False) # 활성 테이블 세션일 때만 QR 주문 허용
     created_at = db.Column(db.DateTime, default=datetime.now)
     last_logged_at = db.Column(db.DateTime, nullable=True)
 
@@ -129,6 +135,9 @@ class Table(db.Model):
     grid_y = db.Column(db.Integer, nullable=True)
     grid_w = db.Column(db.Integer, nullable=True)
     grid_h = db.Column(db.Integer, nullable=True)
+    # ── QR 셀프 주문 토큰 (테이블별 발급) ──
+    qr_token = db.Column(db.String(64), unique=True, nullable=True, index=True)
+    qr_generated_at = db.Column(db.DateTime, nullable=True)
     # category_page_id = db.Column(db.Integer, db.ForeignKey('table_category_page.id'))
 
     #def __repr__(self):

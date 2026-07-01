@@ -1,3 +1,5 @@
+import secrets
+from datetime import datetime
 from flask import session, jsonify
 from app.models import Order, TableOrderList, TablePaymentList, db, Table, TableCategory
 
@@ -227,6 +229,52 @@ def update_table_layout(tables_data):
         table.grid_h = t.get('grid_h')
     db.session.commit()
     return True
+
+
+#############
+# QR 셀프 주문
+#############
+
+# 테이블 QR 토큰 → (table, store_id) 해석
+# Table에는 store_id가 없고 table_category_id → TableCategory.store_id로 이어짐
+def get_table_by_qr_token(qr_token):
+    if not qr_token:
+        return None, None
+    table = Table.query.filter_by(qr_token=qr_token).first()
+    if not table:
+        return None, None
+    category = TableCategory.query.filter_by(id=table.table_category_id).first()
+    store_id = category.store_id if category else None
+    return table, store_id
+
+
+# 테이블 store_id 조회 (category 조인)
+def get_store_id_by_table_id(table_id):
+    table = Table.query.filter_by(id=table_id).first()
+    if not table:
+        return None
+    category = TableCategory.query.filter_by(id=table.table_category_id).first()
+    return category.store_id if category else None
+
+
+# 테이블 QR 토큰 생성/재발급 (추측 불가 토큰)
+def generate_table_qr_token(table_id):
+    table = Table.query.filter_by(id=table_id).first()
+    if not table:
+        return None
+    table.qr_token = secrets.token_urlsafe(32)
+    table.qr_generated_at = datetime.now()
+    db.session.commit()
+    return table.qr_token
+
+
+# 테이블에 활성 세션(체크인 중, 미체크아웃)이 있는지 여부 — 세션 게이트용
+def has_active_table_session(table_id):
+    item = TableOrderList.query\
+        .filter(TableOrderList.table_id == table_id)\
+        .filter(TableOrderList.checkingout_at.is_(None))\
+        .first()
+    return item is not None
 
 
 # 테이블 사용유무 조회

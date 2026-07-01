@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>orderandgo</title>
+  <link rel="icon" type="image/x-icon" href="/static/images/common/logo.png">
+  <link rel="stylesheet" href="/static/css/reset.css">
+  <link rel="stylesheet" href="/static/css/common.css">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <style>
+    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #F5F5F5; }
+    .qr-error { text-align: center; padding: 40px 24px; }
+    .qr-error i { font-size: 64px; color: #1FAA9C; }
+    .qr-error h1 { margin: 20px 0 8px; font-size: 20px; font-weight: 700; color: #222; }
+    .qr-error p { color: #777; font-size: 15px; line-height: 1.5; }
+  </style>
+</head>
+
+<body>
+  <div class="qr-error">
+    <i class="ph-bold ph-qr-code"></i>
+    <h1>유효하지 않은 QR입니다</h1>
+    <p>QR 코드가 만료되었거나 잘못되었습니다.<br>테이블의 QR 코드를 다시 스캔해 주세요.</p>
+  </div>
+</body>
+
+</html>
