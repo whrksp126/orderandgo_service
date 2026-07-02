@@ -143,8 +143,8 @@
     if (minus) minus.addEventListener('click', function () { if (state.tables > 1) { state.tables--; numEl.textContent = state.tables; save(); } });
     if (plus) plus.addEventListener('click', function () { if (state.tables < 60) { state.tables++; numEl.textContent = state.tables; save(); } });
 
-    var next = document.getElementById('obNext');
-    if (next) next.addEventListener('click', onNext);
+    var nextBtn = document.getElementById('obNext');
+    if (nextBtn) nextBtn.addEventListener('click', onNext);
     var login = document.getElementById('obLogin');
     if (login) login.addEventListener('click', function () { location.href = '/login'; });
   }
