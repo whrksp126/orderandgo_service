@@ -1,6 +1,7 @@
-// 오더앤고 온보딩 위저드 (Duolingo식): 쉬운 입력 먼저 → 미리보기(가치) → 가입은 마지막
+// 오더앤고 온보딩 위저드 (Duolingo식): 쉬운 입력 먼저 → 미리보기(가치) → 하드웨어 확인 → 가입은 마지막
 (function () {
   var KEY = 'og_onboarding';
+  var CONTACT = window.OG_CONTACT || { tel: '', email: '' };
   var INDUSTRIES = [
     { id: 'korean', name: '한식', icon: 'ph-bowl-food' },
     { id: 'chinese', name: '중식', icon: 'ph-cooking-pot' },
@@ -11,13 +12,21 @@
     { id: 'pub', name: '치킨·주점', icon: 'ph-beer-bottle' },
     { id: 'etc', name: '기타', icon: 'ph-storefront' },
   ];
+  var YN = [
+    { id: 'yes', name: '네, 있어요', icon: 'ph-check-circle' },
+    { id: 'no', name: '아니요, 없어요', icon: 'ph-x-circle' },
+    { id: 'unsure', name: '잘 모르겠어요', icon: 'ph-question' },
+  ];
+  var TOTAL = 8;
 
-  var state = load() || { step: 0, industry: '', storeName: '', menus: [{ name: '', price: '' }], tables: 6 };
+  var state = load() || {
+    step: 0, industry: '', storeName: '', menus: [{ name: '', price: '' }],
+    tables: 6, hasTerminal: '', hasPrinter: ''
+  };
 
   function load() { try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; } }
   function save() { localStorage.setItem(KEY, JSON.stringify(state)); }
 
-  var TOTAL = 6;
   var stepEl = document.getElementById('obStep');
   var footEl = document.getElementById('obFoot');
   var barEl = document.getElementById('obBar');
@@ -25,12 +34,22 @@
 
   function esc(s) { return (s || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   function won(v) { var n = parseInt(v, 10); return isNaN(n) ? '0원' : n.toLocaleString() + '원'; }
+  function chips(list, selected, attr) {
+    var h = '<div class="ob-chips">';
+    list.forEach(function (it) {
+      h += '<button class="ob-chip ' + (selected === it.id ? 'active' : '') + '" data-' + attr + '="' + it.id + '">' +
+        '<i class="ph ' + it.icon + '"></i>' + it.name + '</button>';
+    });
+    return h + '</div>';
+  }
 
   function valid() {
     switch (state.step) {
       case 0: return !!state.industry;
       case 1: return state.storeName.trim().length > 0;
       case 2: return state.menus.some(function (m) { return m.name.trim() && parseInt(m.price, 10) > 0; });
+      case 5: return !!state.hasTerminal;
+      case 6: return !!state.hasPrinter;
       default: return true;
     }
   }
@@ -40,12 +59,7 @@
     var h = '';
     if (state.step === 0) {
       h += '<span class="ob-eyebrow">STEP 1</span><h1 class="ob-title">어떤 매장을 운영하세요?</h1>' +
-        '<p class="ob-sub">업종에 맞는 예시 메뉴와 화면을 준비해 드려요.</p><div class="ob-chips">';
-      INDUSTRIES.forEach(function (it) {
-        h += '<button class="ob-chip ' + (state.industry === it.id ? 'active' : '') + '" data-ind="' + it.id + '">' +
-          '<i class="ph ' + it.icon + '"></i>' + it.name + '</button>';
-      });
-      h += '</div>';
+        '<p class="ob-sub">업종에 맞는 예시 메뉴와 화면을 준비해 드려요.</p>' + chips(INDUSTRIES, state.industry, 'ind');
     } else if (state.step === 1) {
       h += '<span class="ob-eyebrow">STEP 2</span><h1 class="ob-title">매장 이름을 알려주세요</h1>' +
         '<p class="ob-sub">손님에게 보이는 이름이에요. 나중에 바꿀 수 있어요.</p>' +
@@ -82,8 +96,17 @@
         '<p class="ob-sub">POS 플로어맵과 테이블별 QR을 자동으로 만들어 드려요.</p>' +
         '<div class="ob-stepper"><button id="obMinus">−</button><span class="num" id="obTableNum">' + state.tables + '</span><button id="obPlus">+</button></div>';
     } else if (state.step === 5) {
+      h += '<span class="ob-eyebrow">STEP 5</span><h1 class="ob-title">토스 프론트 단말기가 있으신가요?</h1>' +
+        '<p class="ob-sub">카드·간편결제를 받으려면 토스플레이스 프론트 단말기가 필요해요. 없으셔도 무료로 도와드려요.</p>' +
+        chips(YN, state.hasTerminal, 'term');
+    } else if (state.step === 6) {
+      h += '<span class="ob-eyebrow">STEP 6</span><h1 class="ob-title">영수증 프린터가 있으신가요?</h1>' +
+        '<p class="ob-sub">영수증·주문서 출력에 사용해요. 없으셔도 추천 구성을 안내해 드려요.</p>' +
+        chips(YN, state.hasPrinter, 'printer');
+    } else if (state.step === 7) {
       var mc = state.menus.filter(function (m) { return m.name.trim(); }).length;
       var indName = (INDUSTRIES.find(function (x) { return x.id === state.industry; }) || {}).name || '-';
+      var lackHw = state.hasTerminal !== 'yes' || state.hasPrinter !== 'yes';
       h += '<span class="ob-eyebrow">거의 다 됐어요!</span><h1 class="ob-title">' + esc(state.storeName || '내 매장') + ' 매장이 준비됐어요 🎉</h1>' +
         '<p class="ob-sub">지금 가입하면 아래 내용이 그대로 저장돼요.</p>' +
         '<div class="ob-summary">' +
@@ -91,12 +114,24 @@
         '<div class="ob-summary-row"><span>매장 이름</span><strong>' + esc(state.storeName || '-') + '</strong></div>' +
         '<div class="ob-summary-row"><span>등록 메뉴</span><strong>' + mc + '개</strong></div>' +
         '<div class="ob-summary-row"><span>테이블</span><strong>' + state.tables + '개</strong></div>' +
-        '</div>' +
-        '<p class="ob-sub" style="margin-bottom:8px;">가입 후 이어서 설정할 수 있어요:</p>' +
-        '<ul class="ob-next-list">' +
-        '<li><i class="ph ph-qr-code"></i> 테이블 QR 출력</li>' +
-        '<li><i class="ph ph-credit-card"></i> 토스플레이스 단말기 연결</li>' +
-        '<li><i class="ph ph-monitor"></i> 주방 KDS · 프린터 설정</li></ul>';
+        '</div>';
+      if (lackHw) {
+        var need = [];
+        if (state.hasTerminal !== 'yes') need.push('토스 프론트 단말기');
+        if (state.hasPrinter !== 'yes') need.push('영수증 프린터');
+        h += '<div class="ob-consult"><div class="ob-consult-top"><i class="ph ph-headset"></i>' +
+          '<div><strong>' + need.join(' · ') + '가 필요하신가요?</strong>' +
+          '<p>필요한 장비를 무료로 상담받고, 우리 매장에 맞는 구성을 추천받으세요.</p></div></div>' +
+          '<div class="ob-consult-btns">' +
+          (CONTACT.tel ? '<a class="ob-consult-btn call" href="tel:' + CONTACT.tel + '"><i class="ph ph-phone"></i> 전화 상담</a>' : '') +
+          (CONTACT.email ? '<a class="ob-consult-btn mail" href="mailto:' + CONTACT.email + '?subject=오더앤고 도입 상담"><i class="ph ph-envelope-simple"></i> 이메일 문의</a>' : '') +
+          '</div></div>';
+      } else {
+        h += '<p class="ob-sub" style="margin-bottom:8px;">가입 후 이어서 설정할 수 있어요:</p>' +
+          '<ul class="ob-next-list"><li><i class="ph ph-qr-code"></i> 테이블 QR 출력</li>' +
+          '<li><i class="ph ph-credit-card"></i> 토스플레이스 단말기 연결</li>' +
+          '<li><i class="ph ph-monitor"></i> 주방 KDS · 프린터 설정</li></ul>';
+      }
     }
     stepEl.innerHTML = h;
     renderFoot();
@@ -104,7 +139,7 @@
   }
 
   function renderFoot() {
-    if (state.step === 5) {
+    if (state.step === 7) {
       footEl.innerHTML = '<button class="ob-btn" id="obNext">무료로 시작하고 저장하기</button>' +
         '<button class="ob-btn ghost" id="obLogin">이미 계정이 있어요</button>';
     } else {
@@ -113,18 +148,18 @@
   }
 
   function wire() {
-    // 업종 칩
+    // 칩(업종/하드웨어) — 선택 즉시 자동 진행
     stepEl.querySelectorAll('.ob-chip').forEach(function (c) {
       c.addEventListener('click', function () {
-        state.industry = c.dataset.ind; save();
-        // 자동 진행(듀오링고식 즉시 반응)
-        next();
+        if (c.dataset.ind) state.industry = c.dataset.ind;
+        else if (c.dataset.term) state.hasTerminal = c.dataset.term;
+        else if (c.dataset.printer) state.hasPrinter = c.dataset.printer;
+        save(); next();
       });
     });
     var nameInput = document.getElementById('obName');
     if (nameInput) nameInput.addEventListener('input', function () { state.storeName = nameInput.value; save(); refreshNext(); });
 
-    // 메뉴 입력
     var menusWrap = document.getElementById('obMenus');
     if (menusWrap) {
       menusWrap.querySelectorAll('.ob-menu-row').forEach(function (row) {
@@ -138,7 +173,6 @@
       if (add) add.addEventListener('click', function () { if (state.menus.length < 12) { state.menus.push({ name: '', price: '' }); save(); render(); } });
     }
 
-    // 테이블 스텝퍼
     var minus = document.getElementById('obMinus'), plus = document.getElementById('obPlus'), numEl = document.getElementById('obTableNum');
     if (minus) minus.addEventListener('click', function () { if (state.tables > 1) { state.tables--; numEl.textContent = state.tables; save(); } });
     if (plus) plus.addEventListener('click', function () { if (state.tables < 60) { state.tables++; numEl.textContent = state.tables; save(); } });
@@ -151,12 +185,11 @@
 
   function refreshNext() {
     var n = document.getElementById('obNext');
-    if (n && state.step < 5) n.disabled = !valid();
+    if (n && state.step < 7) n.disabled = !valid();
   }
 
   function onNext() {
-    if (state.step === 5) {
-      // 가입으로 인계 (온보딩 데이터는 localStorage 에 보관 → 가입/로그인 후 커밋)
+    if (state.step === 7) {
       save();
       location.href = '/register_admin?from=onboarding';
       return;
@@ -165,7 +198,7 @@
     next();
   }
 
-  function next() { if (state.step < 5) { state.step++; save(); render(); window.scrollTo(0, 0); } }
+  function next() { if (state.step < 7) { state.step++; save(); render(); window.scrollTo(0, 0); } }
   function prev() {
     if (state.step === 0) { location.href = '/'; return; }
     state.step--; save(); render(); window.scrollTo(0, 0);

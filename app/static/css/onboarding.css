@@ -88,6 +88,17 @@ body.ob {
 .ob-next-list li { display: flex; gap: var(--og-space-2); align-items: center; font-size: var(--og-fs-sm); color: var(--og-text-muted); margin-bottom: var(--og-space-2); }
 .ob-next-list i { color: var(--og-gray-400); }
 
+/* 상담 문의 (하드웨어 미보유 시) */
+.ob-consult { background: var(--og-primary-050); border: 1px solid var(--og-primary-100); border-radius: var(--og-radius-lg); padding: var(--og-space-5); margin-top: var(--og-space-4); }
+.ob-consult-top { display: flex; gap: var(--og-space-3); align-items: flex-start; }
+.ob-consult-top > i { font-size: 28px; color: var(--og-primary); flex-shrink: 0; }
+.ob-consult-top strong { font-size: var(--og-fs-sm); font-weight: var(--og-fw-bold); }
+.ob-consult-top p { font-size: var(--og-fs-xs); color: var(--og-text-muted); margin: 4px 0 0; }
+.ob-consult-btns { display: flex; gap: var(--og-space-2); margin-top: var(--og-space-4); }
+.ob-consult-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px; border-radius: var(--og-radius-md); font-size: var(--og-fs-sm); font-weight: var(--og-fw-bold); text-decoration: none; }
+.ob-consult-btn.call { background: var(--og-primary); color: #fff; }
+.ob-consult-btn.mail { background: #fff; color: var(--og-primary); border: 1px solid var(--og-primary); }
+
 /* 하단 CTA */
 .ob-foot { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,.96); backdrop-filter: blur(8px);
   border-top: 1px solid var(--og-gray-100); padding: var(--og-space-4) var(--og-space-5); }

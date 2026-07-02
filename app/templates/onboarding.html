@@ -20,4 +20,7 @@
 </div>
 {% endblock %}
 
-{% block scripts %}<script src="/static/js/onboarding.js"></script>{% endblock %}
+{% block scripts %}
+<script>window.OG_CONTACT = { tel: "{{ company.tel }}", email: "{{ company.email }}" };</script>
+<script src="/static/js/onboarding.js"></script>
+{% endblock %}
