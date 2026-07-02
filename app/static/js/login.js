@@ -191,7 +191,13 @@ const clickRequestVerifyCode = (event) => {
     const btn = event.currentTarget;
     if (btn) btn.disabled = true;
     window.ogFirebasePhone.sendCode(tel)
-      .then(() => showToast('인증번호가 발송되었습니다', 'success'))
+      .then(() => {
+        showToast('인증번호가 발송되었습니다', 'success');
+        const vb = document.getElementById('verify_btn');
+        if (vb) vb.style.display = '';
+        const codeEl = document.getElementById('code_number');
+        if (codeEl) codeEl.focus();
+      })
       .catch(err => {
         console.error('[Firebase sendCode]', err);
         var detail = (err && err.code ? err.code : '') + ' ' + (err && err.message ? err.message : err);
@@ -217,6 +223,27 @@ const clickRequestVerifyCode = (event) => {
     .catch(() => showToast('발송 중 오류가 발생했습니다', 'error'));
 };
 
+// ── 인증번호 확인 (register.html / find_password.html 공용) ──
+// 성공 시 window.__ogVerifiedToken 저장 + 비밀번호 입력 영역(#secret_section) 노출
+const clickVerifyCode = (event) => {
+  const code = (document.getElementById('code_number')?.value || '').trim();
+  if (code.length < 4) { showToast('인증번호를 입력해주세요', 'error'); return; }
+  if (!window.ogFirebasePhone) { showToast('인증 모듈을 불러오는 중입니다', 'error'); return; }
+  const btn = event.currentTarget;
+  btn.disabled = true;
+  window.ogFirebasePhone.confirmCode(code)
+    .then(idToken => {
+      window.__ogVerifiedToken = idToken;
+      document.querySelectorAll('input[type="tel"]').forEach(el => el.disabled = true);
+      const codeEl = document.getElementById('code_number'); if (codeEl) codeEl.disabled = true;
+      btn.style.display = 'none';
+      const badge = document.getElementById('verified_badge'); if (badge) badge.style.display = '';
+      const sec = document.getElementById('secret_section'); if (sec) sec.style.display = '';
+      showToast('전화번호 인증이 완료되었습니다', 'success');
+    })
+    .catch(() => { showToast('인증번호가 올바르지 않습니다', 'error'); btn.disabled = false; });
+};
+
 // ── 관리자 회원가입 (register.html) ──
 const onSubmitRegister = (event) => {
   event.preventDefault();
@@ -224,6 +251,15 @@ const onSubmitRegister = (event) => {
   const tels = [...form.querySelectorAll('input[type="tel"]')].map(el => el.value).join('');
   const password = form.querySelector('#password').value;
   const codeNumber = form.querySelector('#code_number').value;
+
+  if (window.ogFirebasePhone && !window.__ogVerifiedToken) {
+    showFormMsg('form_msg', '전화번호 인증을 먼저 완료해주세요.');
+    return;
+  }
+  if (!password || password.length < 4) {
+    showFormMsg('form_msg', '비밀번호를 입력해주세요.');
+    return;
+  }
 
   const postRegister = (idToken) => {
     const fd = new FormData();
@@ -244,14 +280,7 @@ const onSubmitRegister = (event) => {
       .catch(() => showToast('오류가 발생했습니다.', 'error'));
   };
 
-  // Firebase 인증코드 확인 후 가입
-  if (window.ogFirebasePhone) {
-    window.ogFirebasePhone.confirmCode(codeNumber)
-      .then(idToken => postRegister(idToken))
-      .catch(() => showFormMsg('form_msg', '인증번호가 올바르지 않습니다.'));
-    return;
-  }
-  postRegister(null);
+  postRegister(window.__ogVerifiedToken || null);
 };
 
 // ── 회원가입 유효성 검사 (register.html) ──

@@ -227,9 +227,17 @@ def find_password():
 
     tel = request.form.get('tel')
     new_password = request.form.get('new_password')
+    firebase_token = request.form.get('firebase_id_token')
 
     if not tel or not new_password:
         return jsonify({'code': 400, 'message': '전화번호와 새 비밀번호를 입력해주세요.'})
+
+    # 전화번호 인증 필수 (본인 확인)
+    if not firebase_token:
+        return jsonify({'code': 400, 'message': '전화번호 인증이 필요합니다.'})
+    verified_phone = _verify_firebase_phone(firebase_token)
+    if not verified_phone or not _same_phone(verified_phone, tel):
+        return jsonify({'code': 400, 'message': '전화번호 인증에 실패했습니다.'})
 
     user = get_user_by_tel(tel)
     if not user:
