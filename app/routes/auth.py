@@ -219,6 +219,14 @@ def register_store_user():
         print("회원가입 성공", result)
         return jsonify({'message': 'Success', 'code': 200})
 
+# 전화번호 가입 여부 확인 (가입=중복 방지 / 재설정=존재 확인)
+@auth_bp.route('/check_tel', methods=['GET'])
+def check_tel():
+    tel = request.args.get('tel', '')
+    exists = bool(get_user_by_tel(tel)) if tel else False
+    return jsonify({'exists': exists})
+
+
 # 비밀번호 찾기 (재설정)
 @auth_bp.route('/find_password', methods=['GET', 'POST'])
 def find_password():

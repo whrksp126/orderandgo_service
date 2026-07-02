@@ -186,19 +186,32 @@ const clickRequestVerifyCode = (event) => {
     showToast('전화번호를 먼저 입력해주세요', 'error');
     return;
   }
-  // Firebase 전화 인증 (실제 SMS 발송)
+  // Firebase 전화 인증 (실제 SMS 발송) — 발송 전에 가입여부 사전 확인
   if (window.ogFirebasePhone) {
     const btn = event.currentTarget;
     if (btn) btn.disabled = true;
-    window.ogFirebasePhone.sendCode(tel)
+    const mode = window.OG_PHONE_MODE || 'register';
+    fetch('/check_tel?tel=' + encodeURIComponent(tel))
+      .then(r => r.json())
+      .then(d => {
+        if (mode === 'register' && d.exists) {
+          showToast('이미 가입된 번호입니다. 로그인해 주세요.', 'error');
+          setTimeout(() => { window.location.href = '/login'; }, 1500);
+          throw 'handled';
+        }
+        if (mode === 'reset' && !d.exists) {
+          showToast('가입되지 않은 번호입니다.', 'error');
+          throw 'handled';
+        }
+        return window.ogFirebasePhone.sendCode(tel);
+      })
       .then(() => {
         showToast('인증번호가 발송되었습니다', 'success');
-        const vb = document.getElementById('verify_btn');
-        if (vb) vb.style.display = '';
-        const codeEl = document.getElementById('code_number');
-        if (codeEl) codeEl.focus();
+        const vb = document.getElementById('verify_btn'); if (vb) vb.style.display = '';
+        const codeEl = document.getElementById('code_number'); if (codeEl) codeEl.focus();
       })
       .catch(err => {
+        if (err === 'handled') return;
         console.error('[Firebase sendCode]', err);
         var detail = (err && err.code ? err.code : '') + ' ' + (err && err.message ? err.message : err);
         alert('인증번호 발송 오류\n' + detail);
@@ -238,7 +251,7 @@ const clickVerifyCode = (event) => {
       const codeEl = document.getElementById('code_number'); if (codeEl) codeEl.disabled = true;
       btn.style.display = 'none';
       const badge = document.getElementById('verified_badge'); if (badge) badge.style.display = '';
-      const sec = document.getElementById('secret_section'); if (sec) sec.style.display = '';
+      document.querySelectorAll('.js-secret').forEach(el => { el.style.display = ''; });
       showToast('전화번호 인증이 완료되었습니다', 'success');
     })
     .catch(() => { showToast('인증번호가 올바르지 않습니다', 'error'); btn.disabled = false; });
