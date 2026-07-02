@@ -92,6 +92,7 @@ body.ob {
 .ob-consult { background: var(--og-primary-050); border: 1px solid var(--og-primary-100); border-radius: var(--og-radius-lg); padding: var(--og-space-5); margin-top: var(--og-space-4); }
 .ob-consult-top { display: flex; gap: var(--og-space-3); align-items: flex-start; }
 .ob-consult-top > i { font-size: 28px; color: var(--og-primary); flex-shrink: 0; }
+.ob-consult-top > div { min-width: 0; }
 .ob-consult-top strong { font-size: var(--og-fs-sm); font-weight: var(--og-fw-bold); }
 .ob-consult-top p { font-size: var(--og-fs-xs); color: var(--og-text-muted); margin: 4px 0 0; }
 .ob-consult-btns { display: flex; gap: var(--og-space-2); margin-top: var(--og-space-4); }
