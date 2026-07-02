@@ -13,17 +13,17 @@
 COMPANY = {
     "service_name": "오더앤고",              # 서비스명
     "service_name_en": "OrderAndGo",
-    "company_name": "[사용자입력: 상호(회사명)]",
-    "ceo_name": "[사용자입력: 대표자명]",
-    "business_number": "[사용자입력: 사업자등록번호]",          # 000-00-00000
-    "mail_order_number": "[사용자입력: 통신판매업신고번호]",     # 제0000-지역-0000호
-    "address": "[사용자입력: 사업장 주소]",
-    "tel": "[사용자입력: 대표 전화번호]",
-    "email": "[사용자입력: 고객문의 이메일]",
+    "company_name": "슬기로운 사업",
+    "ceo_name": "조건호",
+    "business_number": "315-27-01645",
+    "mail_order_number": "제2025-부산진-1148호",
+    "address": "부산광역시 부산진구 동천로 116, 3층 오픈오피스 12호(전포동, 한신빌딩 티움)",
+    "tel": "010-2085-2374",
+    "email": "ceo@ghmate.com",
     # 개인정보보호책임자
-    "privacy_officer_name": "[사용자입력: 개인정보보호책임자 성명]",
-    "privacy_officer_title": "[사용자입력: 직책]",
-    "privacy_officer_contact": "[사용자입력: 연락처(전화/이메일)]",
+    "privacy_officer_name": "조건호",
+    "privacy_officer_title": "대표",
+    "privacy_officer_contact": "ceo@ghmate.com",
     # 약관/방침 시행일 (실제 공개일로 갱신)
     "terms_effective_date": "2026-07-02",
     "privacy_effective_date": "2026-07-02",
