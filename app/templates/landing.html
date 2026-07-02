@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{# 랜딩은 base 의 SEO 기본값 사용 (site.default_title/description) #}
+{% block head %}
+  <link rel="stylesheet" href="/static/css/landing.css">
+{% endblock %}
+
+{% block body %}
+<!-- ================= 헤더 ================= -->
+<header class="lp-header">
+  <div class="lp-header-inner">
+    <a class="lp-logo" href="/"><img src="/static/images/common/logo-order&go-color.png" alt="오더앤고"></a>
+    <nav class="lp-nav">
+      <a class="lp-navlink" href="#features">기능</a>
+      <a class="lp-navlink" href="#how">이용 흐름</a>
+      <a class="lp-navlink" href="#faq">자주 묻는 질문</a>
+      <a class="lp-navlink" href="/login">로그인</a>
+      <a class="og-btn og-btn--primary og-btn--pill" href="/start">무료로 시작하기</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ================= 히어로 ================= -->
+<section class="lp-hero">
+  <div class="og-container">
+    <span class="lp-hero-badge">포스 · QR주문 · 주방 · 결제 · 매장관리 올인원</span>
+    <h1>포스기부터 테이블오더까지,<br><span class="accent">오더앤고</span> 하나면 됩니다</h1>
+    <p class="lp-hero-sub">
+      비싼 포스기 없이도 QR 주문·카드결제·주방 관리·매출 정산을 한 번에.
+      소상공 사장님을 위한 가장 쉬운 매장 운영 솔루션.
+    </p>
+    <div class="lp-hero-cta">
+      <a class="og-btn og-btn--primary og-btn--lg og-btn--pill" href="/start">무료로 시작하기</a>
+      <a class="og-btn og-btn--ghost og-btn--lg og-btn--pill" href="/login">로그인</a>
+    </div>
+    <p class="lp-hero-note">설치 없이 지금 바로 · 신용카드 등록 불필요</p>
+  </div>
+  <div class="lp-hero-visual">
+    <div class="lp-mock" role="img" aria-label="오더앤고 POS 화면 미리보기">
+      <!-- Phase 3: /static/images/landing/hero-pos.png (실제 캡처+기기목업) 로 교체 -->
+      POS 화면 캡처 (준비중)
+    </div>
+  </div>
+</section>
+
+<!-- ================= 기능 쇼케이스 ================= -->
+<section class="lp-section" id="features">
+  <div class="og-container">
+    <div class="lp-section-head">
+      <span class="lp-eyebrow">FEATURES</span>
+      <h2>매장 운영에 필요한 모든 것</h2>
+      <p>실제 오더앤고 화면입니다. 고객 주문부터 주방·결제·정산까지 끊김 없이 이어집니다.</p>
+    </div>
+
+    {% set features = [
+      {"eyebrow":"고객 QR 주문", "title":"테이블에서 QR 스캔, 직접 주문", "desc":"손님이 QR을 찍고 메뉴·옵션을 골라 바로 주문. 홀 인력 부담을 줄입니다.", "img":"feature-qr.png", "points":["메뉴·옵션·장바구니","직원 호출 버튼","실시간 영수증"], "reverse": false},
+      {"eyebrow":"POS", "title":"한눈에 보는 테이블 현황과 결제", "desc":"플로어맵에서 테이블 상태를 실시간 확인하고 카드·현금 결제를 처리합니다.", "img":"feature-pos.png", "points":["실시간 테이블 상태","주문 상세 관리","토스 단말기 카드결제"], "reverse": true},
+      {"eyebrow":"주방 KDS", "title":"주방 디스플레이로 조리 관리", "desc":"들어온 주문을 주방 화면에서 대기·완료로 관리하고 경과 시간을 확인합니다.", "img":"feature-kds.png", "points":["대기/완료 분할 화면","조리 경과 타이머","탭 한 번으로 완료"], "reverse": false},
+      {"eyebrow":"매장 관리", "title":"메뉴·테이블을 드래그로 손쉽게", "desc":"메뉴와 테이블 배치를 캔버스에서 직접 구성하고 QR을 발급합니다.", "img":"feature-store.png", "points":["메뉴 배치 편집","테이블 배치·QR 발급","결제내역·정산"], "reverse": true}
+    ] %}
+
+    {% for f in features %}
+    <div class="lp-feature {{ 'reverse' if f.reverse }}">
+      <div class="lp-feature-text">
+        <span class="lp-eyebrow">{{ f.eyebrow }}</span>
+        <h3>{{ f.title }}</h3>
+        <p>{{ f.desc }}</p>
+        <ul class="lp-feature-list">
+          {% for p in f.points %}<li><i class="ph ph-check-circle"></i>{{ p }}</li>{% endfor %}
+        </ul>
+      </div>
+      <div class="lp-feature-media">
+        <div class="lp-mock" role="img" aria-label="{{ f.title }} 화면">
+          <!-- Phase 3: /static/images/landing/{{ f.img }} -->
+          {{ f.eyebrow }} 화면 (준비중)
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- ================= 이용 흐름 ================= -->
+<section class="lp-section alt" id="how">
+  <div class="og-container">
+    <div class="lp-section-head">
+      <span class="lp-eyebrow">HOW IT WORKS</span>
+      <h2>3분이면 시작합니다</h2>
+    </div>
+    <div class="lp-steps">
+      <div class="lp-step"><div class="lp-step-num">1</div><h4>매장·메뉴 입력</h4><p>가입 없이 매장 이름과 대표 메뉴부터 입력해 보세요.</p></div>
+      <div class="lp-step"><div class="lp-step-num">2</div><h4>미리보기 확인</h4><p>입력하는 즉시 POS·주문 화면에 어떻게 보이는지 확인합니다.</p></div>
+      <div class="lp-step"><div class="lp-step-num">3</div><h4>가입하고 저장</h4><p>마음에 들면 간편 가입으로 지금까지 만든 매장을 저장합니다.</p></div>
+      <div class="lp-step"><div class="lp-step-num">4</div><h4>주문 받기</h4><p>QR을 테이블에 두면 바로 주문·결제가 시작됩니다.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section class="lp-section" id="faq">
+  <div class="og-container">
+    <div class="lp-section-head">
+      <span class="lp-eyebrow">FAQ</span>
+      <h2>자주 묻는 질문</h2>
+    </div>
+    <div class="lp-faq">
+      <details><summary>별도 장비를 사야 하나요?</summary><p>아니요. 기존 태블릿·PC·스마트폰으로 시작할 수 있습니다. 카드결제는 토스 단말기와 연동됩니다.</p></details>
+      <details><summary>지금 바로 사용해볼 수 있나요?</summary><p>네. 가입 없이 매장과 메뉴를 입력해 미리보기까지 확인한 뒤, 원할 때 가입해 저장할 수 있습니다.</p></details>
+      <details><summary>카드결제는 어떻게 되나요?</summary><p>토스플레이스 단말기와 연동되어 POS에서 카드·현금 결제를 처리하고 정산 내역을 관리합니다.</p></details>
+      <details><summary>주방 화면(KDS)도 제공되나요?</summary><p>네. 주방용 디스플레이로 주문을 대기/완료로 관리하고 조리 경과 시간을 확인할 수 있습니다.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 최종 CTA ================= -->
+<section class="lp-cta">
+  <div class="og-container">
+    <h2>지금, 우리 매장에 맞게 시작해 보세요</h2>
+    <p>가입 전에 먼저 만들어 보고 결정하세요.</p>
+    <a class="og-btn og-btn--primary og-btn--lg og-btn--pill" href="/start">무료로 시작하기</a>
+  </div>
+</section>
+{% endblock %}

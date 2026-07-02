@@ -188,7 +188,7 @@ function _updateBackButton(view, tableId) {
   if (view === 'tableList') {
     newBtn.addEventListener('click', function(e) {
       e.preventDefault();
-      window.location.href = '/';
+      window.location.href = '/dashboard';
     });
   } else if (view === 'menuList') {
     newBtn.addEventListener('click', function(e) {

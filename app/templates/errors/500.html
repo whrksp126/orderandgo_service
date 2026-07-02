@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}일시적인 오류가 발생했습니다 | {{ company.service_name }}{% endblock %}
+{% block robots %}noindex, follow{% endblock %}
+{% block body %}
+<div class="og-error">
+  <div class="og-error-code">500</div>
+  <h1>일시적인 오류가 발생했습니다</h1>
+  <p>잠시 후 다시 시도해 주세요. 문제가 계속되면 고객센터로 문의해 주세요.</p>
+  <a class="og-btn og-btn--primary" href="/">홈으로 돌아가기</a>
+</div>
+{% endblock %}

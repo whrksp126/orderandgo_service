@@ -22,9 +22,9 @@ def login():
             stores = get_store(session['admin_user_id'])
             store_list = [{'store_id': s.store_id, 'name': s.name} for s in stores]
             return render_template('login.html', store_list=store_list)
-        # 스토어로 이미 로그인된 경우 → 메인으로
+        # 스토어로 이미 로그인된 경우 → 대시보드로
         if current_user.is_authenticated:
-            return redirect(url_for('main.index'))
+            return redirect(url_for('main.dashboard'))
 
         return render_template('login.html')
     

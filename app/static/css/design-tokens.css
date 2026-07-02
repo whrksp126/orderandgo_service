@@ -1,0 +1,115 @@
+/* ============================================================
+ * 오더앤고 디자인 시스템 토큰 (Design Tokens)
+ * 기존 앱(common.css) 토큰을 formalize — 랜딩/온보딩/앱 공통 사용
+ * 톤: 신뢰·전문 미니멀 / 브랜드 티얼 #1FAA9C
+ * ============================================================ */
+
+:root {
+  /* ---------- Brand (Primary) ---------- */
+  --og-primary: #1FAA9C;        /* 브랜드 티얼 */
+  --og-primary-hover: #2ABAA4;  /* hover/active */
+  --og-primary-dark: #199589;   /* depth */
+  --og-primary-050: #E9F7F5;    /* 아주 옅은 배경 */
+  --og-primary-100: #CFEEEA;
+
+  /* ---------- Accent (Action/Error) ---------- */
+  --og-accent: #F43E25;         /* 포인트 레드 (삭제/강조) */
+  --og-accent-soft: #FF5A5F;
+
+  /* ---------- Status ---------- */
+  --og-info: #17C7FF;
+  --og-success: #1FAA9C;
+  --og-warning: #FFB803;
+  --og-error: #F43E25;
+
+  /* ---------- Neutral scale ---------- */
+  --og-white: #FFFFFF;
+  --og-gray-050: #F5F5F5;
+  --og-gray-100: #EFEFEF;
+  --og-gray-200: #DADADA;
+  --og-gray-300: #C6C6C6;
+  --og-gray-400: #999999;
+  --og-gray-500: #888888;
+  --og-gray-600: #666666;
+  --og-gray-800: #333333;
+  --og-gray-900: #111111;
+  --og-black: #000000;
+
+  /* ---------- Text ---------- */
+  --og-text: #333333;
+  --og-text-muted: #666666;
+  --og-text-subtle: #888888;
+  --og-text-invert: #FFFFFF;
+
+  /* ---------- Surface / Border ---------- */
+  --og-bg: #FFFFFF;
+  --og-bg-alt: #F5F5F5;
+  --og-border: #DADADA;
+  --og-border-strong: #C6C6C6;
+
+  /* ---------- Typography ---------- */
+  --og-font-sans: "Pretendard Variable", "Pretendard", "Noto Sans KR", -apple-system,
+    BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, sans-serif;
+
+  --og-fs-xs: 14px;
+  --og-fs-sm: 16px;
+  --og-fs-md: 18px;
+  --og-fs-lg: 24px;
+  --og-fs-xl: 30px;
+  --og-fs-2xl: 40px;
+  --og-fs-3xl: 56px;   /* 랜딩 히어로 */
+
+  --og-fw-regular: 400;
+  --og-fw-medium: 500;
+  --og-fw-semibold: 600;
+  --og-fw-bold: 700;
+  --og-fw-extrabold: 800;
+
+  --og-lh-tight: 1.25;
+  --og-lh-normal: 1.5;
+  --og-lh-relaxed: 1.7;
+
+  /* ---------- Spacing scale (4px base) ---------- */
+  --og-space-1: 4px;
+  --og-space-2: 8px;
+  --og-space-3: 12px;
+  --og-space-4: 16px;
+  --og-space-5: 20px;
+  --og-space-6: 24px;
+  --og-space-8: 32px;
+  --og-space-10: 40px;
+  --og-space-14: 56px;
+  --og-space-20: 80px;
+  --og-space-30: 120px;   /* 랜딩 섹션 간격 */
+
+  /* ---------- Radius ---------- */
+  --og-radius-sm: 5px;
+  --og-radius-md: 8px;
+  --og-radius-lg: 12px;
+  --og-radius-xl: 16px;
+  --og-radius-2xl: 24px;
+  --og-radius-pill: 999px;
+
+  /* ---------- Shadow ---------- */
+  --og-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --og-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.10);
+  --og-shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
+  --og-shadow-brand: 0 8px 24px rgba(31, 170, 156, 0.28);
+
+  /* ---------- Layout ---------- */
+  --og-container: 1160px;
+  --og-container-narrow: 800px;
+
+  /* ---------- Motion ---------- */
+  --og-transition: 0.25s ease;
+
+  /* ---------- 하위호환: 기존 common.css 변수 alias ---------- */
+  --backgound-color-1fa: var(--og-primary);
+  --border-color-1fa: var(--og-primary);
+  --font-color-1fa: var(--og-primary);
+  --background-color-f5: var(--og-gray-050);
+  --background-color-ff: var(--og-white);
+  --border-color-da: var(--og-border);
+  --border-color-c6: var(--og-border-strong);
+  --font-color-88: var(--og-text-subtle);
+}

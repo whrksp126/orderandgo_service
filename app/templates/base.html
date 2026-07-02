@@ -3,23 +3,104 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OrderAndGo</title>
-  <link rel="icon" type="image/x-icon" href="/static/images/common/logo.png">
 
-  <!-- 시작 초기 css 설정 -->
-  <link rel="stylesheet" href="static/css/responsive.css">
-  <link rel="stylesheet" href="static/css/reset.css">
-  <link rel="stylesheet" href="static/css/common.css">
-  <!-- 아이콘 -->
+  {# ---------- SEO 기본 메타 (페이지별 override 가능) ---------- #}
+  <title>{% block title %}{{ site.default_title }}{% endblock %}</title>
+  <meta name="description" content="{% block description %}{{ site.default_description }}{% endblock %}">
+  <meta name="keywords" content="{% block keywords %}{{ site.keywords }}{% endblock %}">
+  <meta name="robots" content="{% block robots %}index, follow{% endblock %}">
+  <link rel="canonical" href="{% block canonical %}{{ request.url_root.rstrip('/') }}{{ request.path }}{% endblock %}">
+
+  {# ---------- Open Graph ---------- #}
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="{{ site.short_name }}">
+  <meta property="og:locale" content="{{ site.locale }}">
+  <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}{{ self.description() }}{% endblock %}">
+  <meta property="og:url" content="{{ request.url_root.rstrip('/') }}{{ request.path }}">
+  <meta property="og:image" content="{{ request.url_root.rstrip('/') }}{% block og_image %}{{ site.og_image }}{% endblock %}">
+
+  {# ---------- Twitter ---------- #}
+  <meta name="twitter:card" content="{{ site.twitter_card }}">
+  <meta name="twitter:title" content="{{ self.title() }}">
+  <meta name="twitter:description" content="{{ self.description() }}">
+  <meta name="twitter:image" content="{{ request.url_root.rstrip('/') }}{{ self.og_image() }}">
+
+  {# ---------- 구조화 데이터 (JSON-LD) ---------- #}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "{{ company.service_name }}",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "description": "{{ site.default_description }}",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "KRW" },
+    "provider": {
+      "@type": "Organization",
+      "name": "{{ company.company_name }}",
+      "url": "{{ request.url_root.rstrip('/') }}"
+    }
+  }
+  </script>
+
+  <link rel="icon" type="image/png" href="/static/images/common/logo.png">
+
+  {# ---------- 폰트 / 디자인 시스템 ---------- #}
+  <link rel="stylesheet" href="/static/css/reset.css">
+  <link rel="stylesheet" href="/static/css/design-tokens.css">
+  <link rel="stylesheet" href="/static/css/public.css">
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  {% block head %}{% endblock %}
 
-  <!-- 전용 css -->
-  <!-- <link rel="stylesheet" href="static/css/main.css"> -->
+  {# ---------- GA4 (측정ID 설정 시 활성화) ---------- #}
+  {% if ga4_id %}
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga4_id }}"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', '{{ ga4_id }}');
+  </script>
+  {% endif %}
 </head>
 <body>
-  <!-- 공통 스크립트 -->
-  <!-- <script src="static/js/common.js"></script> -->
-  <!-- 전용 스크립트 -->
-  <!-- <script src="static/js/main.js"></script> -->
+  {% block body %}{% endblock %}
+
+  {% block footer %}
+  <footer class="og-footer">
+    <div class="og-footer-inner">
+      <div class="og-footer-brand">
+        <img src="/static/images/common/logo-order&go-white.png" alt="{{ company.service_name }}" class="og-footer-logo">
+        <p class="og-footer-tagline">요식업 포스·QR주문·매장관리 올인원</p>
+      </div>
+      <nav class="og-footer-links">
+        <a href="/terms">이용약관</a>
+        <a href="/privacy"><strong>개인정보처리방침</strong></a>
+        <a href="/login">로그인</a>
+      </nav>
+    </div>
+    <div class="og-footer-legal">
+      <p>
+        <span>{{ company.service_name }}</span>
+        <span>상호 {{ company.company_name }}</span>
+        <span>대표 {{ company.ceo_name }}</span>
+        <span>사업자등록번호 {{ company.business_number }}</span>
+        <span>통신판매업신고 {{ company.mail_order_number }}</span>
+      </p>
+      <p>
+        <span>주소 {{ company.address }}</span>
+        <span>대표전화 {{ company.tel }}</span>
+        <span>이메일 {{ company.email }}</span>
+      </p>
+      <p>
+        <span>개인정보보호책임자 {{ company.privacy_officer_name }} ({{ company.privacy_officer_title }}, {{ company.privacy_officer_contact }})</span>
+      </p>
+      <p class="og-footer-copy">© {{ company.terms_effective_date[:4] }} {{ company.company_name }}. All rights reserved.</p>
+    </div>
+  </footer>
+  {% endblock %}
+
+  {% block scripts %}{% endblock %}
 </body>
 </html>

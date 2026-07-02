@@ -1,0 +1,102 @@
+/* ============================================================
+ * 오더앤고 랜딩 페이지 (v0 스캐폴드 — Claude Design 산출물로 고도화 예정)
+ * design-tokens.css / public.css 의존
+ * ============================================================ */
+
+/* ---------- 헤더 ---------- */
+.lp-header {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--og-gray-100);
+}
+.lp-header-inner {
+  max-width: var(--og-container); margin: 0 auto;
+  padding: var(--og-space-4) var(--og-space-6);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.lp-logo img { height: 28px; display: block; }
+.lp-nav { display: flex; align-items: center; gap: var(--og-space-6); }
+.lp-nav a.lp-navlink { font-size: var(--og-fs-xs); font-weight: var(--og-fw-medium); color: var(--og-text-muted); }
+.lp-nav a.lp-navlink:hover { color: var(--og-primary); }
+
+/* ---------- 히어로 ---------- */
+.lp-hero {
+  background: linear-gradient(180deg, var(--og-primary-050) 0%, #fff 100%);
+  padding: var(--og-space-20) 0 var(--og-space-14);
+  text-align: center;
+}
+.lp-hero-badge {
+  display: inline-block; font-size: var(--og-fs-xs); font-weight: var(--og-fw-semibold);
+  color: var(--og-primary-dark); background: var(--og-primary-100);
+  padding: 6px 14px; border-radius: var(--og-radius-pill); margin-bottom: var(--og-space-5);
+}
+.lp-hero h1 {
+  font-size: var(--og-fs-3xl); font-weight: var(--og-fw-extrabold);
+  line-height: var(--og-lh-tight); letter-spacing: -0.02em; margin-bottom: var(--og-space-5);
+}
+.lp-hero h1 .accent { color: var(--og-primary); }
+.lp-hero-sub { font-size: var(--og-fs-md); color: var(--og-text-muted); max-width: 640px; margin: 0 auto var(--og-space-8); }
+.lp-hero-cta { display: flex; gap: var(--og-space-3); justify-content: center; flex-wrap: wrap; }
+.lp-hero-note { margin-top: var(--og-space-4); font-size: var(--og-fs-xs); color: var(--og-text-subtle); }
+.lp-hero-visual {
+  max-width: 960px; margin: var(--og-space-14) auto 0; padding: 0 var(--og-space-6);
+}
+
+/* ---------- 기기 목업 (placeholder — Phase 3 실제 캡처로 교체) ---------- */
+.lp-mock {
+  border-radius: var(--og-radius-xl); background: var(--og-gray-050);
+  border: 1px solid var(--og-gray-200); box-shadow: var(--og-shadow-lg);
+  aspect-ratio: 16 / 10; display: flex; align-items: center; justify-content: center;
+  color: var(--og-text-subtle); font-size: var(--og-fs-xs); overflow: hidden;
+}
+.lp-mock img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* ---------- 섹션 공통 ---------- */
+.lp-section { padding: var(--og-space-30) 0; }
+.lp-section.alt { background: var(--og-gray-050); }
+.lp-section-head { text-align: center; max-width: 680px; margin: 0 auto var(--og-space-14); }
+.lp-eyebrow { font-size: var(--og-fs-xs); font-weight: var(--og-fw-bold); color: var(--og-primary); letter-spacing: 0.04em; }
+.lp-section-head h2 { font-size: var(--og-fs-xl); font-weight: var(--og-fw-extrabold); letter-spacing: -0.02em; margin: var(--og-space-2) 0 var(--og-space-3); }
+.lp-section-head p { font-size: var(--og-fs-sm); color: var(--og-text-muted); }
+
+/* ---------- 기능 (교차 레이아웃) ---------- */
+.lp-feature { display: grid; grid-template-columns: 1fr 1fr; gap: var(--og-space-14); align-items: center; margin-bottom: var(--og-space-20); }
+.lp-feature:last-child { margin-bottom: 0; }
+.lp-feature.reverse .lp-feature-media { order: -1; }
+.lp-feature-text h3 { font-size: var(--og-fs-lg); font-weight: var(--og-fw-bold); margin-bottom: var(--og-space-3); }
+.lp-feature-text p { font-size: var(--og-fs-sm); color: var(--og-text-muted); margin-bottom: var(--og-space-4); }
+.lp-feature-list { list-style: none; padding: 0; }
+.lp-feature-list li { display: flex; gap: var(--og-space-2); align-items: flex-start; font-size: var(--og-fs-sm); color: var(--og-text); margin-bottom: var(--og-space-2); }
+.lp-feature-list i { color: var(--og-primary); font-size: 18px; margin-top: 2px; }
+
+/* ---------- 이용 흐름 ---------- */
+.lp-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--og-space-6); }
+.lp-step { text-align: center; padding: var(--og-space-6); }
+.lp-step-num { width: 44px; height: 44px; border-radius: 50%; background: var(--og-primary); color: #fff; font-weight: var(--og-fw-bold); display: inline-flex; align-items: center; justify-content: center; margin-bottom: var(--og-space-4); }
+.lp-step h4 { font-size: var(--og-fs-sm); font-weight: var(--og-fw-bold); margin-bottom: var(--og-space-2); }
+.lp-step p { font-size: var(--og-fs-xs); color: var(--og-text-muted); }
+
+/* ---------- FAQ ---------- */
+.lp-faq { max-width: var(--og-container-narrow); margin: 0 auto; }
+.lp-faq details { border-bottom: 1px solid var(--og-gray-200); padding: var(--og-space-5) 0; }
+.lp-faq summary { font-size: var(--og-fs-sm); font-weight: var(--og-fw-semibold); cursor: pointer; list-style: none; display: flex; justify-content: space-between; }
+.lp-faq summary::-webkit-details-marker { display: none; }
+.lp-faq summary::after { content: "＋"; color: var(--og-primary); }
+.lp-faq details[open] summary::after { content: "－"; }
+.lp-faq p { font-size: var(--og-fs-sm); color: var(--og-text-muted); margin-top: var(--og-space-3); }
+
+/* ---------- 최종 CTA ---------- */
+.lp-cta { background: var(--og-primary); color: #fff; text-align: center; padding: var(--og-space-20) 0; }
+.lp-cta h2 { font-size: var(--og-fs-xl); font-weight: var(--og-fw-extrabold); margin-bottom: var(--og-space-3); }
+.lp-cta p { opacity: 0.9; margin-bottom: var(--og-space-8); }
+.lp-cta .og-btn--primary { background: #fff; color: var(--og-primary); border-color: #fff; box-shadow: none; }
+.lp-cta .og-btn--primary:hover { background: var(--og-gray-050); }
+
+@media (max-width: 900px) {
+  .lp-feature { grid-template-columns: 1fr; gap: var(--og-space-6); }
+  .lp-feature.reverse .lp-feature-media { order: 0; }
+  .lp-steps { grid-template-columns: repeat(2, 1fr); }
+  .lp-hero h1 { font-size: var(--og-fs-2xl); }
+  .lp-nav .lp-navlink { display: none; }
+}

@@ -127,7 +127,7 @@ const onSubmitStoreLogin = (event) => {
     .then(r => r.json())
     .then(data => {
       if (data.code === 200) {
-        window.location.href = '/';
+        window.location.href = '/dashboard';
       } else {
         showFormMsg('form_store_msg', data.message);
       }
@@ -167,7 +167,7 @@ const onSubmitStoreSelect = (event) => {
     .then(r => r.json())
     .then(data => {
       if (data.code === 200) {
-        window.location.href = '/';
+        window.location.href = '/dashboard';
       } else {
         showFormMsg('form_msg', data.message);
       }
