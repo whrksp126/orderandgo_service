@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>OrderAndGo · QR 주문 설정</title>
+  <link rel="icon" type="image/x-icon" href="/static/images/common/logo.png">
+
+  <link rel="stylesheet" href="/static/css/responsive.css">
+  <link rel="stylesheet" href="/static/css/reset.css">
+  <link rel="stylesheet" href="/static/css/common.css">
+  <link rel="stylesheet" href="/static/css/animation.css">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <link rel="stylesheet" href="/static/css/store.css">
+
+  <style>
+    body { background-color: #F8F9FA; }
+
+    .qr_settings_page main {
+      padding: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      background-color: #F8F9FA;
+      min-height: calc(100vh - 80px);
+    }
+    .store_product.qr_settings_page section { padding: 0; }
+
+    .settings_card {
+      width: 100%;
+      max-width: 560px;
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid #E9ECEF;
+      box-shadow: 0 4px 12px rgba(0,0,0,.05);
+      overflow: hidden;
+    }
+    .settings_header {
+      padding: 22px 24px;
+      border-bottom: 1px solid #F1F3F5;
+    }
+    .settings_header h2 {
+      font-size: 1.2rem; font-weight: 800; color: #212529; letter-spacing: -0.5px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .settings_header h2 i { color: #12b886; font-size: 1.25rem; }
+    .settings_header p { font-size: 0.85rem; color: #ADB5BD; margin-top: 6px; }
+
+    .settings_body { padding: 24px; }
+    .settings_footer { padding: 18px 24px; border-top: 1px solid #F1F3F5; }
+
+    .field { margin-bottom: 24px; }
+    .field:last-child { margin-bottom: 0; }
+    .field_label { display: block; font-size: 0.85rem; font-weight: 700; color: #495057; margin-bottom: 10px; }
+    .coord_line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .geo_coords { font-size: 0.82rem; color: #868E96; font-weight: 600; margin-top: 10px; }
+    .geo_coords.set { color: #12b886; }
+    .num_input { width: 130px; padding: 11px 14px; border: 1px solid #CED4DA; border-radius: 8px; font-size: 0.95rem; color: #495057; }
+    .num_input:focus { border-color: #12b886; outline: none; box-shadow: 0 0 0 3px rgba(18,184,134,.1); }
+    .num_suffix { font-size: 0.85rem; color: #868E96; }
+
+    .switch_row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 0; border-top: 1px solid #F8F9FA; }
+    .switch_row .txt { font-size: 0.92rem; color: #495057; font-weight: 700; }
+    .switch_row .txt small { display: block; font-weight: 400; color: #ADB5BD; font-size: 0.8rem; margin-top: 3px; }
+    .switch { position: relative; width: 46px; height: 26px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; inset: 0; cursor: pointer; background: #CED4DA; border-radius: 999px; transition: .2s; }
+    .slider:before { content: ""; position: absolute; height: 20px; width: 20px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+    .switch input:checked + .slider { background: #12b886; }
+    .switch input:checked + .slider:before { transform: translateX(20px); }
+
+    .btn { border: none; border-radius: 8px; cursor: pointer; font-weight: 700; transition: all .18s ease; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    .btn-primary { background: #12b886; color: #fff; padding: 11px 16px; font-size: 0.92rem; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(18,184,134,.3); }
+    .btn.block { width: 100%; padding: 14px; font-size: 0.98rem; }
+  </style>
+</head>
+
+<body class="store_product qr_settings_page">
+  <div id="container">
+    <header>
+      <a class="back_btn" href="/store/product">
+        <i class="ph-bold ph-caret-left"></i>
+      </a>
+      <div class="center">
+        <a onclick="location.reload();">
+          <h1><img src="/static/images/common/logo-order&go-white.png" alt=""></h1>
+        </a>
+        <div class="header_info">
+          <span class="cur_time"></span>
+          <span class="store_state" data-state="open">영업중</span>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="settings_card">
+        <div class="settings_header">
+          <h2><i class="ph-bold ph-shield-check"></i> 매장 위치 · 주문 보안</h2>
+          <p>QR 주문의 가짜 주문을 방지하는 설정입니다.</p>
+        </div>
+        <div class="settings_body">
+          <div class="field">
+            <span class="field_label">매장 좌표</span>
+            <div class="coord_line">
+              <button class="btn btn-primary" onclick="setStoreLocationHere()">
+                <i class="ph ph-crosshair"></i> 현재 위치로 설정
+              </button>
+            </div>
+            <p class="geo_coords" id="geoCoords">좌표 미설정</p>
+          </div>
+
+          <div class="field">
+            <span class="field_label">허용 반경</span>
+            <div class="coord_line">
+              <input type="number" class="num_input" id="geoRadius" min="20" max="5000" step="10" value="200">
+              <span class="num_suffix">m 이내에서만 주문 허용</span>
+            </div>
+          </div>
+
+          <div class="switch_row">
+            <div class="txt">위치 기반 주문 제한
+              <small>매장 반경 밖 기기의 주문을 차단(지오펜스)</small>
+            </div>
+            <label class="switch"><input type="checkbox" id="geoEnabled" checked><span class="slider"></span></label>
+          </div>
+          <div class="switch_row">
+            <div class="txt">착석 테이블만 주문 허용
+              <small>활성 테이블 세션일 때만 QR 주문 수락</small>
+            </div>
+            <label class="switch"><input type="checkbox" id="requireSession"><span class="slider"></span></label>
+          </div>
+        </div>
+        <div class="settings_footer">
+          <button class="btn btn-primary block" onclick="saveGeofence()">
+            <i class="ph-bold ph-check"></i> 설정 저장
+          </button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/static/js/common.js"></script>
+  <script src="/static/js/store_qr_settings.js"></script>
+</body>
+
+</html>

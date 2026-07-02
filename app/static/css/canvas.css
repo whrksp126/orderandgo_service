@@ -23,8 +23,12 @@
 
 /* pos/tableList 캔버스 배경 — 흰색으로 */
 #container:not(.order) .canvas-scroll-wrap {
-  background-color: #f8f9fa;
   padding: 12px;
+}
+
+/* 밝은 배경은 pos/tableList 등에만. set_table / QR 발급(set_table_position)은 어둡게 */
+body:not(.set_table_position) #container:not(.order) .canvas-scroll-wrap {
+  background-color: #f8f9fa;
 }
 
 body:not(.set_table_position) #table-canvas {

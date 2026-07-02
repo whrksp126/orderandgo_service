@@ -979,6 +979,13 @@ def table_qr_mgmt():
     return render_template('store_table_qr_mgmt.html')
 
 
+# QR 주문 설정(지오펜스/보안) — 별도 페이지
+@store_bp.route('/qr_settings', methods=['GET'])
+@login_required
+def qr_settings():
+    return render_template('store_qr_settings.html')
+
+
 # QR 발급 페이지용 테이블 목록 (QR 발급 상태 포함)
 @store_bp.route('/get_table_qr_list', methods=['GET'])
 @login_required
@@ -992,6 +999,10 @@ def api_get_table_qr_list():
             'id': t.id,
             'name': t.name,
             'position': t.position,
+            'grid_x': t.grid_x,
+            'grid_y': t.grid_y,
+            'grid_w': t.grid_w,
+            'grid_h': t.grid_h,
             'has_qr': bool(t.qr_token),
             'qr_generated_at': t.qr_generated_at.strftime('%Y-%m-%d %H:%M') if t.qr_generated_at else None,
         } for t in tables]
@@ -1027,6 +1038,11 @@ def api_generate_table_qr():
     if not token:
         return jsonify({'code': 404, 'msg': '테이블을 찾을 수 없습니다.'}), 404
 
+    from app.models import Table, TableCategory
+    table = Table.query.get(table_id)
+    cat = TableCategory.query.get(table.table_category_id) if table else None
+    store = Store.query.get(current_user.id)
+
     qr_url = request.host_url.rstrip('/') + '/table_order/t/' + token
     buff = io.BytesIO()
     segno.make(qr_url, error='m').save(buff, kind='png', scale=8, border=2)
@@ -1036,6 +1052,9 @@ def api_generate_table_qr():
         'qr_token': token,
         'qr_url': qr_url,
         'qr_png': 'data:image/png;base64,' + b64,
+        'store_name': store.name if store else '',
+        'category_name': cat.category_name if cat else '',
+        'table_name': table.name if table else '',
     })
 
 
@@ -1057,6 +1076,10 @@ def api_get_table_qr(table_id):
     if not table or not table.qr_token:
         return jsonify({'code': 404, 'msg': '발급된 QR이 없습니다.'}), 404
 
+    from app.models import TableCategory
+    cat = TableCategory.query.get(table.table_category_id)
+    store = Store.query.get(current_user.id)
+
     qr_url = request.host_url.rstrip('/') + '/table_order/t/' + table.qr_token
     buff = io.BytesIO()
     segno.make(qr_url, error='m').save(buff, kind='png', scale=8, border=2)
@@ -1067,6 +1090,8 @@ def api_get_table_qr(table_id):
         'qr_token': table.qr_token,
         'qr_url': qr_url,
         'qr_png': 'data:image/png;base64,' + b64,
+        'store_name': store.name if store else '',
+        'category_name': cat.category_name if cat else '',
     })
 
 

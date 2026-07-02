@@ -12,88 +12,68 @@
   <link rel="stylesheet" href="/static/css/common.css">
   <link rel="stylesheet" href="/static/css/animation.css">
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
   <link rel="stylesheet" href="/static/css/store.css">
+  <link rel="stylesheet" href="/static/css/canvas.css">
 
   <style>
-    .qr-page { padding: 20px; max-width: 1000px; margin: 0 auto; }
-    .qr-card { background: #fff; border: 1px solid #eee; border-radius: 14px; padding: 20px; margin-bottom: 20px; }
-    .qr-card h2 { font-size: 16px; font-weight: 700; margin-bottom: 14px; color: #222; display: flex; align-items: center; gap: 8px; }
-    .qr-card h2 i { color: #1FAA9C; }
-    .geo-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
-    .geo-row label { font-size: 14px; color: #444; min-width: 120px; }
-    .geo-row input[type="number"] { width: 120px; padding: 8px 10px; border: 1px solid #ddd; border-radius: 8px; }
-    .geo-coords { font-size: 13px; color: #777; }
-    .btn { border: none; border-radius: 8px; padding: 9px 14px; font-size: 14px; cursor: pointer; }
-    .btn.brand { background: #1FAA9C; color: #fff; }
-    .btn.ghost { background: #f2f2f2; color: #333; }
-    .btn.small { padding: 6px 10px; font-size: 13px; }
-    .switch { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: #444; }
+    /* QR 발급용 카드 — 이름만 표시 */
+    .qr-card { cursor: pointer; }
+    .qr-card .card-title { display: flex; align-items: center; padding: 16px 16px; }
+    .qr-card .card-title h2 { padding: 0; font-size: 18px; }
 
-    .cat-block { margin-bottom: 18px; }
-    .cat-block h3 { font-size: 14px; color: #555; margin-bottom: 10px; }
-    .table-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-    .table-cell { border: 1px solid #eee; border-radius: 10px; padding: 12px; text-align: center; }
-    .table-cell .tname { font-weight: 600; margin-bottom: 4px; }
-    .table-cell .tstate { font-size: 12px; color: #999; margin-bottom: 8px; }
-    .table-cell .tstate.on { color: #1FAA9C; }
-    .table-cell .cell-actions { display: flex; gap: 6px; justify-content: center; }
-
+    /* QR 모달 */
     .qr-modal { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; align-items: center; justify-content: center; z-index: 1000; }
     .qr-modal.active { display: flex; }
-    .qr-modal-inner { background: #fff; border-radius: 16px; padding: 24px; width: 340px; text-align: center; }
-    .qr-modal-inner h3 { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
-    .qr-modal-inner img { width: 260px; height: 260px; object-fit: contain; }
-    .qr-modal-inner .qr-url { font-size: 11px; color: #999; word-break: break-all; margin: 10px 0 16px; }
-    .qr-modal-actions { display: flex; gap: 8px; justify-content: center; }
+    .qr-modal-inner { background: #fff; border-radius: 18px; padding: 26px; width: 360px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,.25); }
+    .qr-modal-inner h3 { font-size: 1.15rem; font-weight: 800; margin-bottom: 4px; color: #212529; }
+    .qr-modal-inner .sub { font-size: 0.8rem; color: #ADB5BD; margin-bottom: 18px; }
+    .qr-frame { border: 1px solid #E9ECEF; border-radius: 14px; padding: 16px; display: inline-block; min-height: 100px; }
+    .qr-modal-inner img { width: 240px; height: 240px; object-fit: contain; display: block; }
+    .qr-modal-inner .qr-url { font-size: 0.72rem; color: #ADB5BD; word-break: break-all; margin: 14px 0 18px; }
+    .qr-empty-state { padding: 40px 10px; color: #868E96; font-size: 0.92rem; }
+    .qr-empty-state i { font-size: 42px; color: #DEE2E6; display: block; margin-bottom: 12px; }
+    .qr-modal-actions { display: flex; gap: 8px; }
+    .qr-btn { flex: 1; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; padding: 12px; font-size: 0.92rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: all .18s; }
+    .qr-btn.primary { background: #12b886; color: #fff; }
+    .qr-btn.primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(18,184,134,.3); }
+    .qr-btn.ghost { background: #F1F3F5; color: #495057; }
+    .qr-btn.ghost:hover { background: #E9ECEF; }
   </style>
 </head>
 
-<body class="store_product">
+<body class="set_table_position qr_issue_page">
   <div id="container">
     <header>
-      <a class="back_btn" onclick="window.location.href='/store/product'">
+      <a class="back_btn" href="/store/product">
         <i class="ph-bold ph-caret-left"></i>
       </a>
       <div class="center">
-        <h1><img src="/static/images/common/logo-order&go-white.png" alt="OrderAndGo"></h1>
+        <a onclick="location.reload();">
+          <h1><img src="/static/images/common/logo-order&go-white.png" alt=""></h1>
+        </a>
         <div class="header_info">
-          <span class="store_state" data-state="open">테이블 QR 발급</span>
+          <span class="cur_time"></span>
+          <span class="store_state" data-state="open">영업중</span>
         </div>
       </div>
     </header>
-
     <main>
-      <div class="qr-page">
-        <!-- 매장 위치 / 지오펜스 -->
-        <div class="qr-card">
-          <h2><i class="ph-bold ph-map-pin"></i> 매장 위치 · 가짜 주문 방지</h2>
-          <div class="geo-row">
-            <button class="btn brand" onclick="setStoreLocationHere()">
-              <i class="ph ph-crosshair"></i> 현재 위치로 매장 좌표 설정
-            </button>
-            <span class="geo-coords" id="geoCoords">좌표 미설정</span>
+      <section>
+        <nav>
+          <ul id="qrCategoryTabs"></ul>
+          <button class="btn_set" onclick="location.href='/store/qr_settings'" title="QR 주문 설정">
+            <i class="ph ph-gear-six"></i>
+          </button>
+        </nav>
+        <article>
+          <div class="table-canvas-wrap">
+            <div class="canvas-scroll-wrap">
+              <div id="table-canvas"></div>
+            </div>
           </div>
-          <div class="geo-row">
-            <label>허용 반경(m)</label>
-            <input type="number" id="geoRadius" min="20" max="5000" step="10" value="200">
-          </div>
-          <div class="geo-row">
-            <label class="switch"><input type="checkbox" id="geoEnabled" checked> 위치 기반 주문 제한(지오펜스) 사용</label>
-          </div>
-          <div class="geo-row">
-            <label class="switch"><input type="checkbox" id="requireSession"> 활성 테이블(착석)일 때만 QR 주문 허용</label>
-          </div>
-          <div class="geo-row">
-            <button class="btn brand" onclick="saveGeofence()">설정 저장</button>
-          </div>
-        </div>
-
-        <!-- 테이블별 QR -->
-        <div class="qr-card">
-          <h2><i class="ph-bold ph-qr-code"></i> 테이블별 QR</h2>
-          <div id="qrTableList"><p style="color:#999;">불러오는 중...</p></div>
-        </div>
-      </div>
+        </article>
+      </section>
     </main>
   </div>
 
@@ -101,13 +81,8 @@
   <div class="qr-modal" id="qrModal" onclick="closeQrModal(event)">
     <div class="qr-modal-inner" onclick="event.stopPropagation()">
       <h3 id="qrModalTitle">테이블 QR</h3>
-      <img id="qrModalImg" src="" alt="QR">
-      <div class="qr-url" id="qrModalUrl"></div>
-      <div class="qr-modal-actions">
-        <button class="btn brand" onclick="printCurrentQr()"><i class="ph ph-printer"></i> 인쇄</button>
-        <button class="btn ghost" onclick="downloadCurrentQr()"><i class="ph ph-download-simple"></i> 저장</button>
-        <button class="btn ghost" onclick="closeQrModal()">닫기</button>
-      </div>
+      <p class="sub" id="qrModalSub">손님이 스캔하면 주문 화면으로 이동합니다</p>
+      <div id="qrModalContent"><!-- JS 렌더 --></div>
     </div>
   </div>
 

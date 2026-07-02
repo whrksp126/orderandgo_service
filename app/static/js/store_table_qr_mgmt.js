@@ -1,168 +1,184 @@
-// 테이블 QR 발급 관리 페이지
+// 테이블 QR 발급 — 테이블 설정과 동일한 캔버스에서 카드 클릭 시 QR 표시(자동 생성)
 
-let _lat = null;
-let _lng = null;
-let _currentQr = { png: null, url: null, title: null };
+const QR = { categories: [], curIndex: 0 };
 
-// ── API 헬퍼 ──
+// 캔버스 그리드 상수 (set_table / tableOrder와 동일)
+const QR_COLS = 20, QR_ROWS = 12, QR_GAP = 16;
+let QR_CELL_W = 60, QR_CELL_H = 60;
+
+function updateCellSize() {
+  const canvas = document.getElementById('table-canvas');
+  if (!canvas) return;
+  QR_CELL_W = (canvas.clientWidth + QR_GAP) / QR_COLS;
+  QR_CELL_H = (canvas.clientHeight + QR_GAP) / QR_ROWS;
+}
+
+function applyRect(card) {
+  const gx = Number(card.dataset.gx), gy = Number(card.dataset.gy);
+  const gw = Number(card.dataset.gw), gh = Number(card.dataset.gh);
+  card.style.left = `${gx * QR_CELL_W}px`;
+  card.style.top = `${gy * QR_CELL_H}px`;
+  card.style.width = `${gw * QR_CELL_W - QR_GAP}px`;
+  card.style.height = `${gh * QR_CELL_H - QR_GAP}px`;
+}
+
+let _roTimer;
+const _ro = new ResizeObserver(() => {
+  clearTimeout(_roTimer);
+  _roTimer = setTimeout(() => {
+    updateCellSize();
+    document.querySelectorAll('#table-canvas .table-card').forEach(applyRect);
+  }, 60);
+});
+
+// ── API ──
 async function apiGet(url) {
-  const res = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
-  return res.json();
+  const r = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
+  return r.json();
 }
 async function apiPost(url, body) {
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body || {}),
-  });
-  return res.json();
+  const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+  return r.json();
 }
 
-// ── 지오펜스 / 매장 위치 ──
-async function loadGeofence() {
-  const d = await apiGet('/store/get_store_location');
-  if (d.code === 404) return;
-  _lat = d.latitude;
-  _lng = d.longitude;
-  document.getElementById('geoRadius').value = d.geofence_radius_m || 200;
-  document.getElementById('geoEnabled').checked = !!d.qr_geofence_enabled;
-  document.getElementById('requireSession').checked = !!d.qr_require_open_session;
-  renderCoords();
-}
-
-function renderCoords() {
-  const el = document.getElementById('geoCoords');
-  if (_lat != null && _lng != null) {
-    el.textContent = `현재 좌표: ${Number(_lat).toFixed(6)}, ${Number(_lng).toFixed(6)}`;
-  } else {
-    el.textContent = '좌표 미설정';
-  }
-}
-
-function setStoreLocationHere() {
-  if (!navigator.geolocation) {
-    alert('이 브라우저는 위치 기능을 지원하지 않습니다.');
-    return;
-  }
-  const el = document.getElementById('geoCoords');
-  el.textContent = '위치 확인 중...';
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      _lat = pos.coords.latitude;
-      _lng = pos.coords.longitude;
-      renderCoords();
-    },
-    (err) => {
-      el.textContent = '위치 확인 실패 (권한을 허용해 주세요)';
-      console.warn(err);
-    },
-    { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
-  );
-}
-
-async function saveGeofence() {
-  const body = {
-    latitude: _lat,
-    longitude: _lng,
-    geofence_radius_m: parseInt(document.getElementById('geoRadius').value, 10) || 200,
-    qr_geofence_enabled: document.getElementById('geoEnabled').checked,
-    qr_require_open_session: document.getElementById('requireSession').checked,
-  };
-  const d = await apiPost('/store/set_store_location', body);
-  alert(d.msg || '저장되었습니다.');
-}
-
-// ── 테이블 QR 목록 ──
+// ── 로드 & 렌더 ──
 async function loadTables() {
   const cats = await apiGet('/store/get_table_qr_list');
-  const wrap = document.getElementById('qrTableList');
-  if (!Array.isArray(cats) || cats.length === 0) {
-    wrap.innerHTML = '<p style="color:#999;">등록된 테이블이 없습니다.</p>';
-    return;
-  }
-  wrap.innerHTML = cats.map((cat) => `
-    <div class="cat-block">
-      <h3>${escapeHtml(cat.name || '카테고리')}</h3>
-      <div class="table-grid">
-        ${(cat.tables || []).map((t) => `
-          <div class="table-cell">
-            <div class="tname">${escapeHtml(t.name || ('테이블 ' + t.id))}</div>
-            <div class="tstate ${t.has_qr ? 'on' : ''}">${t.has_qr ? 'QR 발급됨' : '미발급'}</div>
-            <div class="cell-actions">
-              <button class="btn brand small" onclick="generateQr(${t.id}, '${escapeAttr(t.name || '')}')">
-                ${t.has_qr ? '재발급' : 'QR 발급'}
-              </button>
-              ${t.has_qr ? `<button class="btn ghost small" onclick="viewQr(${t.id})">보기</button>` : ''}
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    </div>
+  QR.categories = Array.isArray(cats) ? cats.sort((a, b) => (a.position || 0) - (b.position || 0)) : [];
+  if (QR.curIndex >= QR.categories.length) QR.curIndex = 0;
+  renderTabs();
+  renderCanvas();
+}
+
+function renderTabs() {
+  const ul = document.getElementById('qrCategoryTabs');
+  ul.innerHTML = QR.categories.map((c, i) => `
+    <li data-id="${c.id}" data-state="${i === QR.curIndex ? 'active' : ''}">
+      <button onclick="changeCategory(${i})">${escapeHtml(c.name || '카테고리')}</button>
+    </li>
   `).join('');
 }
 
-async function generateQr(tableId, tableName) {
-  if (!confirm('QR을 발급/재발급하면 기존 QR은 더 이상 사용할 수 없습니다. 진행할까요?')) return;
-  const d = await apiPost('/store/generate_table_qr', { table_id: tableId });
-  if (d.code !== 200) {
-    alert(d.msg || 'QR 발급에 실패했습니다.');
-    return;
-  }
-  openQrModal(tableName || ('테이블 ' + tableId), d.qr_png, d.qr_url);
-  loadTables();
+function changeCategory(i) {
+  QR.curIndex = i;
+  renderTabs();
+  renderCanvas();
 }
 
-async function viewQr(tableId) {
-  const d = await apiGet('/store/get_table_qr/' + tableId);
-  if (d.code !== 200) {
-    alert(d.msg || 'QR을 불러오지 못했습니다.');
+function renderCanvas() {
+  updateCellSize();
+  const canvas = document.getElementById('table-canvas');
+  if (!canvas) return;
+  canvas.innerHTML = '';
+  const cat = QR.categories[QR.curIndex];
+  const tables = (cat && cat.tables) || [];
+  const placed = tables.filter(t => t.grid_x !== null && t.grid_x !== undefined);
+
+  if (placed.length === 0) {
+    canvas.innerHTML = `<div class="canvas-empty-state"><i class="ph ph-table"></i><p>배치된 테이블이 없습니다. (테이블 설정에서 먼저 배치하세요)</p></div>`;
     return;
   }
-  openQrModal(d.table_name || ('테이블 ' + tableId), d.qr_png, d.qr_url);
+
+  placed.forEach((t) => {
+    const name = t.name || ('테이블 ' + t.id);
+    const card = document.createElement('div');
+    card.className = 'table-card view-card qr-card';
+    card.dataset.id = t.id;
+    card.dataset.gx = t.grid_x;
+    card.dataset.gy = t.grid_y;
+    card.dataset.gw = t.grid_w || 2;
+    card.dataset.gh = t.grid_h || 2;
+    card.innerHTML = `<div class="card-title"><h2>${escapeHtml(name)}</h2></div>`;
+    applyRect(card);
+    card.addEventListener('click', () => openQrForTable(t.id, name));
+    canvas.appendChild(card);
+  });
 }
 
 // ── QR 모달 ──
-function openQrModal(title, png, url) {
-  _currentQr = { png, url, title };
-  document.getElementById('qrModalTitle').textContent = title;
-  document.getElementById('qrModalImg').src = png;
-  document.getElementById('qrModalUrl').textContent = url;
+let _currentQr = { png: null, url: null, filename: null, tableId: null };
+
+function openQrForTable(tableId, name) {
+  document.getElementById('qrModalTitle').textContent = name;
+  const content = document.getElementById('qrModalContent');
   document.getElementById('qrModal').classList.add('active');
+  content.innerHTML = '<div class="qr-empty-state">불러오는 중...</div>';
+
+  // 이미 발급된 QR이 있으면 표시, 없으면 자동 생성
+  apiGet('/store/get_table_qr/' + tableId).then(d => {
+    if (d.code === 200) {
+      renderQrView(d, tableId);
+    } else {
+      apiPost('/store/generate_table_qr', { table_id: tableId }).then(g => {
+        if (g.code === 200) { renderQrView(g, tableId); }
+        else content.innerHTML = `<div class="qr-empty-state">QR을 불러오지 못했습니다.</div>`;
+      });
+    }
+  });
+}
+
+function renderQrView(d, tableId) {
+  _currentQr = {
+    png: d.qr_png,
+    url: d.qr_url,
+    filename: buildFilename(d),
+    tableId: tableId,
+  };
+  document.getElementById('qrModalContent').innerHTML = `
+    <div class="qr-frame"><img src="${d.qr_png}" alt="QR"></div>
+    <div class="qr-url">${escapeHtml(d.qr_url)}</div>
+    <div class="qr-modal-actions">
+      <button class="qr-btn primary" onclick="downloadQrJpeg()"><i class="ph ph-printer"></i> 인쇄</button>
+      <button class="qr-btn ghost" onclick="reissueQr()"><i class="ph ph-arrows-clockwise"></i> 재발급</button>
+      <button class="qr-btn ghost" onclick="closeQrModal()">닫기</button>
+    </div>`;
+}
+
+function reissueQr() {
+  if (!_currentQr.tableId) return;
+  if (!confirm('재발급하면 기존 QR은 더 이상 사용할 수 없습니다. 진행할까요?')) return;
+  const tableId = _currentQr.tableId;
+  const content = document.getElementById('qrModalContent');
+  content.innerHTML = '<div class="qr-empty-state">재발급 중...</div>';
+  apiPost('/store/generate_table_qr', { table_id: tableId }).then(g => {
+    if (g.code === 200) renderQrView(g, tableId);
+    else content.innerHTML = `<div class="qr-empty-state">재발급 실패</div>`;
+  });
 }
 
 function closeQrModal(event) {
   document.getElementById('qrModal').classList.remove('active');
 }
 
-function printCurrentQr() {
+// 인쇄(= QR을 JPEG로 저장). 파일명: 매장_테이블카테고리_테이블명.jpg
+function downloadQrJpeg() {
   if (!_currentQr.png) return;
-  const w = window.open('', '_blank');
-  w.document.write(`
-    <html><head><title>${escapeHtml(_currentQr.title)}</title>
-    <style>
-      body { text-align:center; font-family: sans-serif; padding: 40px; }
-      h2 { margin-bottom: 16px; }
-      img { width: 320px; height: 320px; }
-      .u { font-size: 11px; color:#666; margin-top: 12px; word-break: break-all; }
-    </style></head>
-    <body>
-      <h2>${escapeHtml(_currentQr.title)}</h2>
-      <img src="${_currentQr.png}">
-      <div class="u">${escapeHtml(_currentQr.url)}</div>
-      <script>window.onload = function(){ window.print(); }<\/script>
-    </body></html>
-  `);
-  w.document.close();
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement('canvas');
+    c.width = img.width;
+    c.height = img.height;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(img, 0, 0);
+    const jpeg = c.toDataURL('image/jpeg', 0.92);
+    const a = document.createElement('a');
+    a.href = jpeg;
+    a.download = (_currentQr.filename || 'qr') + '.jpg';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+  img.src = _currentQr.png;
 }
 
-function downloadCurrentQr() {
-  if (!_currentQr.png) return;
-  const a = document.createElement('a');
-  a.href = _currentQr.png;
-  a.download = `qr_${(_currentQr.title || 'table').replace(/\s+/g, '_')}.png`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+function buildFilename(d) {
+  const parts = [d.store_name, d.category_name, d.table_name].map(sanitizeName);
+  return parts.filter(Boolean).join('_');
+}
+function sanitizeName(s) {
+  return String(s == null ? '' : s).replace(/[\\/:*?"<>|]/g, '').trim();
 }
 
 // ── util ──
@@ -171,10 +187,8 @@ function escapeHtml(s) {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
-function escapeAttr(s) {
-  return String(s == null ? '' : s).replace(/'/g, "\\'").replace(/"/g, '&quot;');
-}
 
-// 초기 로드
-loadGeofence();
+// ── init ──
+const _canvasEl = document.getElementById('table-canvas');
+if (_canvasEl) _ro.observe(_canvasEl);
 loadTables();

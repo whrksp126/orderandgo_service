@@ -42,7 +42,8 @@
       <nav>
         <ul>
           <li class="tab-link active" onclick="openTab(event, 'pos-mgmt')"><a>POS관리</a></li>
-          <li class="tab-link" onclick="openTab(event, 'table-order-mgmt')"><a>테이블오더관리</a></li>
+          <li class="tab-link" onclick="openTab(event, 'table-order-mgmt')"><a>TableOrder 관리</a></li>
+          <li class="tab-link" onclick="openTab(event, 'qr-order-mgmt')"><a>QR주문 관리</a></li>
           <li class="tab-link" onclick="openTab(event, 'kds-mgmt')"><a>KDS관리</a></li>
         </ul>
       </nav>
@@ -103,13 +104,21 @@
               <span>직원 호출 관리</span>
             </a>
           </li>
+        </ul>
+      </section>
+
+      <section id="qr-order-mgmt" class="tab-content" style="display: none;">
+        <ul>
           <li>
             <h2>QR 주문</h2>
             <a href="/store/table_qr_mgmt">
               <i class="ph ph-qr-code"></i>
               <span>테이블 QR 발급</span>
             </a>
-            <a class="disabled"></a>
+            <a href="/store/qr_settings">
+              <i class="ph ph-shield-check"></i>
+              <span>QR 주문 설정</span>
+            </a>
           </li>
         </ul>
       </section>
