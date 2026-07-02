@@ -304,7 +304,8 @@ const checkRegisterValid = () => {
   if (!submit) return;
   const tels = [...form.querySelectorAll('input[type="tel"]')].map(el => el.value.trim()).join('');
   const code = form.querySelector('#code_number')?.value.trim() ?? '';
-  const password = form.querySelector('#password')?.value.trim() ?? '';
+  const pwEl = form.querySelector('#password') || form.querySelector('#new_password');
+  const password = pwEl?.value.trim() ?? '';
   submit.disabled = !(tels.length >= 11 && code.length > 0 && password.length > 0);
 };
 
@@ -342,6 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
     form.querySelectorAll('input[type="tel"]').forEach(el => el.addEventListener('input', checkRegisterValid));
     form.querySelector('#code_number')?.addEventListener('input', checkRegisterValid);
     form.querySelector('#password')?.addEventListener('input', checkRegisterValid);
+    form.querySelector('#new_password')?.addEventListener('input', checkRegisterValid);
     checkRegisterValid();
     return;
   }
