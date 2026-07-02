@@ -50,6 +50,19 @@ SITE = {
     "twitter_card": "summary_large_image",
 }
 
+# ---------------------------------------------------------------------------
+# Firebase 전화 인증 (웹 config — apiKey 는 클라이언트 노출값이라 비밀 아님)
+# 콘솔: Authentication > Phone 사용, 승인된 도메인에 dev/stg/prod 도메인 등록 필요
+# ---------------------------------------------------------------------------
+FIREBASE = {
+    "apiKey": "AIzaSyDSQrz00mHmXYwGHtalnpTCjTlIgIWntp0",
+    "authDomain": "orderandgo-2b26f.firebaseapp.com",
+    "projectId": "orderandgo-2b26f",
+    "storageBucket": "orderandgo-2b26f.firebasestorage.app",
+    "messagingSenderId": "908233506018",
+    "appId": "1:908233506018:web:3e4ce28ba3c0d8d814f2bb",
+}
+
 # robots.txt 에서 크롤러에 허용할 공개 경로 (그 외 앱 화면은 Disallow)
 PUBLIC_PATHS = ["/", "/start", "/login", "/terms", "/privacy"]
 DISALLOW_PATHS = ["/pos", "/kds", "/store", "/adm", "/order", "/payment", "/table_order", "/dashboard"]

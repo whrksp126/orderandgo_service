@@ -2,7 +2,7 @@ import os
 from flask import Flask, render_template, jsonify, request
 from flask_socketio import SocketIO
 from config import Config
-from app.site_config import COMPANY, SITE
+from app.site_config import COMPANY, SITE, FIREBASE
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
@@ -71,6 +71,7 @@ def create_app():
         return {
             "company": COMPANY,
             "site": SITE,
+            "firebase": FIREBASE,
             "ga4_id": os.environ.get("GA4_MEASUREMENT_ID"),
         }
 

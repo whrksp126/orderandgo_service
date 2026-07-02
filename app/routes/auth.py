@@ -7,6 +7,32 @@ from flask import redirect, url_for
 
 from app.models.user import create_admin_user, create_store_user, get_store_user_login, get_admin_user_login, update_store_logo_img, get_user_by_tel, reset_user_password
 from app.models.store import get_store
+from app.site_config import FIREBASE
+
+
+def _verify_firebase_phone(id_token):
+    """Firebase ID 토큰을 Google Identity Toolkit 로 검증하고 인증된 전화번호(E.164) 반환. 실패 시 None."""
+    try:
+        api_key = FIREBASE.get('apiKey')
+        res = requests.post(
+            f'https://identitytoolkit.googleapis.com/v1/accounts:lookup?key={api_key}',
+            json={'idToken': id_token}, timeout=5)
+        if res.status_code != 200:
+            return None
+        users = res.json().get('users') or []
+        return users[0].get('phoneNumber') if users else None
+    except Exception as e:
+        print(f'[Firebase] 토큰 검증 오류: {e}')
+        return None
+
+
+def _same_phone(e164, local):
+    """+821012345678 == 01012345678 비교 (숫자만)."""
+    a = ''.join(filter(str.isdigit, e164 or ''))
+    if a.startswith('82'):
+        a = '0' + a[2:]
+    b = ''.join(filter(str.isdigit, local or ''))
+    return a == b
 
 import os
 import random
@@ -125,12 +151,20 @@ def register_admin_user():
         tel = request.form.get('tel')
         password = request.form.get('password')
         code_number = request.form.get('code_number')
+        firebase_token = request.form.get('firebase_id_token')
 
-        # 인증번호 검증
-        saved_code = session.get('verify_code')
-        saved_tel = session.get('verify_tel')
-        if not saved_code or saved_code != code_number or saved_tel != tel:
-            return jsonify({'code': 400, 'message': '인증번호가 올바르지 않습니다.'})
+        # 전화번호 인증 검증: Firebase 우선, 없으면 세션 코드(폴백)
+        if firebase_token:
+            verified_phone = _verify_firebase_phone(firebase_token)
+            if not verified_phone:
+                return jsonify({'code': 400, 'message': '전화번호 인증에 실패했습니다.'})
+            if not _same_phone(verified_phone, tel):
+                return jsonify({'code': 400, 'message': '인증한 번호와 입력한 번호가 다릅니다.'})
+        else:
+            saved_code = session.get('verify_code')
+            saved_tel = session.get('verify_tel')
+            if not saved_code or saved_code != code_number or saved_tel != tel:
+                return jsonify({'code': 400, 'message': '인증번호가 올바르지 않습니다.'})
 
         print(tel, password)
         result = create_admin_user(tel, password)
