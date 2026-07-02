@@ -38,7 +38,9 @@
   <div class="lp-hero-visual">
     <div class="frame-browser">
       <div class="bar"><span></span><span></span><span></span></div>
-      <img src="/static/images/landing/pos-tablelist.png" alt="오더앤고 POS 테이블 현황 화면" loading="lazy">
+      <video autoplay muted loop playsinline poster="/static/images/landing/pos-tablelist.png">
+        <source src="/static/videos/landing/pos-tablelist.mp4" type="video/mp4">
+      </video>
     </div>
   </div>
 </section>
@@ -53,10 +55,10 @@
     </div>
 
     {% set features = [
-      {"eyebrow":"고객 QR 주문", "title":"테이블에서 QR 스캔, 직접 주문", "desc":"손님이 QR을 찍고 메뉴·옵션을 골라 바로 주문. 홀 인력 부담을 줄입니다.", "img":"mobile-order.png", "frame":"phone", "points":["메뉴·옵션·장바구니","직원 호출 버튼","실시간 영수증"], "reverse": false},
-      {"eyebrow":"POS 결제", "title":"한눈에 보는 결제와 정산", "desc":"주문 금액·공급가액·부가세를 자동 계산하고 카드·현금·분할 결제를 처리합니다.", "img":"pos-payment.png", "frame":"screen", "points":["현금·카드 결제","분할 결제·할인","토스 단말기 연동"], "reverse": true},
-      {"eyebrow":"주방 KDS", "title":"주방 디스플레이로 조리 관리", "desc":"들어온 주문을 주방 화면에서 대기·완료로 관리하고 경과 시간을 확인합니다.", "img":"kds.png", "frame":"screen", "points":["대기/완료 분할 화면","조리 경과 타이머","탭 한 번으로 완료"], "reverse": false},
-      {"eyebrow":"매장 관리", "title":"메뉴·테이블을 손쉽게 관리", "desc":"메뉴와 테이블 배치를 직접 구성하고 QR을 발급합니다.", "img":"store-hub.png", "frame":"browser", "points":["메뉴 배치 편집","테이블 배치·QR 발급","결제내역·정산"], "reverse": true}
+      {"eyebrow":"고객 QR 주문", "title":"테이블에서 QR 스캔, 직접 주문", "desc":"손님이 QR을 찍고 메뉴·옵션을 골라 바로 주문. 홀 인력 부담을 줄입니다.", "img":"mobile-order.png", "video":"mobile-order.mp4", "frame":"phone", "points":["메뉴·옵션·장바구니","직원 호출 버튼","실시간 영수증"], "reverse": false},
+      {"eyebrow":"POS 결제", "title":"한눈에 보는 결제와 정산", "desc":"주문 금액·공급가액·부가세를 자동 계산하고 카드·현금·분할 결제를 처리합니다.", "img":"pos-payment.png", "video":"", "frame":"screen", "points":["현금·카드 결제","분할 결제·할인","토스 단말기 연동"], "reverse": true},
+      {"eyebrow":"주방 KDS", "title":"주방 디스플레이로 조리 관리", "desc":"들어온 주문을 주방 화면에서 대기·완료로 관리하고 경과 시간을 확인합니다.", "img":"kds.png", "video":"kds.mp4", "frame":"screen", "points":["대기/완료 분할 화면","조리 경과 타이머","탭 한 번으로 완료"], "reverse": false},
+      {"eyebrow":"매장 관리", "title":"메뉴·테이블을 손쉽게 관리", "desc":"메뉴와 테이블 배치를 직접 구성하고 QR을 발급합니다.", "img":"store-hub.png", "video":"", "frame":"browser", "points":["메뉴 배치 편집","테이블 배치·QR 발급","결제내역·정산"], "reverse": true}
     ] %}
 
     {% for f in features %}
@@ -70,12 +72,16 @@
         </ul>
       </div>
       <div class="lp-feature-media">
+        {% set media %}
+          {% if f.video %}<video autoplay muted loop playsinline poster="/static/images/landing/{{ f.img }}"><source src="/static/videos/landing/{{ f.video }}" type="video/mp4"></video>
+          {% else %}<img src="/static/images/landing/{{ f.img }}" alt="{{ f.title }} 화면" loading="lazy">{% endif %}
+        {% endset %}
         {% if f.frame == 'phone' %}
-        <div class="frame-phone"><img src="/static/images/landing/{{ f.img }}" alt="{{ f.title }} 화면" loading="lazy"></div>
+        <div class="frame-phone">{{ media }}</div>
         {% elif f.frame == 'browser' %}
-        <div class="frame-browser"><div class="bar"><span></span><span></span><span></span></div><img src="/static/images/landing/{{ f.img }}" alt="{{ f.title }} 화면" loading="lazy"></div>
+        <div class="frame-browser"><div class="bar"><span></span><span></span><span></span></div>{{ media }}</div>
         {% else %}
-        <div class="frame-screen"><img src="/static/images/landing/{{ f.img }}" alt="{{ f.title }} 화면" loading="lazy"></div>
+        <div class="frame-screen">{{ media }}</div>
         {% endif %}
       </div>
     </div>
