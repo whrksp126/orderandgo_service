@@ -51,18 +51,26 @@ def main():
                 ctx.request.post(f"{BASE}/login", form={"store_id": IDS["store_id"], "password": IDS["store_pw"]})
             return ctx
 
-        # ── 1. 모바일 QR 주문: 메뉴 스크롤 + 카테고리 전환 ──
+        # ── 1. 모바일 QR 주문: 메뉴 담기 → 옵션 선택 → 장바구니 → 주문하기 ──
         def clip_mobile():
             ctx = new_ctx(390, 844, mobile=True)
             pg = ctx.new_page()
-            pg.goto(f"{BASE}/table_order/t/{IDS['qr_tokens'][1]}", wait_until="networkidle", timeout=20000)
-            pg.wait_for_timeout(1500)
-            for _ in range(5):
-                pg.mouse.wheel(0, 260); pg.wait_for_timeout(500)
-            pg.wait_for_timeout(600)
-            for _ in range(5):
-                pg.mouse.wheel(0, -260); pg.wait_for_timeout(400)
-            pg.wait_for_timeout(800)
+            pg.goto(f"{BASE}/table_order/t/{IDS['qr_tokens'][2]}", wait_until="networkidle", timeout=20000)
+            pg.wait_for_timeout(1600)
+            try:
+                # 짜장면 탭 → 옵션 모달
+                pg.click(".mo-menu-row:has-text('짜장면')", timeout=5000); pg.wait_for_timeout(1100)
+                pg.click(".mo-option-item:has-text('곱빼기')", timeout=3000); pg.wait_for_timeout(700)
+                pg.click(".mo-option-item:has-text('단무지')", timeout=3000); pg.wait_for_timeout(700)
+                pg.click(".mo-btn-confirm", timeout=3000); pg.wait_for_timeout(1100)  # 장바구니 담기
+                # 볶음밥 담기 (상세 모달 → 장바구니 담기)
+                pg.click(".mo-menu-row:has-text('볶음밥')", timeout=3000); pg.wait_for_timeout(1200)
+                pg.click(".mo-btn-confirm", timeout=3000); pg.wait_for_timeout(1100)
+                # 장바구니 열기 → 주문하기
+                pg.click("#moCartBar", timeout=3000); pg.wait_for_timeout(1400)
+                pg.click(".mo-order-btn", timeout=3000); pg.wait_for_timeout(2800)
+            except Exception as e:
+                print("[video] mobile interaction skip:", e); pg.wait_for_timeout(1000)
             v = pg.video.path(); ctx.close()
             return v
 
