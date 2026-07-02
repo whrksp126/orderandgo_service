@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}오더앤고 시작하기 — 3분이면 우리 매장 완성{% endblock %}
+{% block description %}가입 전에 먼저 만들어보세요. 업종·메뉴·테이블만 입력하면 우리 매장이 어떻게 보이는지 바로 확인할 수 있습니다.{% endblock %}
+{% block robots %}noindex, follow{% endblock %}
+
+{% block head %}<link rel="stylesheet" href="/static/css/onboarding.css">{% endblock %}
+
+{# 온보딩은 몰입형 — 기본 푸터 숨김 #}
+{% block footer %}{% endblock %}
+
+{% block body %}
+<div class="ob-shell">
+  <div class="ob-top">
+    <button class="ob-back" id="obBack" aria-label="이전"><i class="ph ph-caret-left"></i></button>
+    <div class="ob-progress"><div class="ob-progress-bar" id="obBar"></div></div>
+    <a class="ob-close" href="/">나가기</a>
+  </div>
+  <div class="ob-main"><div id="obStep" class="ob-step"></div></div>
+  <div class="ob-foot"><div class="ob-foot-inner" id="obFoot"></div></div>
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="/static/js/onboarding.js"></script>{% endblock %}
