@@ -102,7 +102,57 @@ def main():
             v = pg.video.path(); ctx.close()
             return v
 
-        for name, fn in [("mobile-order", clip_mobile), ("pos-tablelist", clip_pos), ("kds", clip_kds)]:
+        # ── 4. POS 카드결제 → 진행중 → 결제완료 → 영수증 (실제 UI 함수 구동) ──
+        def clip_pos_payment():
+            ctx = new_ctx(1024, 768, auth=True)
+            pg = ctx.new_page()
+            tid = IDS['order_table_id']
+            pg.goto(f"{BASE}/pos/payment/{tid}", wait_until="networkidle", timeout=20000)
+            pg.wait_for_timeout(2600)  # 주문/결제 데이터 로드
+            try:
+                # 카드 결제 버튼 시각적 클릭(단말기 게이트로 실패해도 무시) → 진행중 모달 강제 표시
+                try: pg.hover(".card_btn", timeout=1500)
+                except Exception: pass
+                pg.wait_for_timeout(500)
+                pg.evaluate("() => { try{ if(window._closeCardPaymentModal) _closeCardPaymentModal(); }catch(e){}; "
+                            "try{ _openCardPaymentModal('DEMO-APPROVAL', 0); }catch(e){} }")
+                pg.wait_for_timeout(2600)  # '카드 결제 진행 중'
+                pg.evaluate("() => { try{ _closeCardPaymentModal(); }catch(e){}; "
+                            "try{ createCompletedPaymentModal({preventDefault(){}}, 'CARD', null); }catch(e){} }")
+                pg.wait_for_timeout(2600)  # '결제 완료'
+                pg.evaluate("() => { try{ openReceiptDetailModal('CARD'); }catch(e){} }")
+                pg.wait_for_timeout(3400)  # 영수증 미리보기
+            except Exception as e:
+                print("[video] pos_payment skip:", e); pg.wait_for_timeout(1500)
+            v = pg.video.path(); ctx.close()
+            return v
+
+        # ── 5. 관리자 메뉴 설정: 메뉴 목록 → 클릭 → 편집 폼(이미지·가격·옵션) ──
+        def clip_admin():
+            ctx = new_ctx(1440, 900, auth=True)
+            pg = ctx.new_page()
+            pg.goto(f"{BASE}/store/set_menu", wait_until="networkidle", timeout=20000)
+            pg.wait_for_timeout(2600)
+            try:
+                sel = ".set_menu_product main article .article_bottom ul li[data-id]"
+                pg.wait_for_selector(sel, timeout=6000)
+                rows = pg.query_selector_all(sel)
+                if rows:
+                    rows[0].click(); pg.wait_for_timeout(2800)          # 첫 메뉴 편집 폼
+                    if len(rows) > 3:
+                        rows[3].click(); pg.wait_for_timeout(2800)      # 다른 메뉴 설정
+                    elif len(rows) > 1:
+                        rows[1].click(); pg.wait_for_timeout(2800)
+                else:
+                    pg.wait_for_timeout(1500)
+            except Exception as e:
+                print("[video] admin skip:", e); pg.wait_for_timeout(1500)
+            v = pg.video.path(); ctx.close()
+            return v
+
+        for name, fn in [("mobile-order", clip_mobile), ("pos-tablelist", clip_pos),
+                         ("kds", clip_kds), ("pos-payment", clip_pos_payment),
+                         ("admin-menu", clip_admin)]:
             try:
                 webm = fn()
                 to_mp4(webm, name)
