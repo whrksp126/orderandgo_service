@@ -192,7 +192,12 @@ const clickRequestVerifyCode = (event) => {
     if (btn) btn.disabled = true;
     window.ogFirebasePhone.sendCode(tel)
       .then(() => showToast('인증번호가 발송되었습니다', 'success'))
-      .catch(err => showToast('발송 실패: ' + (err && err.message ? err.message : err), 'error'))
+      .catch(err => {
+        console.error('[Firebase sendCode]', err);
+        var detail = (err && err.code ? err.code : '') + ' ' + (err && err.message ? err.message : err);
+        alert('인증번호 발송 오류\n' + detail);
+        showToast('발송 실패: ' + detail, 'error');
+      })
       .finally(() => { if (btn) btn.disabled = false; });
     return;
   }
