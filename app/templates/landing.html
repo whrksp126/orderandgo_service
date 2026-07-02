@@ -45,45 +45,50 @@
   </div>
 </section>
 
-<!-- ================= 기능 쇼케이스 ================= -->
+<!-- ================= 신뢰 스트립 ================= -->
+<section class="lp-trust">
+  <div class="og-container lp-trust-row">
+    <div class="lp-trust-item"><strong>설치 없이</strong><span>지금 바로 시작</span></div>
+    <div class="lp-trust-item"><strong>토스플레이스</strong><span>단말기 카드결제 연동</span></div>
+    <div class="lp-trust-item"><strong>실시간 연동</strong><span>주문·주방·결제 한 흐름</span></div>
+    <div class="lp-trust-item"><strong>QR 셀프 주문</strong><span>홀 인력 부담↓</span></div>
+  </div>
+</section>
+
+<!-- ================= 기능 쇼케이스 (대형 실동작 영상) ================= -->
 <section class="lp-section" id="features">
   <div class="og-container">
     <div class="lp-section-head">
       <span class="lp-eyebrow">FEATURES</span>
-      <h2>매장 운영에 필요한 모든 것</h2>
-      <p>실제 오더앤고 화면입니다. 고객 주문부터 주방·결제·정산까지 끊김 없이 이어집니다.</p>
+      <h2>실제로 매장에서 이렇게 돌아갑니다</h2>
+      <p>연출이 아닌 실제 오더앤고 화면 그대로. 주문부터 주방·결제·영수증까지 끊김 없이 이어집니다.</p>
     </div>
 
     {% set features = [
-      {"eyebrow":"고객 QR 주문", "title":"테이블에서 QR 스캔, 직접 주문", "desc":"손님이 QR을 찍고 메뉴·옵션을 골라 바로 주문. 홀 인력 부담을 줄입니다.", "img":"mobile-order.png", "video":"mobile-order.mp4", "frame":"phone", "points":["메뉴·옵션·장바구니","직원 호출 버튼","실시간 영수증"], "reverse": false},
-      {"eyebrow":"POS 결제", "title":"한눈에 보는 결제와 정산", "desc":"주문 금액·공급가액·부가세를 자동 계산하고 카드·현금·분할 결제를 처리합니다.", "img":"pos-payment.png", "video":"", "frame":"screen", "points":["현금·카드 결제","분할 결제·할인","토스 단말기 연동"], "reverse": true},
-      {"eyebrow":"주방 KDS", "title":"주방 디스플레이로 조리 관리", "desc":"들어온 주문을 주방 화면에서 대기·완료로 관리하고 경과 시간을 확인합니다.", "img":"kds.png", "video":"kds.mp4", "frame":"screen", "points":["대기/완료 분할 화면","조리 경과 타이머","탭 한 번으로 완료"], "reverse": false},
-      {"eyebrow":"매장 관리", "title":"메뉴·테이블을 손쉽게 관리", "desc":"메뉴와 테이블 배치를 직접 구성하고 QR을 발급합니다.", "img":"store-hub.png", "video":"", "frame":"browser", "points":["메뉴 배치 편집","테이블 배치·QR 발급","결제내역·정산"], "reverse": true}
+      {"eyebrow":"고객 QR 주문", "title":"테이블에서 QR 스캔, 손님이 직접 주문", "desc":"손님이 QR을 찍고 메뉴·옵션을 골라 장바구니에 담아 바로 주문합니다. 주문받는 인력 없이도 홀이 돌아갑니다.", "video":"mobile-order.mp4", "img":"mobile-order.png", "frame":"phone", "points":["메뉴·옵션 선택 후 장바구니 담기","직원 호출 버튼","주문 즉시 POS·주방으로 전송"], "reverse": false},
+      {"eyebrow":"POS 결제 · 영수증", "title":"카드 결제부터 영수증까지 한 번에", "desc":"주문 금액·공급가액·부가세를 자동 계산하고, 카드 결제 후 영수증까지 즉시 출력됩니다. 분할 결제·할인도 지원합니다.", "video":"pos-payment.mp4", "img":"pos-payment.png", "frame":"screen", "points":["현금·카드·분할 결제","토스플레이스 단말기 승인","영수증 자동 발행"], "reverse": true},
+      {"eyebrow":"주방 KDS", "title":"주방 디스플레이로 조리 관리", "desc":"들어온 주문이 주방 화면에 실시간으로 뜹니다. 조리 경과 시간을 확인하고 탭 한 번으로 완료 처리합니다.", "video":"kds.mp4", "img":"kds.png", "frame":"screen", "points":["대기/완료 분할 화면","조리 경과 타이머","탭 한 번으로 완료"], "reverse": false},
+      {"eyebrow":"매장 관리", "title":"메뉴·가격·옵션을 사장님이 직접", "desc":"메뉴 이름·가격·사진·옵션을 화면에서 바로 등록하고 수정합니다. 테이블 배치와 QR 발급까지 한 곳에서 관리합니다.", "video":"admin-menu.mp4", "img":"admin-menu.png", "frame":"browser", "points":["메뉴·가격·옵션 설정","사진 등록·카테고리 분류","테이블 배치·QR 발급"], "reverse": true}
     ] %}
 
     {% for f in features %}
-    <div class="lp-feature {{ 'reverse' if f.reverse }}">
-      <div class="lp-feature-text">
+    <div class="lp-showcase {{ 'reverse' if f.reverse }}">
+      <div class="lp-showcase-text">
         <span class="lp-eyebrow">{{ f.eyebrow }}</span>
         <h3>{{ f.title }}</h3>
         <p>{{ f.desc }}</p>
-        <ul class="lp-feature-list">
+        <ul class="lp-showcase-list">
           {% for p in f.points %}<li><i class="ph ph-check-circle"></i>{{ p }}</li>{% endfor %}
         </ul>
       </div>
-      <div class="lp-feature-media">
-        {% set media %}
-          {% if f.video %}<video autoplay muted loop playsinline poster="/static/images/landing/{{ f.img }}"><source src="/static/videos/landing/{{ f.video }}" type="video/mp4"></video>
-          {% else %}<img src="/static/images/landing/{{ f.img }}" alt="{{ f.title }} 화면" loading="lazy">{% endif %}
-        {% endset %}
-        {% if f.frame == 'phone' %}
-        <div class="frame-phone">{{ media }}</div>
-        {% elif f.frame == 'browser' %}
-        <div class="frame-browser"><div class="bar"><span></span><span></span><span></span></div>{{ media }}</div>
-        {% else %}
-        <div class="frame-screen">{{ media }}</div>
-        {% endif %}
-      </div>
+      {% set media %}<video autoplay muted loop playsinline poster="/static/images/landing/{{ f.img }}"><source src="/static/videos/landing/{{ f.video }}" type="video/mp4"></video>{% endset %}
+      {% if f.frame == 'phone' %}
+      <div class="lp-showcase-media phone-wrap"><div class="frame-phone">{{ media }}</div></div>
+      {% elif f.frame == 'browser' %}
+      <div class="lp-showcase-media"><div class="frame-browser"><div class="bar"><span></span><span></span><span></span></div>{{ media }}</div></div>
+      {% else %}
+      <div class="lp-showcase-media"><div class="frame-screen">{{ media }}</div></div>
+      {% endif %}
     </div>
     {% endfor %}
   </div>
@@ -93,10 +98,10 @@
 <section class="lp-partner">
   <div class="og-container">
     <div class="lp-partner-box">
-      <i class="ph ph-credit-card"></i>
+      <img class="lp-partner-img" src="/static/images/landing/toss-front-terminal.png" alt="토스플레이스 프론트 결제 단말기" loading="lazy">
       <div>
         <h3>토스플레이스 단말기로 카드결제까지 한 번에</h3>
-        <p>오더앤고는 <strong>토스플레이스(Toss Place) 결제 단말기</strong>와 연동됩니다. 별도의 POS 카드 리더기 없이 단말기에서 카드·간편결제를 처리하고, 결제 결과가 POS에 실시간으로 반영됩니다.</p>
+        <p>오더앤고는 <strong>토스플레이스(Toss Place) 프론트 단말기</strong>와 연동됩니다. 별도의 POS 카드 리더기 없이 단말기에서 카드·간편결제를 처리하고, 결제 결과가 POS에 실시간으로 반영됩니다.</p>
       </div>
     </div>
   </div>

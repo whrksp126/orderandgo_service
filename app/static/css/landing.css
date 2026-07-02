@@ -40,8 +40,35 @@
 .lp-hero-cta { display: flex; gap: var(--og-space-3); justify-content: center; flex-wrap: wrap; }
 .lp-hero-note { margin-top: var(--og-space-4); font-size: var(--og-fs-xs); color: var(--og-text-subtle); }
 .lp-hero-visual {
-  max-width: 960px; margin: var(--og-space-14) auto 0; padding: 0 var(--og-space-6);
+  max-width: 1060px; margin: var(--og-space-14) auto 0; padding: 0 var(--og-space-6);
 }
+
+/* ---------- 신뢰 스트립 ---------- */
+.lp-trust { border-top: 1px solid var(--og-gray-100); border-bottom: 1px solid var(--og-gray-100); background: var(--og-gray-050); }
+.lp-trust-row { display: flex; justify-content: space-between; gap: var(--og-space-6); flex-wrap: wrap; padding: var(--og-space-8) var(--og-space-6); }
+.lp-trust-item { display: flex; flex-direction: column; gap: 2px; min-width: 150px; }
+.lp-trust-item strong { font-size: var(--og-fs-md); font-weight: var(--og-fw-extrabold); color: var(--og-primary); }
+.lp-trust-item span { font-size: var(--og-fs-xs); color: var(--og-text-muted); }
+
+/* ---------- 대형 기능 쇼케이스 (미디어 크게) ---------- */
+.lp-showcase {
+  display: grid; grid-template-columns: 360px 1fr; gap: var(--og-space-14);
+  align-items: center; margin-bottom: var(--og-space-30);
+}
+.lp-showcase:last-child { margin-bottom: 0; }
+.lp-showcase.reverse .lp-showcase-media { order: -1; }
+.lp-showcase-text h3 { font-size: var(--og-fs-xl); font-weight: var(--og-fw-extrabold); letter-spacing: -0.02em; margin: var(--og-space-2) 0 var(--og-space-4); line-height: var(--og-lh-tight); }
+.lp-showcase-text p { font-size: var(--og-fs-md); color: var(--og-text-muted); margin-bottom: var(--og-space-6); line-height: var(--og-lh-relaxed); }
+.lp-showcase-list { list-style: none; padding: 0; }
+.lp-showcase-list li { display: flex; gap: var(--og-space-2); align-items: flex-start; font-size: var(--og-fs-sm); font-weight: var(--og-fw-medium); margin-bottom: var(--og-space-3); }
+.lp-showcase-list i { color: var(--og-primary); font-size: 20px; margin-top: 1px; }
+/* 폰은 틴트 패널 안에서 크게 */
+.lp-showcase-media.phone-wrap {
+  background: linear-gradient(160deg, var(--og-primary-050), #fff);
+  border-radius: var(--og-radius-2xl); padding: var(--og-space-10) 0;
+  display: flex; justify-content: center;
+}
+.lp-showcase-media .frame-phone { width: 320px; }
 
 /* ---------- 기기 목업 프레임 (실제 캡처) ---------- */
 /* 브라우저/모니터 프레임 (데스크톱 관리자 화면) */
@@ -96,10 +123,20 @@
   border-radius: var(--og-radius-xl); padding: var(--og-space-8);
 }
 .lp-partner-box > i { font-size: 48px; color: var(--og-primary); flex-shrink: 0; }
-.lp-partner-box h3 { font-size: var(--og-fs-md); font-weight: var(--og-fw-bold); margin-bottom: var(--og-space-2); }
-.lp-partner-box p { font-size: var(--og-fs-sm); color: var(--og-text-muted); }
+.lp-partner-img { width: 220px; flex-shrink: 0; display: block; filter: drop-shadow(0 12px 24px rgba(0,0,0,0.18)); }
+.lp-partner-box h3 { font-size: var(--og-fs-lg); font-weight: var(--og-fw-extrabold); margin-bottom: var(--og-space-3); }
+.lp-partner-box p { font-size: var(--og-fs-md); color: var(--og-text-muted); line-height: var(--og-lh-relaxed); }
 .lp-partner-box strong { color: var(--og-primary-dark); }
-@media (max-width: 768px) { .lp-partner-box { flex-direction: column; text-align: center; } }
+@media (max-width: 768px) { .lp-partner-box { flex-direction: column; text-align: center; } .lp-partner-img { width: 180px; } }
+
+/* ---------- 반응형: 쇼케이스/신뢰 ---------- */
+@media (max-width: 900px) {
+  .lp-showcase { grid-template-columns: 1fr; gap: var(--og-space-6); margin-bottom: var(--og-space-20); }
+  .lp-showcase.reverse .lp-showcase-media { order: 0; }
+  .lp-showcase-text h3 { font-size: var(--og-fs-lg); }
+  .lp-showcase-text p { font-size: var(--og-fs-sm); }
+  .lp-trust-row { justify-content: flex-start; }
+}
 
 /* ---------- 이용 흐름 ---------- */
 .lp-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--og-space-6); }
