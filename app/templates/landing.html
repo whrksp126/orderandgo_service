@@ -36,9 +36,9 @@
     <p class="lp-hero-note">설치 없이 지금 바로 · 신용카드 등록 불필요</p>
   </div>
   <div class="lp-hero-visual">
-    <div class="lp-mock" role="img" aria-label="오더앤고 POS 화면 미리보기">
-      <!-- Phase 3: /static/images/landing/hero-pos.png (실제 캡처+기기목업) 로 교체 -->
-      POS 화면 캡처 (준비중)
+    <div class="frame-browser">
+      <div class="bar"><span></span><span></span><span></span></div>
+      <img src="/static/images/landing/pos-tablelist.png" alt="오더앤고 POS 테이블 현황 화면" loading="lazy">
     </div>
   </div>
 </section>
@@ -53,10 +53,10 @@
     </div>
 
     {% set features = [
-      {"eyebrow":"고객 QR 주문", "title":"테이블에서 QR 스캔, 직접 주문", "desc":"손님이 QR을 찍고 메뉴·옵션을 골라 바로 주문. 홀 인력 부담을 줄입니다.", "img":"feature-qr.png", "points":["메뉴·옵션·장바구니","직원 호출 버튼","실시간 영수증"], "reverse": false},
-      {"eyebrow":"POS", "title":"한눈에 보는 테이블 현황과 결제", "desc":"플로어맵에서 테이블 상태를 실시간 확인하고 카드·현금 결제를 처리합니다.", "img":"feature-pos.png", "points":["실시간 테이블 상태","주문 상세 관리","토스 단말기 카드결제"], "reverse": true},
-      {"eyebrow":"주방 KDS", "title":"주방 디스플레이로 조리 관리", "desc":"들어온 주문을 주방 화면에서 대기·완료로 관리하고 경과 시간을 확인합니다.", "img":"feature-kds.png", "points":["대기/완료 분할 화면","조리 경과 타이머","탭 한 번으로 완료"], "reverse": false},
-      {"eyebrow":"매장 관리", "title":"메뉴·테이블을 드래그로 손쉽게", "desc":"메뉴와 테이블 배치를 캔버스에서 직접 구성하고 QR을 발급합니다.", "img":"feature-store.png", "points":["메뉴 배치 편집","테이블 배치·QR 발급","결제내역·정산"], "reverse": true}
+      {"eyebrow":"고객 QR 주문", "title":"테이블에서 QR 스캔, 직접 주문", "desc":"손님이 QR을 찍고 메뉴·옵션을 골라 바로 주문. 홀 인력 부담을 줄입니다.", "img":"mobile-order.png", "frame":"phone", "points":["메뉴·옵션·장바구니","직원 호출 버튼","실시간 영수증"], "reverse": false},
+      {"eyebrow":"POS 결제", "title":"한눈에 보는 결제와 정산", "desc":"주문 금액·공급가액·부가세를 자동 계산하고 카드·현금·분할 결제를 처리합니다.", "img":"pos-payment.png", "frame":"screen", "points":["현금·카드 결제","분할 결제·할인","토스 단말기 연동"], "reverse": true},
+      {"eyebrow":"주방 KDS", "title":"주방 디스플레이로 조리 관리", "desc":"들어온 주문을 주방 화면에서 대기·완료로 관리하고 경과 시간을 확인합니다.", "img":"kds.png", "frame":"screen", "points":["대기/완료 분할 화면","조리 경과 타이머","탭 한 번으로 완료"], "reverse": false},
+      {"eyebrow":"매장 관리", "title":"메뉴·테이블을 손쉽게 관리", "desc":"메뉴와 테이블 배치를 직접 구성하고 QR을 발급합니다.", "img":"store-hub.png", "frame":"browser", "points":["메뉴 배치 편집","테이블 배치·QR 발급","결제내역·정산"], "reverse": true}
     ] %}
 
     {% for f in features %}
@@ -70,10 +70,13 @@
         </ul>
       </div>
       <div class="lp-feature-media">
-        <div class="lp-mock" role="img" aria-label="{{ f.title }} 화면">
-          <!-- Phase 3: /static/images/landing/{{ f.img }} -->
-          {{ f.eyebrow }} 화면 (준비중)
-        </div>
+        {% if f.frame == 'phone' %}
+        <div class="frame-phone"><img src="/static/images/landing/{{ f.img }}" alt="{{ f.title }} 화면" loading="lazy"></div>
+        {% elif f.frame == 'browser' %}
+        <div class="frame-browser"><div class="bar"><span></span><span></span><span></span></div><img src="/static/images/landing/{{ f.img }}" alt="{{ f.title }} 화면" loading="lazy"></div>
+        {% else %}
+        <div class="frame-screen"><img src="/static/images/landing/{{ f.img }}" alt="{{ f.title }} 화면" loading="lazy"></div>
+        {% endif %}
       </div>
     </div>
     {% endfor %}

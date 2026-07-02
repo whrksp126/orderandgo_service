@@ -43,14 +43,36 @@
   max-width: 960px; margin: var(--og-space-14) auto 0; padding: 0 var(--og-space-6);
 }
 
-/* ---------- 기기 목업 (placeholder — Phase 3 실제 캡처로 교체) ---------- */
-.lp-mock {
-  border-radius: var(--og-radius-xl); background: var(--og-gray-050);
-  border: 1px solid var(--og-gray-200); box-shadow: var(--og-shadow-lg);
-  aspect-ratio: 16 / 10; display: flex; align-items: center; justify-content: center;
-  color: var(--og-text-subtle); font-size: var(--og-fs-xs); overflow: hidden;
+/* ---------- 기기 목업 프레임 (실제 캡처) ---------- */
+/* 브라우저/모니터 프레임 (데스크톱 관리자 화면) */
+.frame-browser {
+  border-radius: var(--og-radius-lg); overflow: hidden;
+  box-shadow: var(--og-shadow-lg); border: 1px solid var(--og-gray-200); background: #fff;
 }
-.lp-mock img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.frame-browser .bar {
+  height: 34px; background: var(--og-gray-100); display: flex; align-items: center;
+  gap: 6px; padding: 0 14px; border-bottom: 1px solid var(--og-gray-200);
+}
+.frame-browser .bar span { width: 11px; height: 11px; border-radius: 50%; background: var(--og-gray-300); }
+.frame-browser img { width: 100%; display: block; }
+
+/* 태블릿/모니터 프레임 (POS/KDS 1024x768) */
+.frame-screen {
+  border-radius: var(--og-radius-xl); overflow: hidden; background: #111;
+  padding: 12px; box-shadow: var(--og-shadow-lg);
+}
+.frame-screen img { width: 100%; display: block; border-radius: var(--og-radius-md); }
+
+/* 폰 프레임 (모바일 QR 주문) */
+.frame-phone {
+  width: 280px; margin: 0 auto; background: #111; border-radius: 40px;
+  padding: 12px; box-shadow: var(--og-shadow-lg); position: relative;
+}
+.frame-phone::before {
+  content: ""; position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+  width: 110px; height: 22px; background: #111; border-radius: 0 0 14px 14px; z-index: 2;
+}
+.frame-phone img { width: 100%; display: block; border-radius: 30px; }
 
 /* ---------- 섹션 공통 ---------- */
 .lp-section { padding: var(--og-space-30) 0; }
