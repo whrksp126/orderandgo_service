@@ -66,11 +66,7 @@
 /* 폰 프레임 (모바일 QR 주문) */
 .frame-phone {
   width: 280px; margin: 0 auto; background: #111; border-radius: 40px;
-  padding: 12px; box-shadow: var(--og-shadow-lg); position: relative;
-}
-.frame-phone::before {
-  content: ""; position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
-  width: 110px; height: 22px; background: #111; border-radius: 0 0 14px 14px; z-index: 2;
+  padding: 12px; box-shadow: var(--og-shadow-lg);
 }
 .frame-phone img { width: 100%; display: block; border-radius: 30px; }
 
@@ -91,6 +87,19 @@
 .lp-feature-list { list-style: none; padding: 0; }
 .lp-feature-list li { display: flex; gap: var(--og-space-2); align-items: flex-start; font-size: var(--og-fs-sm); color: var(--og-text); margin-bottom: var(--og-space-2); }
 .lp-feature-list i { color: var(--og-primary); font-size: 18px; margin-top: 2px; }
+
+/* ---------- 결제 파트너 하이라이트 ---------- */
+.lp-partner { padding: var(--og-space-14) 0; }
+.lp-partner-box {
+  display: flex; gap: var(--og-space-6); align-items: center;
+  background: var(--og-primary-050); border: 1px solid var(--og-primary-100);
+  border-radius: var(--og-radius-xl); padding: var(--og-space-8);
+}
+.lp-partner-box > i { font-size: 48px; color: var(--og-primary); flex-shrink: 0; }
+.lp-partner-box h3 { font-size: var(--og-fs-md); font-weight: var(--og-fw-bold); margin-bottom: var(--og-space-2); }
+.lp-partner-box p { font-size: var(--og-fs-sm); color: var(--og-text-muted); }
+.lp-partner-box strong { color: var(--og-primary-dark); }
+@media (max-width: 768px) { .lp-partner-box { flex-direction: column; text-align: center; } }
 
 /* ---------- 이용 흐름 ---------- */
 .lp-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--og-space-6); }

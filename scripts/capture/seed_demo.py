@@ -146,11 +146,12 @@ def run():
         tcat = TableCategory(store_id=sid, category_name="1층 홀", position=1)
         db.session.add(tcat); db.session.commit()
         tables = []
-        coords = [(0, 0), (3, 0), (6, 0), (9, 0), (0, 3), (3, 3), (6, 3), (9, 3)]
+        # 12 테이블: 4열 × 3행, 각 카드 3×3 (제목+주문내역이 잘리지 않는 크기)
+        coords = [(gx, gy) for gy in (0, 4, 8) for gx in (0, 5, 10, 15)]
         for i, (gx, gy) in enumerate(coords, start=1):
             t = Table(name=f"{i}번", seat_count=4 if i % 2 else 2, is_group=0,
                       table_category_id=tcat.id, position=i,
-                      grid_x=gx, grid_y=gy, grid_w=2, grid_h=2,
+                      grid_x=gx, grid_y=gy, grid_w=3, grid_h=3,
                       qr_token=f"demoqr{i}", qr_generated_at=datetime.now())
             db.session.add(t); tables.append(t)
         db.session.commit()
@@ -163,11 +164,12 @@ def run():
                                          use_quantity=(nm in ("물", "냅킨")), is_active=True))
         db.session.commit()
 
-        # ── 활성 주문 (POS/KDS 생동감) : 2·5번 테이블에 진행중 주문 ──
+        # ── 활성 주문 (POS/KDS 생동감) : 2·6·10번 테이블에 진행중 주문 ──
         ensure_order_status()
         now = datetime.now()
         for t, items in [(tables[1], [("짜장면", 2), ("탕수육", 1)]),
-                         (tables[4], [("짬뽕", 1), ("볶음밥", 1), ("코카콜라", 2)])]:
+                         (tables[5], [("짬뽕", 1), ("볶음밥", 1), ("코카콜라", 2)]),
+                         (tables[9], [("짜장면", 1), ("소주", 2)])]:
             tol = TableOrderList(store_id=sid, table_id=t.id, checkingin_at=now - timedelta(minutes=8))
             db.session.add(tol); db.session.commit()
             for nm, qty in items:
@@ -185,7 +187,7 @@ def run():
             "store_pw": STORE_PW,
             "kds_station_id": kds.id,
             "order_table_id": tables[1].id,   # 2번 (주문 있음)
-            "order_table_id2": tables[4].id,  # 5번 (주문 있음)
+            "order_table_id2": tables[5].id,  # 6번 (주문 있음)
             "qr_tokens": [t.qr_token for t in tables],
         }
         with open(IDS_FILE, "w") as f:
