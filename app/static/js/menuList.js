@@ -121,10 +121,13 @@ var initGetMenuList = async function() {
 };
 
 var initGetTableOrderList = async function(autoShow) {
-  var url = '/pos/get_table_order_list/' + lastPath;
+  var reqTableId = lastPath; // 요청 시점의 테이블 id 고정
+  var url = '/pos/get_table_order_list/' + reqTableId;
   var method = 'GET';
   var fetchData = {};
   var result = await fetchDataAsync(url, method, fetchData);
+  // 응답 도착 시 이미 다른 테이블로 이동했다면 이 응답은 버린다 (stale 방지: 빈 테이블에 이전 주문이 남는 문제)
+  if (String(reqTableId) !== String(lastPath)) return;
   order_history = result.map(function(order) {
     return {
       id: order.id,
