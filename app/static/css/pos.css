@@ -123,7 +123,7 @@ main section article {
   padding: 20px;
   background: #f5f5f5;
   overflow: hidden;
-  transition: .25s;
+  /* 뷰 전환 시 높이가 애니메이션되지 않도록 transition 제거 (실영업 POS 즉각 반응) */
 }
 
 #container.order main section article {

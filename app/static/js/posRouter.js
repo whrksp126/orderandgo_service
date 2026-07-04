@@ -91,47 +91,12 @@ function _clearAnimClasses(el) {
   }
 }
 
-// ─── 슬라이드 전환 애니메이션 ───────────────────────────────────────────────
+// ─── 뷰 전환 (전환 효과 없이 즉시 교체) ─────────────────────────────────────
+// 실영업 POS는 지연/슬라이드가 방해됨 → 클릭 즉시 필요한 부분만 바로 렌더한다.
 function _animateTransition(route, params, direction) {
   var content = document.getElementById('pos-content');
-
-  // 이전 애니메이션 클래스 모두 제거
-  _clearAnimClasses(content);
-
-  // 초기 로드 — 애니메이션 없이 바로 렌더
-  if (direction === 'none') {
-    _initView(route.view, params);
-    return;
-  }
-
-  // 나가는 애니메이션 클래스 결정
-  var exitClass = direction === 'forward' ? 'pos-exit-left' : 'pos-exit-right';
-
-  // 1) 현재 콘텐츠 나가는 애니메이션
-  content.classList.add(exitClass);
-
-  setTimeout(function() {
-    // 2) 이전 애니메이션 정리 + 새 콘텐츠 렌더
-    _clearAnimClasses(content);
-    _initView(route.view, params);
-
-    // 3) 들어오는 시작 위치 설정
-    var enterClass = direction === 'forward' ? 'pos-enter-right' : 'pos-enter-left';
-    content.classList.add(enterClass);
-
-    // requestAnimationFrame으로 브라우저가 시작 위치를 인식하도록
-    requestAnimationFrame(function() {
-      requestAnimationFrame(function() {
-        content.classList.remove(enterClass);
-        content.classList.add('pos-enter-active');
-      });
-    });
-
-    // 애니메이션 종료 후 클래스 정리
-    setTimeout(function() {
-      _clearAnimClasses(content);
-    }, 300);
-  }, 150);
+  _clearAnimClasses(content); // 혹시 남아있을 수 있는 전환 클래스 제거
+  _initView(route.view, params);
 }
 
 // ─── 뷰 초기화 ─────────────────────────────────────────────────────────────
