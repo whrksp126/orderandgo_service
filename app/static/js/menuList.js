@@ -120,15 +120,11 @@ var initGetMenuList = async function() {
   createHtml(result);
 };
 
-var initGetTableOrderList = async function() {
+var initGetTableOrderList = async function(autoShow) {
   var url = '/pos/get_table_order_list/' + lastPath;
   var method = 'GET';
   var fetchData = {};
   var result = await fetchDataAsync(url, method, fetchData);
-  if (result.length != 0) {
-    var _orderListBtns = document.querySelectorAll('.basket_container > .count_btns button.order_history, .basket_container > .count_btns button.new_order');
-    _orderListBtns.forEach(function(btn) { btn.dataset.active = true; });
-  }
   order_history = result.map(function(order) {
     return {
       id: order.id,
@@ -140,27 +136,45 @@ var initGetTableOrderList = async function() {
       options: order.options,
     };
   });
+  if (result.length != 0) {
+    var _orderListBtns = document.querySelectorAll('.basket_container > .count_btns button.order_history, .basket_container > .count_btns button.new_order');
+    _orderListBtns.forEach(function(btn) { btn.dataset.active = true; });
+  }
+  var _basketContainer = document.querySelector('.basket_container');
+  var isViewingOrderList = _basketContainer && _basketContainer.dataset.type === 'order_list';
+  if (autoShow && result.length != 0) {
+    // 주문이 있는 테이블은 진입 즉시 주문내역을 보여준다 (실영업 POS UX)
+    showOrderHistoryView();
+  } else if (isViewingOrderList) {
+    // 이미 주문내역을 보는 중이면(소켓 갱신 등) 목록만 즉시 갱신
+    changeOrderHtml(setBasketData(order_history));
+  }
 };
 
 // =============================================
 //  주문내역 / 장바구니 전환
 // =============================================
 
-window.clickOrderHistoryBtn = function(event) {
-  document.querySelector('.basket_container .count_btns').innerHTML = posMenuListOrderListTopBtnsHtml();
+// 주문내역 뷰로 전환 (버튼 클릭 / 테이블 진입 자동표시 공용)
+function showOrderHistoryView() {
+  var _countBtnsWrap = document.querySelector('.basket_container .count_btns');
+  if (_countBtnsWrap) _countBtnsWrap.innerHTML = posMenuListOrderListTopBtnsHtml();
 
-  var _orderHistoryBtn = event.currentTarget;
-  _orderHistoryBtn.dataset.check = true;
   var _basketContainer = document.querySelector('.basket_container');
-  _basketContainer.dataset.type = "order_list";
+  if (_basketContainer) _basketContainer.dataset.type = "order_list";
   changeOrderHtml(setBasketData(order_history));
   var _countBtns = document.querySelectorAll('.count_btns button.minus, .count_btns button.plus, .count_btns button.delete');
   _countBtns.forEach(function(btn) { btn.dataset.active = false; });
   closeOptionModal();
 
   var _orderBtn = document.querySelector('.order_btns ul li.order button');
-  _orderBtn.innerHTML = '주문취소';
-  document.querySelector('.order_btns ul li.order').dataset.iscancel = true;
+  if (_orderBtn) _orderBtn.innerHTML = '주문취소';
+  var _orderLi = document.querySelector('.order_btns ul li.order');
+  if (_orderLi) _orderLi.dataset.iscancel = true;
+}
+
+window.clickOrderHistoryBtn = function(event) {
+  showOrderHistoryView();
 };
 
 var clickBasketBtn = function(event) {
@@ -731,12 +745,12 @@ window.initMenuListView = function(params) {
 
   document.getElementById('pos-content').innerHTML = MENU_LIST_SHELL;
   initGetMenuList();
-  initGetTableOrderList();
+  initGetTableOrderList(true); // 진입 시 주문 있으면 자동으로 주문내역 표시
 
   // onOrderUpdate 콜백 (menuList 뷰용)
   window.onOrderUpdate = function(data) {
     if (data.table_id == lastPath) {
-      initGetTableOrderList();
+      initGetTableOrderList(false); // 소켓 갱신: 보고 있을 때만 갱신, 강제 전환 안 함
     }
   };
 };
