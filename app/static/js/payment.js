@@ -1469,6 +1469,15 @@ window.initPaymentView = function(params) {
 
   document.getElementById('pos-content').innerHTML = PAYMENT_SHELL;
 
+  // menuList 에서 넘어온 주문내역이 있으면 즉시 사용해 렌더 지연 제거 (권위 데이터는 아래 callOrderHistory 로 재확인)
+  var handoff = window.__posPayHandoff;
+  window.__posPayHandoff = null;
+  if (handoff && String(handoff.tableId) === String(tableId) && Array.isArray(handoff.orders)) {
+    order_history = handoff.orders.map(function(o) {
+      return { id: o.id, masterName: o.masterName, name: o.name, price: o.price, count: 1, options: o.options };
+    });
+  }
+
   // 소켓 이벤트 등록
   _setupPaymentSocketEvents();
 

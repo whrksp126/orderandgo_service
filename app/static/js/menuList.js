@@ -745,6 +745,8 @@ window.clickOrder = async function(event) {
 };
 
 window.clickPayment = function(event) {
+  // 결제 페이지가 즉시 그릴 수 있도록 이미 받아둔 주문내역을 넘겨준다 (재조회 대기 제거)
+  window.__posPayHandoff = { tableId: String(lastPath), orders: order_history };
   navigateTo('/pos/payment/' + lastPath);
 };
 
