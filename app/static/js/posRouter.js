@@ -58,8 +58,10 @@ function _routeTo(path, isPopState) {
       _currentParams = params;
       _currentDepth = route.depth;
 
-      // lastPath 호환 유지
-      window.lastPath = params.tableId || path.split('/').pop();
+      // lastPath 갱신 — common.js의 렉시컬 `lastPath`(실제 소비자가 읽는 값)를 갱신해야 함.
+      // window.lastPath만 바꾸면 별개 속성이라 주문조회가 이전 테이블 id를 계속 사용함.
+      lastPath = params.tableId || path.split('/').pop();
+      window.lastPath = lastPath;
 
       // body/container 클래스 동적 변경
       _updateShellClasses(route.view);

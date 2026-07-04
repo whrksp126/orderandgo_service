@@ -733,6 +733,7 @@ window.clickPayment = function(event) {
 
 window.initMenuListView = function(params) {
   var tableId = params.tableId;
+  lastPath = tableId;          // common.js 렉시컬 lastPath 갱신 (주문조회가 읽는 실제 값)
   window.lastPath = tableId;
 
   // 상태 초기화

@@ -1451,6 +1451,7 @@ window.clickPercentBtn = function(event) {
 
 window.initPaymentView = function(params) {
   var tableId = params.tableId;
+  lastPath = tableId;          // common.js 렉시컬 lastPath 갱신 (실제 소비자가 읽는 값)
   window.lastPath = tableId;
 
   // 상태 초기화
