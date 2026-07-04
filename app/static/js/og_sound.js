@@ -83,8 +83,10 @@
   var CLICKABLE = [
     'button', 'a[href]', 'input[type="submit"]', '[role="button"]', '[onclick]',
     '.item', '.menu', '.table_box', '.card', '.change_page_btn',
+    '.table-card', '.view-card',            // POS 테이블 카드
+    '.kds-card', '.card-footer button', '.btn-item-complete', // KDS 카드/버튼
     '.ob-chip', '.su-step', '.count_btns button', '.order_btns button',
-    '.tab', '.btn', '[class*="btn"]'
+    '.tab', '.btn', '[class*="btn"]', 'li[onclick]', 'nav li'
   ].join(',');
 
   function onDown(e) {
