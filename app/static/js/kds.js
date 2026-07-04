@@ -285,6 +285,7 @@ async function completeBatch(orderIds) {
     });
     const data = await res.json();
     if (data.code === 200) {
+      try { if (window.ogSound) ogSound.complete(); } catch (e) {}
       // 즉시 UI에서 해당 배치 제거
       pendingBatches = pendingBatches.filter(b => !orderIds.some(id => b.order_ids.includes(id)));
       renderPendingBoard();

@@ -586,6 +586,14 @@ const changeOrderHtml = (datas) => {
 
 // Toast Notification (Premium 3D Stack)
 const showToast = (message, type = 'info') => {
+  // 사운드 피드백 (성공/오류만; 정보성 토스트는 별도 이벤트음에서 처리)
+  try {
+    if (window.ogSound) {
+      if (type === 'error') ogSound.error();
+      else if (type === 'success') ogSound.success();
+    }
+  } catch (e) {}
+
   let container = document.getElementById('toastContainer');
   if (!container) {
     container = document.createElement('div');
@@ -699,6 +707,7 @@ if (typeof io !== 'undefined') {
         });
 
         showToast(`${tableName}에서 새로운 주문이 들어왔습니다.`);
+        try { if (window.ogSound) ogSound.notify(); } catch (e) {}
         renderNotifications();
       }
 
@@ -749,6 +758,7 @@ if (typeof io !== 'undefined') {
       }
 
       showToast(toastText);
+      try { if (window.ogSound) ogSound.call(); } catch (e) {}
       renderNotifications();
     });
   }

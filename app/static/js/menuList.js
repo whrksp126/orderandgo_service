@@ -728,6 +728,7 @@ window.clickOrder = async function(event) {
     var result = await fetchDataAsync(url, method, fd);
     if (result.code == 200) {
       showToast('주문이 완료되었습니다.');
+      try { if (window.ogSound) ogSound.success(); } catch (e) {}
       setTimeout(function() {
         navigateTo('/pos/tableList');
       }, 1500);

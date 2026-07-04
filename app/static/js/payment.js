@@ -122,6 +122,9 @@ function _setupPaymentSocketEvents() {
       return;
     }
 
+    // 결제 승인 성공 → 사운드 피드백
+    try { if (window.ogSound) ogSound.success(); } catch (e) {}
+
     if (isCash) {
       var resp = result.response || result || {};
       if (_cashTablePaymentListId) {
