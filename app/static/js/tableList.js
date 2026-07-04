@@ -51,12 +51,31 @@ var cachingData = null;
 //  Data load
 // =============================================
 
+// 테이블 페이지 캐시 — 세션 유지. 구조(카테고리/테이블 배치)는 거의 안 바뀌므로
+// 캐시로 즉시 렌더하고, 백그라운드 fetch로 주문 오버레이 등 변경분만 반영한다.
+var _tablePageCache = null;
+
 var loadTableData = function() {
+  var rendered = false; // 이번 호출에서 이미 그렸는지 (캐시 vs fetch 중복 렌더 방지)
+  var doRender = function(data) {
+    tableData = setInitFetchData(data);
+    createHtml(tableData);
+    rendered = true;
+  };
+
+  // 1) 캐시가 있으면 즉시 렌더 (캔버스 크기 정착 후 그리도록 rAF)
+  if (_tablePageCache) {
+    var cached = _tablePageCache;
+    requestAnimationFrame(function() { if (!rendered) doRender(cached); });
+  }
+
+  // 2) 최신 데이터 fetch → 변경됐거나 아직 안 그렸으면 렌더
   fetch('/pos/get_table_page', { method: 'GET' })
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      tableData = setInitFetchData(data);
-      createHtml(tableData);
+      var changed = !_tablePageCache || JSON.stringify(data) !== JSON.stringify(_tablePageCache);
+      _tablePageCache = data;
+      if (changed || !rendered) doRender(data);
     })
     .catch(function(err) { console.error('Error:', err); });
 };

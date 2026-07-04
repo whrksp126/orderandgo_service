@@ -110,14 +110,35 @@ var indexData = { main: 0, sub: 0, page: 0 };
 //  데이터 로드
 // =============================================
 
+// 매장 메뉴 캐시 — 세션 동안 유지(뷰 전환마다 리셋하지 않음).
+// 메뉴는 거의 안 바뀌므로 캐시로 즉시 렌더하고, 백그라운드에서 최신화하여 변경 시에만 다시 그린다.
+var _menuCache = null;
+
 var initGetMenuList = async function() {
-  var url = '/pos/get_menu_list';
-  var method = 'GET';
-  var fetchData = {};
-  var result = await fetchDataAsync(url, method, fetchData);
-  console.log(result);
+  if (_menuCache) {
+    menuData = _menuCache;
+    createHtml(_menuCache);      // 캐시로 즉시 렌더 (클릭 시 지연 없음)
+    revalidateMenuCache();       // 백그라운드 최신화
+    return;
+  }
+  var result = await fetchDataAsync('/pos/get_menu_list', 'GET', {});
+  _menuCache = result;
   menuData = result;
   createHtml(result);
+};
+
+// 백그라운드에서 메뉴를 다시 받아 변경이 있을 때만 재렌더 (없으면 조용히 캐시 유지)
+var revalidateMenuCache = async function() {
+  try {
+    var result = await fetchDataAsync('/pos/get_menu_list', 'GET', {});
+    if (_menuCache && JSON.stringify(result) === JSON.stringify(_menuCache)) return;
+    _menuCache = result;
+    menuData = result;
+    // 옵션 모달을 조작 중이면 재렌더로 방해하지 않는다 (다음 진입 때 반영)
+    var _modal = document.getElementById('optionModal');
+    if (_modal && _modal.classList.contains('active')) return;
+    createHtml(result);
+  } catch (e) { /* 실패 시 캐시 유지 */ }
 };
 
 var initGetTableOrderList = async function(autoShow) {
