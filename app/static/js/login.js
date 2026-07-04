@@ -274,18 +274,33 @@ const onSubmitRegister = (event) => {
     return;
   }
 
+  // 온보딩에서 넘어온 경우(?from=onboarding)에만 localStorage 의 매장/메뉴/테이블 데이터를 함께 전송
+  let onboarding = null;
+  const fromOnboarding = new URLSearchParams(location.search).get('from') === 'onboarding';
+  if (fromOnboarding) {
+    try { onboarding = localStorage.getItem('og_onboarding'); } catch (e) { onboarding = null; }
+  }
+
   const postRegister = (idToken) => {
     const fd = new FormData();
     fd.append('tel', tels);
     fd.append('password', password);
     fd.append('code_number', codeNumber);
     if (idToken) fd.append('firebase_id_token', idToken);
+    if (onboarding) fd.append('onboarding', onboarding);
     fetch('/register_admin', { method: 'POST', body: fd })
       .then(r => r.json())
       .then(data => {
         if (data.code === 200) {
-          showToast('관리자 로그인 후 스토어를 생성해 주세요', 'success');
-          setTimeout(() => { window.location.href = '/login'; }, 2000);
+          if (data.redirect) {
+            // 매장 자동 생성 완료 → 온보딩 임시 데이터 정리 후 설정 화면으로
+            try { localStorage.removeItem('og_onboarding'); } catch (e) {}
+            showToast(data.note || '매장이 만들어졌어요! 설정을 이어가요', 'success');
+            setTimeout(() => { window.location.href = data.redirect; }, 1200);
+          } else {
+            showToast('관리자 로그인 후 스토어를 생성해 주세요', 'success');
+            setTimeout(() => { window.location.href = '/login'; }, 2000);
+          }
         } else {
           showFormMsg('form_msg', data.message);
         }

@@ -1,7 +1,7 @@
 from flask import render_template, Response, request, redirect
 from app.routes import main_bp
 from app.site_config import PUBLIC_PATHS, DISALLOW_PATHS
-from flask_login import login_required
+from flask_login import login_required, current_user
 
 
 # ---------------------------------------------------------------------------
@@ -27,6 +27,36 @@ def dashboard():
 @main_bp.route('/start')
 def start():
     return render_template('onboarding.html')
+
+
+# ---------------------------------------------------------------------------
+# 가입 직후 설정 체크리스트 (로그인 후 하드 세팅 안내) — Duolingo식 후반부
+# ---------------------------------------------------------------------------
+@main_bp.route('/setup')
+@login_required
+def setup():
+    from app.models import (db, Menu, Table, TableCategory, TerminalToken,
+                            KdsStation, PrinterEnvironment)
+    store = current_user
+    menu_count = Menu.query.filter_by(store_id=store.id).count()
+    table_count = db.session.query(Table).join(
+        TableCategory, Table.table_category_id == TableCategory.id
+    ).filter(TableCategory.store_id == store.id).count()
+    terminal_connected = bool(
+        TerminalToken.query.filter_by(store_id=store.id).first()
+        or getattr(store, 'terminal_serial', None)
+    )
+    kds_ready = bool(KdsStation.query.filter_by(store_id=store.id).first())
+    printer_ready = bool(PrinterEnvironment.query.filter_by(store_id=store.id).first())
+    status = {
+        'store_name': store.name,
+        'menu_count': menu_count,
+        'table_count': table_count,
+        'terminal_connected': terminal_connected,
+        'kds_ready': kds_ready,
+        'printer_ready': printer_ready,
+    }
+    return render_template('setup.html', status=status)
 
 
 # ---------------------------------------------------------------------------

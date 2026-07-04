@@ -7,7 +7,9 @@ from flask import redirect, url_for
 
 from app.models.user import create_admin_user, create_store_user, get_store_user_login, get_admin_user_login, update_store_logo_img, get_user_by_tel, reset_user_password
 from app.models.store import get_store
+from app.models.onboarding import create_store_from_onboarding
 from app.site_config import FIREBASE
+import json
 
 
 def _verify_firebase_phone(id_token):
@@ -166,20 +168,33 @@ def register_admin_user():
             if not saved_code or saved_code != code_number or saved_tel != tel:
                 return jsonify({'code': 400, 'message': '인증번호가 올바르지 않습니다.'})
 
-        print(tel, password)
         result = create_admin_user(tel, password)
 
         if result == 'duplicate':
             return jsonify({'code': 409, 'message': '이미 가입된 전화번호입니다.'})
         if result == False:
             return jsonify({'code': 400, 'message': '회원가입 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'})
-        
-        print("회원가입 성공", result)
-        response = jsonify({
-            'code' : 200,
-            'message': 'Success'
-        })
-        return response
+
+        # ── 온보딩 데이터가 있으면 매장/메뉴/테이블 즉시 생성 후 매장으로 자동 로그인 ──
+        onboarding_raw = request.form.get('onboarding')
+        if onboarding_raw:
+            try:
+                onboarding = json.loads(onboarding_raw)
+            except (ValueError, TypeError):
+                onboarding = None
+            user = get_user_by_tel(tel)
+            store = create_store_from_onboarding(user.id, password, onboarding) if (user and onboarding) else None
+            if store:
+                login_user(store)
+                session['user_type'] = 'store'
+                session.pop('admin_user_id', None)
+                return jsonify({'code': 200, 'message': 'Success', 'redirect': '/setup?welcome=1'})
+            # 매장 생성 실패 시: 가입만 완료 → 로그인 유도
+            return jsonify({'code': 200, 'message': 'Success',
+                            'redirect': '/login',
+                            'note': '가입이 완료됐어요. 로그인 후 매장을 만들어 주세요.'})
+
+        return jsonify({'code': 200, 'message': 'Success'})
     
 
 # 스토어 회원가입

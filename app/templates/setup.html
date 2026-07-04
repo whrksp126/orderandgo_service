@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}매장 설정 — 오더앤고{% endblock %}
+{% block description %}가입이 완료됐어요. 남은 설정을 이어서 마무리하세요.{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+
+{% block head %}<link rel="stylesheet" href="/static/css/setup.css">{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block body %}
+<div class="su-shell">
+  <div class="su-card">
+    <div class="su-hero">
+      <div class="su-hero-badge"><i class="ph ph-confetti"></i></div>
+      <h1 class="su-title">{{ status.store_name }} 매장이 준비됐어요! 🎉</h1>
+      <p class="su-sub">가입과 매장 생성이 완료됐어요. 아래 항목만 마무리하면 바로 영업을 시작할 수 있어요.</p>
+    </div>
+
+    {# ── 이미 완료된 것 ── #}
+    <div class="su-section-label">완료됨</div>
+    <ul class="su-done">
+      <li><i class="ph ph-check-circle"></i> 매장 생성 완료</li>
+      <li><i class="ph ph-check-circle"></i> 대표 메뉴 <strong>{{ status.menu_count }}</strong>개 등록</li>
+      <li><i class="ph ph-check-circle"></i> 테이블 <strong>{{ status.table_count }}</strong>개 · QR 자동 발급</li>
+    </ul>
+
+    {# ── 이어서 할 것 ── #}
+    <div class="su-section-label">이어서 설정하기</div>
+    <div class="su-steps">
+      <a class="su-step" href="/store/set_menu">
+        <div class="su-step-ic teal"><i class="ph ph-cards"></i></div>
+        <div class="su-step-body">
+          <div class="su-step-title">메뉴 다듬기</div>
+          <div class="su-step-desc">사진·옵션·설명을 추가해 손님 주문 화면을 완성해요.</div>
+        </div>
+        <i class="ph ph-caret-right su-step-arrow"></i>
+      </a>
+
+      <a class="su-step" href="/store/table_qr_mgmt">
+        <div class="su-step-ic teal"><i class="ph ph-qr-code"></i></div>
+        <div class="su-step-body">
+          <div class="su-step-title">테이블 QR 출력·부착</div>
+          <div class="su-step-desc">테이블마다 QR을 출력해 붙이면 손님이 바로 주문해요.</div>
+        </div>
+        <i class="ph ph-caret-right su-step-arrow"></i>
+      </a>
+
+      <a class="su-step {{ 'is-done' if status.terminal_connected else '' }}" href="/store/terminal_mgmt">
+        <div class="su-step-ic {{ 'done' if status.terminal_connected else 'accent' }}">
+          <i class="ph {{ 'ph-check' if status.terminal_connected else 'ph-credit-card' }}"></i>
+        </div>
+        <div class="su-step-body">
+          <div class="su-step-title">토스 프론트 단말기 연결
+            {% if status.terminal_connected %}<span class="su-tag done">연결됨</span>{% endif %}
+          </div>
+          <div class="su-step-desc">단말기에서 오더앤고로 로그인하면 카드·간편결제가 열려요.</div>
+        </div>
+        <i class="ph ph-caret-right su-step-arrow"></i>
+      </a>
+
+      <a class="su-step {{ 'is-done' if status.kds_ready else '' }}" href="/store/kds_station_mgmt">
+        <div class="su-step-ic {{ 'done' if status.kds_ready else 'teal' }}">
+          <i class="ph {{ 'ph-check' if status.kds_ready else 'ph-monitor' }}"></i>
+        </div>
+        <div class="su-step-body">
+          <div class="su-step-title">주방 KDS 설정
+            {% if status.kds_ready %}<span class="su-tag done">설정됨</span>{% endif %}
+          </div>
+          <div class="su-step-desc">주방 모니터로 주문을 실시간으로 받아 조리 상태를 관리해요.</div>
+        </div>
+        <i class="ph ph-caret-right su-step-arrow"></i>
+      </a>
+
+      <a class="su-step {{ 'is-done' if status.printer_ready else '' }}" href="/store/printer_mgmt">
+        <div class="su-step-ic {{ 'done' if status.printer_ready else 'teal' }}">
+          <i class="ph {{ 'ph-check' if status.printer_ready else 'ph-printer' }}"></i>
+        </div>
+        <div class="su-step-body">
+          <div class="su-step-title">영수증 프린터 설정
+            {% if status.printer_ready %}<span class="su-tag done">설정됨</span>{% endif %}
+          </div>
+          <div class="su-step-desc">영수증·주문서 출력을 위한 프린터를 등록해요.</div>
+        </div>
+        <i class="ph ph-caret-right su-step-arrow"></i>
+      </a>
+    </div>
+
+    <a class="su-cta" href="/dashboard"><i class="ph ph-squares-four"></i> 매장 관리 시작하기</a>
+
+    {# ── 장비가 없다면 무료 상담 ── #}
+    <div class="su-consult">
+      <div class="su-consult-top">
+        <i class="ph ph-headset"></i>
+        <div>
+          <strong>단말기·프린터가 아직 없으신가요?</strong>
+          <p>필요한 장비를 무료로 상담받고, 우리 매장에 맞는 구성을 추천받으세요.</p>
+        </div>
+      </div>
+      <div class="su-consult-btns">
+        {% if company.tel %}<a class="su-consult-btn call" href="tel:{{ company.tel }}"><i class="ph ph-phone"></i> 전화 상담</a>{% endif %}
+        {% if company.email %}<a class="su-consult-btn mail" href="mailto:{{ company.email }}?subject=오더앤고 도입 상담"><i class="ph ph-envelope-simple"></i> 이메일 문의</a>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
