@@ -187,7 +187,7 @@ def create_toss_pending():
     from app.models import Store
     data = request.get_json()
     payment_id = str(uuid.uuid4())[:8]
-    store = Store.query.filter_by(user_id=current_user.id).first()
+    store = Store.query.get(current_user.id)
     store_id = store.id
 
     if not store.toss_merchant_id or not store.toss_business_number:
@@ -602,7 +602,7 @@ def check_terminal_online():
     """단말기 폴링 기반 온라인 상태 확인 (POS에서 주기적으로 호출)"""
     from app.models import Store, TerminalToken
     from datetime import datetime, timedelta
-    store = Store.query.filter_by(user_id=current_user.id).first()
+    store = Store.query.get(current_user.id)
     if not store:
         return jsonify({'online': False})
     record = TerminalToken.query.filter_by(store_id=store.id)\
