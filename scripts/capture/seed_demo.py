@@ -109,8 +109,8 @@ def run():
         sc_noodle = SubCategory(main_category_id=mc_meal.id, name="면류", position=1)
         sc_rice = SubCategory(main_category_id=mc_meal.id, name="밥류", position=2)
         sc_fry = SubCategory(main_category_id=mc_meal.id, name="튀김류", position=3)
-        sc_soju = SubCategory(main_category_id=mc_liquor.id, name="소주", position=1)
-        sc_soda = SubCategory(main_category_id=mc_drink.id, name="탄산", position=1)
+        sc_soju = SubCategory(main_category_id=mc_liquor.id, name="주류", position=1)
+        sc_soda = SubCategory(main_category_id=mc_drink.id, name="음료", position=1)
         db.session.add_all([sc_noodle, sc_rice, sc_fry, sc_soju, sc_soda]); db.session.commit()
 
         # ── 메뉴 (page/position 으로 그리드 배치) ──
@@ -130,9 +130,16 @@ def run():
             ("깐풍기", 22000, imgs("menu_64", "깐풍기"), "매콤달콤 깐풍 소스에 버무린 바삭한 닭튀김입니다.", sc_fry.id, 9),
             ("유린기", 22000, imgs("menu_65", "유린기"), "채 썬 채소와 새콤한 간장소스를 올린 닭튀김입니다.", sc_fry.id, 10),
             ("군만두", 7000, imgs("menu_66", "군만두"), "겉은 바삭하고 속은 촉촉하게 구워낸 군만두입니다.", sc_fry.id, 11),
-            # 주류 / 음료
+            # 주류 (4종)
             ("소주", 5000, imgs("menu_56", "소주"), "", sc_soju.id, 12),
-            ("코카콜라", 2000, imgs("menu_57", "코카콜라"), "", sc_soda.id, 13),
+            ("맥주", 5000, imgs("menu_67", "맥주"), "", sc_soju.id, 13),
+            ("고량주", 12000, imgs("menu_68", "고량주"), "", sc_soju.id, 14),
+            ("하이볼", 7000, imgs("menu_69", "하이볼"), "", sc_soju.id, 15),
+            # 음료 (4종)
+            ("코카콜라", 2000, imgs("menu_57", "코카콜라"), "", sc_soda.id, 16),
+            ("사이다", 2000, imgs("menu_70", "사이다"), "", sc_soda.id, 17),
+            ("환타", 2000, imgs("menu_71", "환타"), "", sc_soda.id, 18),
+            ("옥수수수염차", 2000, imgs("menu_72", "옥수수수염차"), "", sc_soda.id, 19),
         ]
         menu_objs = {}
         for name, price, image, desc, subid, pos in menus:
