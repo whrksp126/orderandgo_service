@@ -230,7 +230,7 @@ function _setupPaymentSocketEvents() {
   socket.on('terminal_status', function(data) {
     var statusMap = {
       'showing_order': '단말기에 주문 표시 중...',
-      'processing': '카�� 처리 중...',
+      'processing': '카드 처리 중...',
       'idle': '대기 중',
     };
     var msg = statusMap[data.status] || data.status;
@@ -244,7 +244,7 @@ function _reloadPaymentView() {
   initPaymentView({ tableId: lastPath });
 }
 
-// ─── 단말기 온라인 상태 HTTP 폴링 ────────────────────────────────────��──────
+// ─── 단말기 온라인 상태 HTTP 폴링 ────────────────────────────────────────────
 function _startTerminalStatusPoll() {
   var poll = function() {
     fetch('/pos/toss/terminal_online')
@@ -515,7 +515,7 @@ var paymentHtml = function() {
     var _received = _paid?.querySelector('.received');
 
     receivedTotalPrice = payment_history.payment.reduce(function(acc, item) { return acc + item.price; }, 0);
-    if (_remaining) _remaining.innerHTML = '남��� 금액 ' + (totalPrice - receivedTotalPrice).toLocaleString() + '원';
+    if (_remaining) _remaining.innerHTML = '남은 금액 ' + (totalPrice - receivedTotalPrice).toLocaleString() + '원';
     if (_received) _received.innerHTML = '| 받은 금액 ' + receivedTotalPrice.toLocaleString() + '원';
   }
   var _sectionTotalPrice = document.querySelector('main section .total_price .price');
@@ -613,7 +613,7 @@ var setPaymentData = function(curPaymentPrice) {
   _updateDisplayPendingOrder();
 };
 
-// ─── 할��� ───────────────────────────────────────────────────────────────────
+// ─── 할인 ───────────────────────────────────────────────────────────────────
 window.clickDiscount = function(event) {
   openModalFun(event);
   var _modalTitle = document.querySelector('.modal-content h1');
@@ -906,7 +906,7 @@ window.clickPlusCountBtn = function(event) {
   _dutch.innerHTML = payment_history.payment_history.dutchPrice.toLocaleString() + '원 x ' + payment_history.payment_history.totalDutch;
 };
 
-// ─���─ 현금 결제 ──────────────────────────────────────────────────────────────
+// ───── 현금 결제 ──────────────────────────────────────────────────────────────
 
 function _closeCashPaymentModal() {
   document.querySelector('#cash-wait-modal')?.remove();
@@ -1068,8 +1068,8 @@ function _openCashReceiptCancelModal(paymentId) {
   var modal = document.createElement('div');
   modal.id = 'cash-receipt-cancel-modal';
   modal.innerHTML = '<div class="card-modal-overlay"><div class="card-modal-box">' +
-    '<div class="card-modal-icon">🧾</div><h2>현금영수증 발�� 완료</h2>' +
-    '<p class="terminal-status-msg" style="color:#888;font-size:13px;">영��증이 발급되었습니다. (<span id="cr-cancel-countdown">60</span>초 내 취소 가능)</p>' +
+    '<div class="card-modal-icon"><i class="ph ph-receipt"></i></div><h2>현금영수증 발행 완료</h2>' +
+    '<p class="terminal-status-msg" style="color:#888;font-size:13px;">영수증이 발급되었습니다. (<span id="cr-cancel-countdown">60</span>초 내 취소 가능)</p>' +
     '<div style="display:flex;gap:10px;margin-top:16px;">' +
     '<button class="card-modal-cancel-btn" style="flex:1;background:#e74c3c;" onclick="_requestCashReceiptCancelGlobal()">영수증 취소</button>' +
     '<button class="card-modal-cancel-btn" style="flex:1;background:#27ae60;" onclick="_closeCashReceiptCancelModalGlobal()">확인</button>' +
@@ -1174,7 +1174,7 @@ async function _processCashPayment(issuerType, identityNumber) {
       var waitModal = document.createElement('div');
       waitModal.id = 'cash-wait-modal';
       waitModal.innerHTML = '<div class="card-modal-overlay"><div class="card-modal-box">' +
-        '<div class="card-modal-icon">💵</div><h2>현금 결제 처리 중</h2>' +
+        '<div class="card-modal-icon"><i class="ph ph-money"></i></div><h2>현금 결제 처리 중</h2>' +
         '<p class="terminal-status-msg">단말기에서 결제 처리 중...</p>' +
         '<button class="card-modal-cancel-btn" onclick="clickCancelCashPayment()">결제 취소</button>' +
         '</div></div>';
@@ -1500,7 +1500,7 @@ window.initPaymentView = function(params) {
   _resetInactivityTimer();
   _addInactivityListeners();
 
-  // onOrderUpdate 콜백 (payment 뷰용 - 불���요하지만 안전을 위해)
+  // onOrderUpdate 콜백 (payment 뷰용 - 불필요하지만 안전을 위해)
   window.onOrderUpdate = function(data) {};
 };
 

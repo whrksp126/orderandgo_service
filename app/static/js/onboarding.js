@@ -107,7 +107,7 @@
       var mc = state.menus.filter(function (m) { return m.name.trim(); }).length;
       var indName = (INDUSTRIES.find(function (x) { return x.id === state.industry; }) || {}).name || '-';
       var lackHw = state.hasTerminal !== 'yes' || state.hasPrinter !== 'yes';
-      h += '<span class="ob-eyebrow">거의 다 됐어요!</span><h1 class="ob-title">' + esc(state.storeName || '내 매장') + ' 매장이 준비됐어요 🎉</h1>' +
+      h += '<span class="ob-eyebrow">거의 다 됐어요!</span><h1 class="ob-title">' + esc(state.storeName || '내 매장') + ' 매장이 준비됐어요</h1>' +
         '<p class="ob-sub">지금 가입하면 아래 내용이 그대로 저장돼요.</p>' +
         '<div class="ob-summary">' +
         '<div class="ob-summary-row"><span>업종</span><strong>' + indName + '</strong></div>' +

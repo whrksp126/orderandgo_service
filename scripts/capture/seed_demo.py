@@ -23,8 +23,8 @@ from app.models import (
 
 IDS_FILE = os.path.join(os.path.dirname(__file__), "demo_ids.json")
 
-STORE_ID = "demo"
-STORE_PW = "demo1234"
+STORE_ID = "order"
+STORE_PW = "order1234"
 STORE_NAME = "빨간중식"
 IMG_BASE = "/static/images/store_16"
 
@@ -114,13 +114,25 @@ def run():
         db.session.add_all([sc_noodle, sc_rice, sc_fry, sc_soju, sc_soda]); db.session.commit()
 
         # ── 메뉴 (page/position 으로 그리드 배치) ──
+        # 이미지 경로 규칙: /static/images/store_16/{폴더}/{메뉴명}_{1..4}.png (각 4장)
         menus = [
-            ("짜장면", 8000, imgs("menu_50", "짜장면"), "40년 전통 춘장 베이스로 만든 시그니처 메뉴입니다.", sc_noodle.id, 1),
-            ("짬뽕", 11000, imgs("menu_51", "짬뽕"), "8가지 해산물이 들어간 얼큰한 전통 해물 짬뽕입니다.", sc_noodle.id, 2),
-            ("볶음밥", 9000, imgs("menu_52", "볶음밥"), "신선한 계란과 새우가 들어간 황금 볶음밥입니다.", sc_rice.id, 3),
-            ("탕수육", 12000, imgs("menu_55", "탕수육"), "새콤달콤 소스에 세 번 튀겨 더 바삭한 명품 탕수육입니다.", sc_fry.id, 4),
-            ("소주", 5000, imgs("menu_56", "소주"), "", sc_soju.id, 5),
-            ("코카콜라", 2000, imgs("menu_57", "코카콜라"), "", sc_soda.id, 6),
+            # 면류
+            ("짜장면", 8000, imgs("menu_50", "짜장면"), "춘장을 충분히 볶아 진하게 낸 기본 짜장면입니다.", sc_noodle.id, 1),
+            ("짬뽕", 11000, imgs("menu_51", "짬뽕"), "여러 해산물을 넣어 얼큰하게 끓인 해물 짬뽕입니다.", sc_noodle.id, 2),
+            ("간짜장", 8500, imgs("menu_60", "간짜장"), "면과 짜장을 따로 볶아 불맛을 살린 간짜장입니다.", sc_noodle.id, 3),
+            ("울면", 9500, imgs("menu_61", "울면"), "부드러운 녹말 국물에 해산물과 계란을 푼 울면입니다.", sc_noodle.id, 4),
+            # 밥류
+            ("볶음밥", 9000, imgs("menu_52", "볶음밥"), "계란과 채소를 넣고 센 불에 볶아낸 볶음밥입니다.", sc_rice.id, 5),
+            ("잡채밥", 10000, imgs("menu_62", "잡채밥"), "당면 잡채를 밥과 함께 낸 든든한 한 그릇입니다.", sc_rice.id, 6),
+            ("마파두부덮밥", 9500, imgs("menu_63", "마파두부덮밥"), "얼얼한 마파 소스와 두부를 밥 위에 올린 덮밥입니다.", sc_rice.id, 7),
+            # 튀김류
+            ("탕수육", 12000, imgs("menu_55", "탕수육"), "새콤달콤한 소스를 곁들여 바삭하게 튀겨낸 탕수육입니다.", sc_fry.id, 8),
+            ("깐풍기", 22000, imgs("menu_64", "깐풍기"), "매콤달콤 깐풍 소스에 버무린 바삭한 닭튀김입니다.", sc_fry.id, 9),
+            ("유린기", 22000, imgs("menu_65", "유린기"), "채 썬 채소와 새콤한 간장소스를 올린 닭튀김입니다.", sc_fry.id, 10),
+            ("군만두", 7000, imgs("menu_66", "군만두"), "겉은 바삭하고 속은 촉촉하게 구워낸 군만두입니다.", sc_fry.id, 11),
+            # 주류 / 음료
+            ("소주", 5000, imgs("menu_56", "소주"), "", sc_soju.id, 12),
+            ("코카콜라", 2000, imgs("menu_57", "코카콜라"), "", sc_soda.id, 13),
         ]
         menu_objs = {}
         for name, price, image, desc, subid, pos in menus:
