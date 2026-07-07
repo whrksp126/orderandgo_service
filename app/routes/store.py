@@ -916,7 +916,7 @@ def terminal_mgmt():
 @login_required
 def api_get_terminal_info():
     from app.models import Store, TerminalToken
-    store = Store.query.filter_by(user_id=current_user.id).first()
+    store = Store.query.get(current_user.id)
     if not store:
         return jsonify({'code': 404, 'msg': '매장 정보를 찾을 수 없습니다.'}), 404
 
@@ -947,7 +947,7 @@ def api_get_terminal_info():
 def api_terminal_logout():
     """단말기 토큰 삭제 → 단말기 폴링 시 logout 감지"""
     from app.models import Store, TerminalToken
-    store = Store.query.filter_by(user_id=current_user.id).first()
+    store = Store.query.get(current_user.id)
     if not store:
         return jsonify({'code': 404, 'msg': '매장 정보를 찾을 수 없습니다.'}), 404
     TerminalToken.query.filter_by(store_id=store.id).delete()
@@ -961,7 +961,7 @@ def api_terminal_logout():
 def api_update_terminal_info():
     from app.models import Store
     data = request.get_json() or {}
-    store = Store.query.filter_by(user_id=current_user.id).first()
+    store = Store.query.get(current_user.id)
     if not store:
         return jsonify({'code': 404, 'msg': '매장 정보를 찾을 수 없습니다.'}), 404
 
