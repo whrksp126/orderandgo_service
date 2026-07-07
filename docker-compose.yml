@@ -36,7 +36,7 @@ services:
     restart: always
     # entrypoint 경유: 신규/기존 DB 마이그레이션 + order_status 시드 후 gunicorn 기동
     environment:
-      APP_CMD: "gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:5000 --access-logfile - --access-logformat '%(t)s %(h)s \"%(r)s\" %(s)s %(b)s' wsgi:app"
+      APP_CMD: "gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:5000 --access-logfile - wsgi:app"
     command: /entrypoint.sh
 
 networks:
