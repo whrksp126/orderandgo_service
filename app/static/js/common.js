@@ -664,7 +664,7 @@ if (typeof io !== 'undefined') {
       console.log('새로운 주문 업데이트:', data);
 
       const orderList = data.order_list || [];
-      const tableName = `테이블 ${data.table_id}`;
+      const tableName = data.table_name ? data.table_name : `테이블 ${data.table_id}`;
 
       let itemsText = "";
       let itemsHtml = "";

@@ -19,8 +19,11 @@ def menu_order():
         from app import socketio
         if not is_pos:
             # 손님 주문일 때만 포스기에 알림 전송
+            from app.models import Table
+            _t = Table.query.get(table_id)
             socketio.emit('update_pos', {
                 'table_id': table_id,
+                'table_name': _t.name if _t else f'테이블 {table_id}',
                 'message': '새로운 주문이 들어왔습니다.',
                 'is_pos': is_pos,
                 'order_list': order_list

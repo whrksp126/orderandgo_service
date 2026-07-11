@@ -84,16 +84,17 @@
   <!-- 직원 요청 및 호출에 대한 처리 영역 -->
   <div id="alarm"></div>
 
+  {% if pos_table_name %}<script>window.__posTableName = {{ pos_table_name|tojson }};</script>{% endif %}
   <!-- 사운드 피드백 -->
   <script src="/static/js/og_sound.js?v=10"></script>
   <!-- 공통 스크립트 -->
-  <script src="/static/js/common.js?v=6"></script>
+  <script src="/static/js/common.js?v=7"></script>
   <!-- SPA 라우터 -->
   <script src="/static/js/posRouter.js?v=5"></script>
   <!-- 전용 스크립트 -->
   <script src="/static/js/tableList.js?v=5"></script>
   <script src="/static/js/menuList.js?v=13"></script>
-  <script src="/static/js/payment.js?v=10"></script>
+  <script src="/static/js/payment.js?v=11"></script>
   <script src="/static/js/receipt.js?v=5"></script>
   <script src="/static/js/printer.js?v=2"></script>
 </body>

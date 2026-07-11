@@ -150,9 +150,134 @@ def main():
             v = pg.video.path(); ctx.close()
             return v
 
+        # ── 6. 관리자 테이블 배치: 캔버스에서 테이블 카드 드래그(자유 배치) ──
+        def clip_admin_table():
+            ctx = new_ctx(1440, 900, auth=True)
+            pg = ctx.new_page()
+            pg.goto(f"{BASE}/store/set_table", wait_until="networkidle", timeout=20000)
+            pg.wait_for_timeout(2600)
+            try:
+                pg.wait_for_selector("#table-canvas .table-card", timeout=6000)
+                cards = pg.query_selector_all("#table-canvas .table-card")
+                if cards:
+                    box = cards[-1].bounding_box()  # 마지막(빈 위치 여유 큰) 카드 드래그
+                    if box:
+                        cx, cy = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+                        pg.mouse.move(cx, cy); pg.wait_for_timeout(600)
+                        pg.mouse.down(); pg.wait_for_timeout(400)
+                        # 오른쪽/아래로 부드럽게 이동 후 스냅
+                        for step in range(1, 11):
+                            pg.mouse.move(cx + step * 14, cy + step * 6); pg.wait_for_timeout(45)
+                        pg.wait_for_timeout(500)
+                        pg.mouse.up(); pg.wait_for_timeout(1600)
+                    # 한 카드 hover 로 마무리
+                    b2 = cards[0].bounding_box()
+                    if b2:
+                        pg.mouse.move(b2["x"] + b2["width"] / 2, b2["y"] + b2["height"] / 2)
+                        pg.wait_for_timeout(1400)
+                else:
+                    pg.wait_for_timeout(1500)
+            except Exception as e:
+                print("[video] admin_table skip:", e); pg.wait_for_timeout(1500)
+            v = pg.video.path(); ctx.close()
+            return v
+
+        # ── 7. 매출·결제 내역 정산: 목록 → 결제 항목 클릭 → 상세 모달 ──
+        def clip_payment_history():
+            ctx = new_ctx(1440, 900, auth=True)
+            pg = ctx.new_page()
+            pg.goto(f"{BASE}/store/payment_history", wait_until="networkidle", timeout=20000)
+            pg.wait_for_timeout(2800)  # 목록 로드
+            try:
+                pg.wait_for_selector(".payment_list li.table_row", timeout=6000)
+                pg.wait_for_timeout(1400)  # 요약/목록 훑기
+                rows = pg.query_selector_all(".payment_list li.table_row")
+                if rows:
+                    rows[0].click(); pg.wait_for_timeout(3200)   # 상세 모달
+                    # 모달 닫고 다른 항목
+                    try: pg.click("#payment-detail-modal .modal-close, #payment-detail-modal .close-btn", timeout=1500)
+                    except Exception: pass
+                    pg.wait_for_timeout(600)
+                    if len(rows) > 2:
+                        rows[2].click(); pg.wait_for_timeout(2600)
+                else:
+                    pg.wait_for_timeout(1500)
+            except Exception as e:
+                print("[video] payment_history skip:", e); pg.wait_for_timeout(1500)
+            v = pg.video.path(); ctx.close()
+            return v
+
+        # ── 8. 실시간 주문 수신: POS 테이블목록 녹화 중 모바일에서 주문 → POS에 반영 ──
+        def clip_realtime_order():
+            pos_ctx = new_ctx(1024, 768, auth=True)
+            pos = pos_ctx.new_page()
+            pos.goto(f"{BASE}/pos/tableList", wait_until="networkidle", timeout=20000)
+            pos.wait_for_timeout(3200)  # 소켓 연결 + 테이블 렌더
+            try:
+                # 트리거용 모바일 컨텍스트(빈 테이블 QR)에서 실제 주문 발생 → 소켓 emit
+                mo_ctx = browser.new_context(viewport={"width": 390, "height": 844},
+                                             is_mobile=True, has_touch=True, device_scale_factor=2)
+                mo = mo_ctx.new_page()
+                mo.goto(f"{BASE}/table_order/t/{IDS['realtime_qr']}", wait_until="networkidle", timeout=20000)
+                mo.wait_for_timeout(1500)
+                try:
+                    mo.click(".mo-menu-row:has-text('탕수육')", timeout=5000); mo.wait_for_timeout(700)
+                    # 필수옵션(소스) 선택 후 담기
+                    try: mo.click(".mo-option-item:has-text('찍먹')", timeout=2000)
+                    except Exception: pass
+                    mo.wait_for_timeout(500)
+                    mo.click(".mo-btn-confirm", timeout=3000); mo.wait_for_timeout(900)
+                    mo.click("#moCartBar", timeout=3000); mo.wait_for_timeout(900)
+                    mo.click(".mo-order-btn", timeout=3000)
+                except Exception as e:
+                    print("[video] realtime trigger skip:", e)
+                # POS가 실시간 수신하는 순간 캡처
+                pos.wait_for_timeout(2800)   # 테이블 카드가 조리중으로 전환 + 알림/토스트
+                try: pos.evaluate("() => { try{ openNotificationSidebar(); }catch(e){} }")
+                except Exception: pass
+                pos.wait_for_timeout(3200)   # 알림 사이드바에 신규 주문 표시
+                mo_ctx.close()
+            except Exception as e:
+                print("[video] realtime_order skip:", e); pos.wait_for_timeout(1500)
+            v = pos.video.path(); pos_ctx.close()
+            return v
+
+        # ── 9. 직원 호출: POS 테이블목록 녹화 중 모바일에서 직원호출 → POS 알림 ──
+        def clip_staff_call():
+            pos_ctx = new_ctx(1024, 768, auth=True)
+            pos = pos_ctx.new_page()
+            pos.goto(f"{BASE}/pos/tableList", wait_until="networkidle", timeout=20000)
+            pos.wait_for_timeout(3200)
+            try:
+                mo_ctx = browser.new_context(viewport={"width": 390, "height": 844},
+                                             is_mobile=True, has_touch=True, device_scale_factor=2)
+                mo = mo_ctx.new_page()
+                mo.goto(f"{BASE}/table_order/t/{IDS['staffcall_qr']}", wait_until="networkidle", timeout=20000)
+                mo.wait_for_timeout(1600)
+                try:
+                    mo.click("text=직원호출", timeout=4000); mo.wait_for_timeout(1000)
+                    # 항목 하나 선택(물) 후 호출
+                    try: mo.click(".mo-staff-item:has-text('물')", timeout=2500)
+                    except Exception: pass
+                    mo.wait_for_timeout(700)
+                    mo.click(".mo-btn-confirm:has-text('호출하기')", timeout=3000)
+                except Exception as e:
+                    print("[video] staff trigger skip:", e)
+                pos.wait_for_timeout(2600)   # POS 벨/토스트 등장
+                try: pos.evaluate("() => { try{ openNotificationSidebar(); }catch(e){} }")
+                except Exception: pass
+                pos.wait_for_timeout(3200)   # 알림 사이드바에 직원호출 표시
+                mo_ctx.close()
+            except Exception as e:
+                print("[video] staff_call skip:", e); pos.wait_for_timeout(1500)
+            v = pos.video.path(); pos_ctx.close()
+            return v
+
         for name, fn in [("mobile-order", clip_mobile), ("pos-tablelist", clip_pos),
                          ("kds", clip_kds), ("pos-payment", clip_pos_payment),
-                         ("admin-menu", clip_admin)]:
+                         ("admin-menu", clip_admin), ("admin-table", clip_admin_table),
+                         ("payment-history", clip_payment_history),
+                         ("realtime-order", clip_realtime_order), ("staff-call", clip_staff_call)]:
             try:
                 webm = fn()
                 to_mp4(webm, name)

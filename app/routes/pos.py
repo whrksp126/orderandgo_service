@@ -1079,7 +1079,9 @@ def set_table_list():
 # 테이블 -> 메뉴리스트 페이지
 @pos_bp.route('/payment/<table_id>', methods=['GET'])
 def payment(table_id):
-    return render_template('pos/pos_shell.html')
+    from app.models import Table
+    t = Table.query.get(table_id)
+    return render_template('pos/pos_shell.html', pos_table_name=(t.name if t else None))
 
 # 현금 결제 후 영수증 정보 업데이트
 @pos_bp.route('/payment/update_cash_receipt', methods=['PATCH'])

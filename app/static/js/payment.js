@@ -1261,7 +1261,7 @@ var createCompletedPaymentModal = async function(event, type, receiptId) {
 
   var tableId = lastPath;
   var storeInfoResult = await fetchDataAsync('/pos/get_store_info', 'GET', {});
-  var tableName = document.querySelector('header h1')?.innerText || tableId;
+  var tableName = window.__posTableName || document.querySelector('header h1')?.innerText || tableId;
 
   var orderData = {
     tableName: tableName,
@@ -1290,7 +1290,7 @@ var createCompletedPaymentModal = async function(event, type, receiptId) {
 
 window.openReceiptDetailModal = async function(type) {
   var storeInfoResult = await fetchDataAsync('/pos/get_store_info', 'GET', {});
-  var tableName = document.querySelector('header h1')?.innerText || lastPath;
+  var tableName = window.__posTableName || document.querySelector('header h1')?.innerText || lastPath;
 
   var orderData = {
     tableName: tableName,
@@ -1325,7 +1325,7 @@ window.printReceiptFromPayment = async function(btn, type, receiptId) {
     var storeInfo = await fetch('/store/get_receipt_store_info')
       .then(function(r) { return r.ok ? r.json() : {}; }).catch(function() { return {}; });
 
-    var tableName = document.querySelector('header h1')?.innerText || String(lastPath);
+    var tableName = window.__posTableName || document.querySelector('header h1')?.innerText || String(lastPath);
     var orderData = {
       tableName: tableName,
       items: order_history.map(function(item) {

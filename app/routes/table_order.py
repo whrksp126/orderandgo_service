@@ -172,9 +172,12 @@ def new_order_pos_update(data):
     make_order(store_id, table_id, order_list)
 
     # 포스기에 주문 업데이트 요청
+    from app.models import Table
+    _t = Table.query.get(table_id)
     socketio.emit('update_pos', {
         'store_id': store_id,
         'table_id': table_id,
+        'table_name': _t.name if _t else f'테이블 {table_id}',
         'message': '새로운 주문이 들어왔습니다.',
         'is_pos': False,
         'order_list': order_list,

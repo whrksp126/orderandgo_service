@@ -38,8 +38,8 @@
   <div class="lp-hero-visual">
     <div class="frame-browser">
       <div class="bar"><span></span><span></span><span></span></div>
-      <video autoplay muted loop playsinline poster="/static/images/landing/pos-tablelist.png">
-        <source src="/static/videos/landing/pos-tablelist.mp4" type="video/mp4">
+      <video autoplay muted loop playsinline poster="/static/images/landing/pos-tablelist.png?v=2">
+        <source src="/static/videos/landing/pos-tablelist.mp4?v=2" type="video/mp4">
       </video>
     </div>
   </div>
@@ -66,9 +66,13 @@
 
     {% set features = [
       {"eyebrow":"고객 QR 주문", "title":"테이블에서 QR 스캔, 손님이 직접 주문", "desc":"손님이 QR을 찍고 메뉴·옵션을 골라 장바구니에 담아 바로 주문합니다. 주문받는 인력 없이도 홀이 돌아갑니다.", "video":"mobile-order.mp4", "img":"mobile-order.png", "frame":"phone", "points":["메뉴·옵션 선택 후 장바구니 담기","직원 호출 버튼","주문 즉시 POS·주문 접수로 전송"], "reverse": false},
-      {"eyebrow":"POS 결제 · 영수증", "title":"카드 결제부터 영수증까지 한 번에", "desc":"주문 금액·공급가액·부가세를 자동 계산하고, 카드 결제 후 영수증까지 즉시 출력됩니다. 분할 결제·할인도 지원합니다.", "video":"pos-payment.mp4", "img":"pos-payment.png", "frame":"screen", "points":["현금·카드·분할 결제","토스플레이스 단말기 승인","영수증 자동 발행"], "reverse": true},
+      {"eyebrow":"실시간 연동", "title":"손님이 주문하면 POS에 바로 뜹니다", "desc":"QR·테이블오더로 들어온 주문이 알림음과 함께 POS와 주문 접수 화면에 즉시 표시됩니다. 테이블 상태도 자동으로 바뀌어 놓치는 주문이 없습니다.", "video":"realtime-order.mp4", "img":"realtime-order.png", "frame":"screen", "points":["주문 즉시 알림음","테이블 상태 자동 전환","POS·주문 접수 동시 수신"], "reverse": true},
       {"eyebrow":"주문 접수 ODS", "title":"주문 접수 화면으로 조리 관리", "desc":"들어온 주문이 주문 접수 화면에 실시간으로 뜹니다. 조리 경과 시간을 확인하고 탭 한 번으로 완료 처리합니다.", "video":"kds.mp4", "img":"kds.png", "frame":"screen", "points":["대기/완료 분할 화면","조리 경과 타이머","탭 한 번으로 완료"], "reverse": false},
-      {"eyebrow":"매장 관리", "title":"메뉴·가격·옵션을 사장님이 직접", "desc":"메뉴 이름·가격·사진·옵션을 화면에서 바로 등록하고 수정합니다. 테이블 배치와 QR 발급까지 한 곳에서 관리합니다.", "video":"admin-menu.mp4", "img":"admin-menu.png", "frame":"browser", "points":["메뉴·가격·옵션 설정","사진 등록·카테고리 분류","테이블 배치·QR 발급"], "reverse": true}
+      {"eyebrow":"직원 호출", "title":"물·직원 호출도 버튼 한 번에", "desc":"손님이 물·냅킨·직원 호출을 누르면 POS에 실시간 알림이 뜹니다. 부르지 않아도 알아서, 무인 홀 운영이 쉬워집니다.", "video":"staff-call.mp4", "img":"staff-call.png", "frame":"screen", "points":["호출 항목 직접 설정","실시간 POS 알림","요청 수량까지 표시"], "reverse": true},
+      {"eyebrow":"POS 결제 · 영수증", "title":"카드 결제부터 영수증까지 한 번에", "desc":"주문 금액·공급가액·부가세를 자동 계산하고, 카드 결제 후 영수증까지 즉시 출력됩니다. 분할 결제·할인도 지원합니다.", "video":"pos-payment.mp4", "img":"pos-payment.png", "frame":"screen", "points":["현금·카드·분할 결제","토스플레이스 단말기 승인","영수증 자동 발행"], "reverse": false},
+      {"eyebrow":"매출 정산", "title":"오늘 매출을 한눈에 정산", "desc":"카드·현금 결제와 취소 내역을 한 화면에서 확인합니다. 결제수단별 매출과 영수증까지 영업일 기준으로 자동 집계됩니다.", "video":"payment-history.mp4", "img":"payment-history.png", "frame":"browser", "points":["결제수단별 매출 집계","결제·취소 내역 관리","영수증 상세·재출력"], "reverse": true},
+      {"eyebrow":"메뉴 관리", "title":"메뉴·가격·옵션을 사장님이 직접", "desc":"메뉴 이름·가격·사진·옵션을 화면에서 바로 등록하고 수정합니다. 곱빼기·소스 선택 같은 옵션도 자유롭게 구성합니다.", "video":"admin-menu.mp4", "img":"admin-menu.png", "frame":"browser", "points":["메뉴·가격·사진 등록","옵션·필수 선택 구성","카테고리 분류"], "reverse": false},
+      {"eyebrow":"테이블 · QR 관리", "title":"테이블 배치도 QR 발급도 직접", "desc":"실제 매장 구조대로 테이블을 자유롭게 배치하고, 테이블마다 QR을 즉시 발급합니다. 자리 이동·구역 변경도 드래그 한 번입니다.", "video":"admin-table.mp4", "img":"admin-table.png", "frame":"browser", "points":["드래그로 자유 배치","테이블별 QR 발급","좌석 수·구역 설정"], "reverse": true}
     ] %}
 
     {% for f in features %}
@@ -81,7 +85,7 @@
           {% for p in f.points %}<li><i class="ph ph-check-circle"></i>{{ p }}</li>{% endfor %}
         </ul>
       </div>
-      {% set media %}<video autoplay muted loop playsinline poster="/static/images/landing/{{ f.img }}"><source src="/static/videos/landing/{{ f.video }}" type="video/mp4"></video>{% endset %}
+      {% set media %}<video autoplay muted loop playsinline poster="/static/images/landing/{{ f.img }}?v=2"><source src="/static/videos/landing/{{ f.video }}?v=2" type="video/mp4"></video>{% endset %}
       {% if f.frame == 'phone' %}
       <div class="lp-showcase-media phone-wrap"><div class="frame-phone">{{ media }}</div></div>
       {% elif f.frame == 'browser' %}

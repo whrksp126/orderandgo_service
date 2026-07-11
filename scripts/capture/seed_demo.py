@@ -17,8 +17,9 @@ from datetime import datetime, timedelta
 from app import create_app, db
 from app.models import (
     Store, MainCategory, SubCategory, Menu, MenuOptionGroup, MenuOption,
-    TableCategory, Table, KdsStation, StaffCallItem, OrderStatus,
+    TableCategory, Table, KdsStation, StaffCallItem, StaffCallLog, OrderStatus,
     TableOrderList, Order,
+    Payment, Payment_method, Payment_status, TablePaymentList,
 )
 
 IDS_FILE = os.path.join(os.path.dirname(__file__), "demo_ids.json")
@@ -47,9 +48,16 @@ def teardown(store):
             MenuOption.query.filter(MenuOption.group_id.in_(grp_ids)).delete(synchronize_session=False)
             MenuOptionGroup.query.filter(MenuOptionGroup.id.in_(grp_ids)).delete(synchronize_session=False)
         Order.query.filter(Order.menu_id.in_(menu_ids)).delete(synchronize_session=False)
+    # 결제 내역(TablePaymentList/Payment) 정리 (재실행용)
+    pay_list_ids = [p.id for p in TablePaymentList.query.filter_by(store_id=sid).all()]
+    if pay_list_ids:
+        Payment.query.filter(Payment.table_payment_list_id.in_(pay_list_ids)).delete(synchronize_session=False)
+    TablePaymentList.query.filter_by(store_id=sid).delete(synchronize_session=False)
     TableOrderList.query.filter_by(store_id=sid).delete(synchronize_session=False)
     if table_ids:
         Order.query.filter(Order.table_id.in_(table_ids)).delete(synchronize_session=False)
+        # 직원 호출 로그(FK: table_id) 정리 후 테이블 삭제
+        StaffCallLog.query.filter(StaffCallLog.table_id.in_(table_ids)).delete(synchronize_session=False)
         Table.query.filter(Table.id.in_(table_ids)).delete(synchronize_session=False)
     Menu.query.filter_by(store_id=sid).delete(synchronize_session=False)
     sub_ids = [s.id for s in SubCategory.query.join(
@@ -65,11 +73,22 @@ def teardown(store):
 
 
 def ensure_order_status():
-    """order_status 0/1/2 보장 (빈 대기/조리중/완료)."""
-    wanted = {1: "대기", 2: "조리중", 3: "완료"}
+    """order_status 1/2 보장 (1=조리중, 2=조리완료)."""
+    wanted = {1: "조리중", 2: "조리완료", 3: "취소"}
     for i, name in wanted.items():
         if not OrderStatus.query.get(i):
             db.session.add(OrderStatus(id=i, status=name))
+    db.session.commit()
+
+
+def ensure_payment_meta():
+    """payment_method(1=카드,2=현금) / payment_status(1=완료,2=취소,3=진행중) 보장."""
+    for i, name in {1: "카드", 2: "현금"}.items():
+        if not Payment_method.query.get(i):
+            db.session.add(Payment_method(id=i, method=name))
+    for i, name in {1: "결제 완료", 2: "결제 취소", 3: "결제 진행 중"}.items():
+        if not Payment_status.query.get(i):
+            db.session.add(Payment_status(id=i, status=name))
     db.session.commit()
 
 
@@ -183,20 +202,68 @@ def run():
                                          use_quantity=(nm in ("물", "냅킨")), is_active=True))
         db.session.commit()
 
-        # ── 활성 주문 (POS/KDS 생동감) : 2·6·10번 테이블에 진행중 주문 ──
+        # ── 활성 주문 (POS/ODS 생동감) : 다양한 상태를 한 화면에 ──
+        # 조리중(status=1): 2·6번 / 조리완료(status=2): 4·10번 / 나머지(3·5·7·8·9·11·12번)는 빈 테이블
+        # → 8번(demoqr8)은 realtime-order 클립의 신규 주문용, 3번(demoqr3)은 staff-call/mobile 클립용으로 비워둠
         ensure_order_status()
         now = datetime.now()
-        for t, items in [(tables[1], [("짜장면", 2), ("탕수육", 1)]),
-                         (tables[5], [("짬뽕", 1), ("볶음밥", 1), ("코카콜라", 2)]),
-                         (tables[9], [("짜장면", 1), ("소주", 2)])]:
-            tol = TableOrderList(store_id=sid, table_id=t.id, checkingin_at=now - timedelta(minutes=8))
+        # (테이블, 주문항목, 조리상태)
+        active = [
+            (tables[1], [("짜장면", 2), ("탕수육", 1)], 1),                  # 2번 조리중
+            (tables[5], [("짬뽕", 1), ("볶음밥", 1), ("코카콜라", 2)], 1),   # 6번 조리중
+            (tables[3], [("간짜장", 1), ("군만두", 1)], 2),                  # 4번 조리완료
+            (tables[9], [("유린기", 1), ("깐풍기", 1), ("맥주", 2)], 2),     # 10번 조리완료
+        ]
+        for t, items, status in active:
+            tol = TableOrderList(store_id=sid, table_id=t.id, checkingin_at=now - timedelta(minutes=9))
             db.session.add(tol); db.session.commit()
             for nm, qty in items:
                 for _ in range(qty):
-                    o = Order(order_status_id=1, menu_id=menu_objs[nm].id, table_id=t.id,
+                    o = Order(order_status_id=status, menu_id=menu_objs[nm].id, table_id=t.id,
                               order_list_id=tol.id, menu_options="{}", is_pos=False,
-                              ordered_at=now - timedelta(minutes=7))
+                              ordered_at=now - timedelta(minutes=8))
                     db.session.add(o)
+        db.session.commit()
+
+        # ── 결제 완료 내역 (매출·정산 클립용) : 오늘 영업일 기준 여러 건 ──
+        ensure_payment_meta()
+
+        def _od(items):
+            """order_details 문자열(list repr) 생성 + 총액 반환."""
+            rows = []
+            total = 0
+            for nm, qty in items:
+                m = menu_objs[nm]
+                rows.append({"name": nm, "price": m.price, "count": qty, "options": []})
+                total += m.price * qty
+            return str(rows), total
+
+        _ph = {"isDirect": False, "direct": 0, "isDutch": False,
+               "totalDutch": 0, "curDutch": 1, "dutchPrice": 0}
+        # (테이블번호1based, 주문항목, 결제수단id(1카드/2현금), 상태(1완료/2취소), 몇분전)
+        pays = [
+            (1,  [("탕수육", 1), ("짜장면", 2), ("소주", 1)], 1, 1, 25),
+            (5,  [("짬뽕", 2), ("군만두", 1)], 2, 1, 52),
+            (7,  [("마파두부덮밥", 1), ("코카콜라", 1)], 1, 1, 95),
+            (11, [("깐풍기", 1), ("고량주", 1), ("맥주", 2)], 1, 1, 140),
+            (9,  [("잡채밥", 1), ("사이다", 2)], 1, 2, 175),  # 결제 취소 건
+        ]
+        for tnum, items, method_id, pstatus, mins_ago in pays:
+            t = tables[tnum - 1]
+            details, total = _od(items)
+            ptime = now - timedelta(minutes=mins_ago)
+            tpl = TablePaymentList(
+                store_id=sid, table_id=t.id, table_name=t.name,
+                first_order_time=ptime - timedelta(minutes=30),
+                order_details=details, discount=0, extra_charge=0,
+                payment_history=json.dumps(_ph, ensure_ascii=False), payment_time=ptime,
+            )
+            db.session.add(tpl); db.session.commit()
+            db.session.add(Payment(
+                table_payment_list_id=tpl.id, payment_method_id=method_id,
+                payment_status=pstatus, payment_amount=total, payment_datetime=ptime,
+                payment_info=None,
+            ))
         db.session.commit()
 
         # ── 캡처 스크립트용 ID 덤프 ──
@@ -205,8 +272,10 @@ def run():
             "store_id": STORE_ID,
             "store_pw": STORE_PW,
             "kds_station_id": kds.id,
-            "order_table_id": tables[1].id,   # 2번 (주문 있음)
-            "order_table_id2": tables[5].id,  # 6번 (주문 있음)
+            "order_table_id": tables[1].id,   # 2번 (조리중 주문 있음 → 결제 클립용)
+            "order_table_id2": tables[5].id,  # 6번 (조리중 주문 있음)
+            "realtime_qr": tables[7].qr_token,   # 8번 (빈 테이블 → realtime-order 신규 주문용)
+            "staffcall_qr": tables[2].qr_token,  # 3번 (빈 테이블 → staff-call 트리거용)
             "qr_tokens": [t.qr_token for t in tables],
         }
         with open(IDS_FILE, "w") as f:
