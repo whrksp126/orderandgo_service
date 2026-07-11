@@ -1698,7 +1698,7 @@ def api_confirm_staff_call():
             # Let's find the order.
             order = Order.query.get(order_id)
             if order:
-                from datetime import timedelta
+                from datetime import datetime as _dt, timedelta
                 # 같은 테이블, 같은 초(second)에 들어온 주문을 같은 배치로 간주
                 window_start = order.ordered_at.replace(microsecond=0)
                 window_end = window_start + timedelta(seconds=1)
@@ -1708,9 +1708,12 @@ def api_confirm_staff_call():
                     Order.ordered_at < window_end
                 ).all()
 
+                # 알림 '확인'은 조리완료(order_status)와 무관 — acknowledged_at만 기록.
+                # 조리 완료는 오직 ODS(주방)에서 처리한다.
+                now = _dt.now()
                 for o in related_orders:
-                    if o.order_status_id == 1:
-                        o.order_status_id = 2
+                    if o.acknowledged_at is None:
+                        o.acknowledged_at = now
 
                 db.session.commit()
             # 주문이 이미 삭제/완료됐어도 알림 '확인'은 성공 처리(404 방지)

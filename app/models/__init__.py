@@ -234,7 +234,8 @@ class Order(db.Model):
     menu_options = db.Column(db.Text)
     ordered_at = db.Column(db.DateTime, default=datetime.now)
     is_pos = db.Column(db.Boolean, default=False)
-    
+    acknowledged_at = db.Column(db.DateTime, nullable=True)  # POS 알림 '확인' 시각(조리완료와 별개)
+
     def set_menu_options(self, options_dict):
           # Python Dictionary를 JSON 형식으로 변환하여 저장
         self.menu_options = json.dumps(options_dict)

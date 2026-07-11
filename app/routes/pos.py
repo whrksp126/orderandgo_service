@@ -1295,6 +1295,7 @@ def api_get_staff_call_logs():
             'status': order.order_status_id,
             'item': item_str,
             'is_pos': order.is_pos,
+            'acknowledged_at': order.acknowledged_at,
         })
 
     # Group orders by (table_name + ordered_at 초 단위)
@@ -1312,20 +1313,25 @@ def api_get_staff_call_logs():
                 'source': '포스기' if o['is_pos'] else '테이블 오더',
                 'items': [],
                 '_is_pos': o['is_pos'],
-                '_has_pending': False,
-                '_last_at': o['ordered_at'],
+                '_unacked': False,          # 확인 안 된 항목이 하나라도 있는지
+                '_acked_at': None,          # 확인 시각(가장 이른 것)
             }
 
         grouped_orders[key]['items'].append(o['item'])
-        if o['status'] == 1:   # 조리중(미확인) 항목이 하나라도 있으면 미확인
-            grouped_orders[key]['_has_pending'] = True
-        if o['ordered_at'] > grouped_orders[key]['_last_at']:
-            grouped_orders[key]['_last_at'] = o['ordered_at']
+        # 알림 '확인' 여부는 acknowledged_at 기준(조리 상태와 무관)
+        if o['acknowledged_at'] is None:
+            grouped_orders[key]['_unacked'] = True
+        else:
+            prev = grouped_orders[key]['_acked_at']
+            if prev is None or o['acknowledged_at'] < prev:
+                grouped_orders[key]['_acked_at'] = o['acknowledged_at']
 
-    # 확인 상태 결정: 포스기 주문은 자동 확인, 그 외에는 그룹 내 모든 주문이 완료(status=2)면 확인됨
+    # 확인 상태 결정: 포스기 주문은 자동 확인, 그 외에는 그룹 전체가 확인(acknowledged)됐을 때만 확인됨
     for g in grouped_orders.values():
-        if g['_is_pos'] or not g['_has_pending']:
-            g['confirmTime'] = g['_last_at']
+        if g['_is_pos']:
+            g['confirmTime'] = g['requestTime']
+        elif not g['_unacked'] and g['_acked_at'] is not None:
+            g['confirmTime'] = g['_acked_at']
 
     # Merge & Sort
     final_list = list(grouped_data.values()) + list(grouped_orders.values())
