@@ -110,13 +110,17 @@ def manifest_json():
         "start_url": "/dashboard",
         "scope": "/",
         "display": "standalone",
+        # 안드로이드는 시스템바까지 숨긴 진짜 전체화면(fullscreen) 우선, 미지원 시 standalone. iOS는 무시하고 standalone.
+        "display_override": ["fullscreen", "standalone"],
         "orientation": "any",
-        "background_color": "#ffffff",
+        "background_color": "#1FAA9C",
         "theme_color": "#1FAA9C",
         "icons": [
-            {"src": "/static/images/common/icon-192.png", "sizes": "192x192", "type": "image/png"},
-            {"src": "/static/images/common/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
-            {"src": "/static/images/common/apple-touch-icon.png", "sizes": "180x180", "type": "image/png"},
+            {"src": "/static/images/common/icon-192.png?v=2", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+            {"src": "/static/images/common/icon-512.png?v=2", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+            # 안드로이드 적응형(둥근/각진) 아이콘용 maskable
+            {"src": "/static/images/common/icon-512.png?v=2", "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
+            {"src": "/static/images/common/apple-touch-icon.png?v=2", "sizes": "180x180", "type": "image/png"},
         ],
     }
     return Response(json.dumps(data, ensure_ascii=False), mimetype="application/manifest+json")
