@@ -873,6 +873,61 @@ main section article .change_page_btn.next_page_btn {
   background: #1FAA9C;
 }
 
+/* ── 이전 영업일 미처리(넘어온) 알림 ── */
+.notification-sidebar .section-header.carryover-header {
+  background: #FFF4E5;
+  color: #B26A00;
+  border-top: none;
+}
+.carryover-header .co-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.carryover-header .co-bulk {
+  display: flex;
+  gap: 6px;
+}
+.notification-item.carryover-item {
+  background: #FFFBF5;
+}
+.co-action {
+  display: flex;
+  gap: 6px;
+}
+.co-btn {
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  white-space: nowrap;
+}
+.co-btn.keep {
+  background: #e9ecef;
+  color: #495057;
+}
+.co-btn.del {
+  background: #F43E25;
+  color: #fff;
+}
+.carryover-header .co-btn {
+  padding: 5px 10px;
+  font-size: 11px;
+}
+.co-badge.cook {
+  font-size: 10px;
+  font-weight: 700;
+  color: #B26A00;
+  background: #FFE8CC;
+  padding: 2px 7px;
+  border-radius: 10px;
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
 .noti-source {
   display: inline-block;
   font-size: 11px;

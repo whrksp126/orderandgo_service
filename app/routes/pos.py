@@ -13,8 +13,9 @@ from app.models.table import \
     delete_table_category, \
     select_table, \
     set_table_group
-from app.models import db, Menu, MenuOption, MenuOptionGroup, StaffCallLog, StaffCallItem, Table, Order
+from app.models import db, Menu, MenuOption, MenuOptionGroup, StaffCallLog, StaffCallItem, Table, Order, CarryoverDeletionLog
 from app.models.staff_call import get_staff_call_logs
+from app.utils.business_day import business_day_start
 
 from app import socketio
 from flask_socketio import join_room, emit
@@ -734,8 +735,97 @@ def get_table_page():
 
     return jsonify(all_table_list)
 
-    # # JSON 파일 경로 설정
-    # json_file_path = 'app/static/json/tableList.json'
+
+# ── 이전 영업일에서 넘어온 미처리(미결제·미완료) 테이블 ──────────────────────────
+def _carryover_tables(store_id, cutoff):
+    """이전 영업일에 시작됐는데 아직 정산되지 않은(열린 세션) 테이블 목록.
+    결제 완료 시 주문/세션이 삭제되므로, 열린 세션 + 최초 주문이 현재 영업일 시작 이전이면
+    '넘어온 건'(미결제 또는 조리 미완료)으로 본다."""
+    day_start = business_day_start(cutoff)
+    orders = get_orders_by_store_id(store_id)  # 열린 세션 주문만
+    by_table = {}
+    for o in orders:
+        by_table.setdefault(o.table_id, []).append(o)
+
+    result = []
+    for table_id, ords in by_table.items():
+        ats = [o.ordered_at for o in ords if o.ordered_at]
+        first_at = min(ats) if ats else None
+        if not first_at or first_at >= day_start:
+            continue  # 이번 영업일 건 → 제외
+        table = Table.query.get(table_id)
+        table_name = table.name if table else f"테이블 {table_id}"
+        item_map = {}
+        for o in ords:
+            m = select_menu(o.menu_id)
+            name = m[0].name if m else f"메뉴 {o.menu_id}"
+            item_map[name] = item_map.get(name, 0) + 1
+        items = [{"name": n, "count": c} for n, c in item_map.items()]
+        pending = sum(1 for o in ords if o.order_status_id == 1)
+        result.append({
+            "table_id": table_id,
+            "table_name": table_name,
+            "order_ids": [o.id for o in ords],
+            "items": items,
+            "order_count": len(ords),
+            "pending_count": pending,   # >0 이면 조리 미완료 포함
+            "first_order_time": first_at.strftime('%Y-%m-%d %H:%M'),
+        })
+    result.sort(key=lambda x: x['first_order_time'])
+    return day_start, result
+
+
+@pos_bp.route('/carryover_check', methods=['GET'])
+@login_required
+def carryover_check():
+    store_id = current_user.id
+    day_start, tables = _carryover_tables(store_id, getattr(current_user, 'business_day_cutoff', None))
+    return jsonify({
+        "business_day": day_start.strftime('%Y-%m-%d'),
+        "tables": tables,
+    })
+
+
+@pos_bp.route('/carryover_delete', methods=['POST'])
+@login_required
+def carryover_delete():
+    store_id = current_user.id
+    data = request.get_json() or {}
+    table_ids = data.get('table_ids', [])
+    if not isinstance(table_ids, list) or not table_ids:
+        return jsonify({'code': 400, 'msg': 'table_ids required'}), 400
+
+    from app.models.payment import delete_order_tableorderlist
+    day_start, tables = _carryover_tables(store_id, getattr(current_user, 'business_day_cutoff', None))
+    by_id = {t['table_id']: t for t in tables}
+    biz = day_start.strftime('%Y-%m-%d')
+    deleted, all_order_ids = [], []
+    try:
+        for tid in table_ids:
+            info = by_id.get(tid)
+            if not info:
+                continue  # 이미 처리됐거나 대상 아님
+            db.session.add(CarryoverDeletionLog(
+                store_id=store_id,
+                table_id=tid,
+                table_name=info['table_name'],
+                business_day=biz,
+                order_summary=json.dumps(info['items'], ensure_ascii=False),
+                order_count=info['order_count'],
+                first_order_time=datetime.strptime(info['first_order_time'], '%Y-%m-%d %H:%M'),
+            ))
+            all_order_ids.extend(info['order_ids'])
+            delete_order_tableorderlist(store_id, tid)  # 주문 + 테이블 세션 제거(내부 commit)
+            deleted.append(tid)
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'code': 500, 'msg': str(e)}), 500
+
+    if all_order_ids:
+        # 삭제된 주문 반영: KDS는 재로드(취소 카드 노이즈 방지), 다른 POS 단말도 테이블 목록 갱신
+        socketio.emit('kds_order_completed', {'order_ids': all_order_ids}, room=f'store_{store_id}_kds')
+        socketio.emit('kds_order_completed', {'order_ids': all_order_ids}, room='pos_group')
+    return jsonify({'code': 200, 'deleted': deleted})
 
     # # JSON 파일 로드
     # with open(json_file_path, 'r', encoding='UTF-8') as file:

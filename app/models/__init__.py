@@ -402,3 +402,17 @@ class KdsStationStaffCall(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     station_id = db.Column(db.Integer, db.ForeignKey('kds_station.id'), nullable=False)
     staff_call_item_id = db.Column(db.Integer, db.ForeignKey('staff_call_item.id'), nullable=False)
+
+
+class CarryoverDeletionLog(db.Model):
+    """이전 영업일에서 넘어온 미결제·미완료 주문을 사용자가 '삭제' 처리한 이력."""
+    __tablename__ = 'carryover_deletion_log'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    store_id = db.Column(db.Integer, db.ForeignKey('store.id'), nullable=False)
+    table_id = db.Column(db.Integer, nullable=True)          # 테이블은 이후 삭제될 수 있어 FK 미설정
+    table_name = db.Column(db.String(100))
+    business_day = db.Column(db.String(10))                  # 삭제 처리된 영업일 'YYYY-MM-DD'
+    order_summary = db.Column(db.Text)                       # JSON [{"name":..,"count":..}]
+    order_count = db.Column(db.Integer, default=0)
+    first_order_time = db.Column(db.DateTime, nullable=True) # 원래 주문 시각(최초)
+    deleted_at = db.Column(db.DateTime, default=datetime.now)

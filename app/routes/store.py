@@ -1212,6 +1212,33 @@ def api_update_business_day():
     return jsonify({'code': 200, 'msg': '저장되었습니다.'})
 
 
+@store_bp.route('/carryover_log', methods=['GET'])
+@login_required
+def carryover_log_page():
+    import json as _json
+    from app.models import CarryoverDeletionLog
+    store_id = current_user.id
+    rows = (CarryoverDeletionLog.query
+            .filter_by(store_id=store_id)
+            .order_by(CarryoverDeletionLog.deleted_at.desc())
+            .limit(200).all())
+    logs = []
+    for r in rows:
+        try:
+            items = _json.loads(r.order_summary) if r.order_summary else []
+        except (ValueError, TypeError):
+            items = []
+        logs.append({
+            'table_name': r.table_name or '',
+            'business_day': r.business_day or '',
+            'items': items,
+            'order_count': r.order_count or 0,
+            'first_order_time': r.first_order_time.strftime('%Y-%m-%d %H:%M') if r.first_order_time else '',
+            'deleted_at': r.deleted_at.strftime('%Y-%m-%d %H:%M') if r.deleted_at else '',
+        })
+    return render_template('carryover_log.html', logs=logs)
+
+
 @store_bp.route('/get_receipt_store_info', methods=['GET'])
 @login_required
 def api_get_receipt_store_info():

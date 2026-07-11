@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>OrderAndGo · 이전일 미결제 삭제 이력</title>
+  <link rel="icon" type="image/x-icon" href="/static/images/common/logo.png">
+
+  <link rel="stylesheet" href="/static/css/responsive.css">
+  <link rel="stylesheet" href="/static/css/reset.css">
+  <link rel="stylesheet" href="/static/css/common.css">
+  <link rel="stylesheet" href="/static/css/animation.css">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <link rel="stylesheet" href="/static/css/store.css">
+
+  <style>
+    body { background-color: #F8F9FA; }
+
+    .clog_page main {
+      padding: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      background-color: #F8F9FA;
+      min-height: calc(100vh - 80px);
+    }
+    .store_product.clog_page section { padding: 0; }
+
+    .clog_card {
+      width: 100%;
+      max-width: 720px;
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid #E9ECEF;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, .05);
+      overflow: hidden;
+    }
+    .clog_header {
+      padding: 22px 24px;
+      border-bottom: 1px solid #F1F3F5;
+    }
+    .clog_header h2 {
+      font-size: 1.2rem; font-weight: 800; color: #212529; letter-spacing: -0.5px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .clog_header h2 i { color: #12b886; font-size: 1.25rem; }
+    .clog_header p { font-size: 0.85rem; color: #ADB5BD; margin-top: 6px; }
+
+    .clog_list { padding: 8px 0; }
+    .clog_item {
+      padding: 16px 24px;
+      border-bottom: 1px solid #F5F5F5;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .clog_item:last-child { border-bottom: none; }
+    .clog_top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .clog_table { font-size: 1rem; font-weight: 800; color: #212529; }
+    .clog_bizday {
+      font-size: 0.75rem; font-weight: 700; color: #12b886;
+      background: #E6F7F3; padding: 3px 10px; border-radius: 999px;
+    }
+    .clog_items { font-size: 0.88rem; color: #495057; line-height: 1.6; }
+    .clog_meta { font-size: 0.75rem; color: #ADB5BD; display: flex; gap: 14px; flex-wrap: wrap; }
+
+    .clog_empty { padding: 60px 24px; text-align: center; color: #ADB5BD; }
+    .clog_empty i { font-size: 48px; display: block; margin-bottom: 12px; color: #CED4DA; }
+    .clog_empty p { font-size: 0.95rem; font-weight: 600; }
+  </style>
+</head>
+
+<body class="store_product clog_page">
+  <div id="container">
+    <header>
+      <a class="back_btn" href="/store/product">
+        <i class="ph-bold ph-caret-left"></i>
+      </a>
+      <div class="center">
+        <a onclick="location.reload();">
+          <h1><img src="/static/images/common/logo-order&go-white.png" alt=""></h1>
+        </a>
+        <div class="header_info">
+          <span class="cur_time"></span>
+          <span class="store_state" data-state="open">영업중</span>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="clog_card">
+        <div class="clog_header">
+          <h2><i class="ph-bold ph-trash"></i> 이전일 미결제 삭제 이력</h2>
+          <p>이전 영업일에서 넘어온 미결제·미완료 주문을 삭제 처리한 기록입니다.</p>
+        </div>
+
+        {% if logs %}
+        <div class="clog_list">
+          {% for log in logs %}
+          <div class="clog_item">
+            <div class="clog_top">
+              <span class="clog_table">{{ log.table_name }}</span>
+              <span class="clog_bizday">{{ log.business_day }} 영업일</span>
+            </div>
+            <div class="clog_items">
+              {% for it in log.items %}{{ it.name }} × {{ it.count }}{% if not loop.last %} · {% endif %}{% endfor %}
+              {% if not log.items %}(항목 정보 없음){% endif %}
+            </div>
+            <div class="clog_meta">
+              <span>총 {{ log.order_count }}개</span>
+              {% if log.first_order_time %}<span>최초 주문 {{ log.first_order_time }}</span>{% endif %}
+              <span>삭제 {{ log.deleted_at }}</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="clog_empty">
+          <i class="ph ph-tray"></i>
+          <p>삭제 이력이 없습니다</p>
+        </div>
+        {% endif %}
+      </section>
+    </main>
+  </div>
+
+  <script src="/static/js/common.js"></script>
+</body>
+
+</html>

@@ -767,6 +767,11 @@ if (typeof io !== 'undefined') {
 // 알림 데이터 (서버 연동 시 초기화)
 let notifications = [];
 
+// 이전 영업일에서 넘어온 미처리(미결제·미완료) 테이블
+let carryoverItems = [];
+let carryoverBusinessDay = '';
+const _coEsc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
 // 알림 사이드바 토글
 const toggleNotificationSidebar = () => {
   const sidebar = document.getElementById('notificationSidebar');
@@ -845,9 +850,11 @@ const renderNotifications = () => {
     .filter(noti => !noti.confirmTime)
     .sort((a, b) => b.id - a.id);
 
-  // Update alarm button state (헤더 벨 아이콘)
+  // Update alarm button state (헤더 벨 아이콘) — 미확인 or 이전영업일 미처리가 있으면 표시
+  const pendingCount = unconfirmed.length + carryoverItems.length;
+  btnAlarm.style.display = pendingCount > 0 ? '' : 'none';
   const btnIcon = btnAlarm.querySelector('i');
-  if (unconfirmed.length > 0) {
+  if (pendingCount > 0) {
     btnAlarm.classList.add('active');
     if (btnIcon) {
       btnIcon.classList.remove('ph-bell');
@@ -867,6 +874,11 @@ const renderNotifications = () => {
     .sort((a, b) => b.id - a.id);
 
   let html = '';
+
+  // 이전 영업일 미처리 영역 (최상단)
+  if (carryoverItems.length > 0) {
+    html += renderCarryoverSection();
+  }
 
   // 미확인 영역 항상 표시
   html += `<li class="section-header">미확인 (${unconfirmed.length})</li>`;
@@ -908,10 +920,151 @@ const confirmNotification = async (id) => {
   }
 }
 
+// ── 이전 영업일 미처리(넘어온) 테이블 알림 ──────────────────────────────────
+
+// 알림 사이드바 열기 (닫기는 toggle 사용)
+const openNotificationSidebar = () => {
+  const sidebar = document.getElementById('notificationSidebar');
+  const overlay = document.getElementById('notificationOverlay');
+  if (!sidebar || !overlay) return;
+  sidebar.classList.add('active');
+  overlay.classList.add('active');
+  renderNotifications();
+};
+
+// 넘어온 테이블 목록 섹션 (전체 유지/삭제 + 개별)
+const renderCarryoverSection = () => {
+  let html = `
+    <li class="section-header carryover-header">
+      <div class="co-head-row">
+        <span>이전 영업일 미처리 (${carryoverItems.length})</span>
+        <div class="co-bulk">
+          <button class="co-btn keep" onclick="keepAllCarryover()">전체 유지</button>
+          <button class="co-btn del" onclick="deleteAllCarryover()">전체 삭제</button>
+        </div>
+      </div>
+    </li>`;
+  html += carryoverItems.map(renderCarryoverItem).join('');
+  return html;
+};
+
+const renderCarryoverItem = (co) => {
+  const itemsHtml = (co.items || []).map(it => `${_coEsc(it.name)} × ${it.count}`).join('<br>');
+  const cook = co.pending_count > 0 ? '<span class="co-badge cook">조리 미완료</span>' : '';
+  return `
+    <li class="notification-item carryover-item" id="co-${co.table_id}">
+      <div class="content">
+        <div class="message"><b>${_coEsc(co.table_name)}</b> ${cook}<br>${itemsHtml}</div>
+        <div class="times">
+          <span class="request-time">최초 주문: ${_coEsc(co.first_order_time)}</span>
+          <span class="request-time">총 ${co.order_count}개</span>
+        </div>
+      </div>
+      <div class="action co-action">
+        <button class="co-btn keep" onclick="keepCarryover(${co.table_id})">유지</button>
+        <button class="co-btn del" onclick="deleteCarryover(${co.table_id})">삭제</button>
+      </div>
+    </li>`;
+};
+
+// 세션 내 '유지' 처리한 테이블 기록(재알림 방지)
+const _markCarryoverKept = (tableId) => {
+  try {
+    const key = `og_carryover_kept_${carryoverBusinessDay}`;
+    const kept = JSON.parse(sessionStorage.getItem(key) || '[]');
+    if (!kept.includes(tableId)) { kept.push(tableId); sessionStorage.setItem(key, JSON.stringify(kept)); }
+  } catch (e) {}
+};
+
+const keepCarryover = (tableId) => {
+  _markCarryoverKept(tableId);
+  carryoverItems = carryoverItems.filter(c => c.table_id !== tableId);
+  renderNotifications();
+};
+
+const keepAllCarryover = () => {
+  carryoverItems.forEach(c => _markCarryoverKept(c.table_id));
+  carryoverItems = [];
+  renderNotifications();
+  showToast('모두 유지 처리했습니다.', 'success');
+};
+
+const deleteCarryover = (tableId) => {
+  const co = carryoverItems.find(c => c.table_id === tableId);
+  const name = co ? co.table_name : '';
+  _confirmCarryoverDelete(`<b>${_coEsc(name)}</b> 테이블의 미결제·미완료 주문을 삭제할까요?`, () => _doDeleteCarryover([tableId]));
+};
+
+const deleteAllCarryover = () => {
+  const ids = carryoverItems.map(c => c.table_id);
+  if (!ids.length) return;
+  _confirmCarryoverDelete(`넘어온 <b>${ids.length}개</b> 테이블을 모두 삭제할까요?`, () => _doDeleteCarryover(ids));
+};
+
+const _doDeleteCarryover = async (tableIds) => {
+  try {
+    const res = await fetch('/pos/carryover_delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ table_ids: tableIds })
+    });
+    const data = await res.json();
+    if (data.code === 200) {
+      carryoverItems = carryoverItems.filter(c => !tableIds.includes(c.table_id));
+      renderNotifications();
+      showToast('삭제했습니다.', 'success');
+      if (typeof loadTableData === 'function') loadTableData(); // POS 테이블 목록 갱신
+    } else {
+      showToast(data.msg || '삭제에 실패했습니다.', 'error');
+    }
+  } catch (e) {
+    showToast('삭제 처리에 실패했습니다.', 'error');
+  }
+};
+
+// 삭제 확인 모달 (기존 모달 시스템 재사용)
+const _confirmCarryoverDelete = (message, onConfirm) => {
+  const m = openDefaultModal(true);
+  m.top.innerHTML = modalTopHtml('삭제 확인', true);
+  m.middle.innerHTML = `<p style="padding:10px 4px;line-height:1.6;color:#333;">${message}<br><small style="color:#999;">삭제한 주문은 복구할 수 없습니다. (매출에는 영향 없음)</small></p>`;
+  window._coDeleteConfirm = () => { removeModal(); onConfirm(); };
+  m.bottom.innerHTML = modalBottomHtml([
+    { class: 'btn_cancel', text: '취소', fun: 'onclick="removeModal()"' },
+    { class: 'btn_confirm co-modal-del', text: '삭제', fun: 'onclick="_coDeleteConfirm()"' },
+  ]);
+};
+
+// POS 진입 시 넘어온 테이블 조회
+async function loadCarryover() {
+  try {
+    const res = await fetch('/pos/carryover_check');
+    if (!res.ok) return;
+    const data = await res.json();
+    carryoverBusinessDay = data.business_day || '';
+    let tables = data.tables || [];
+    // 이번 세션에서 이미 '유지'한 테이블 제외 (같은 영업일 재알림 방지)
+    let kept = [];
+    try { kept = JSON.parse(sessionStorage.getItem(`og_carryover_kept_${carryoverBusinessDay}`) || '[]'); } catch (e) {}
+    carryoverItems = tables.filter(t => !kept.includes(t.table_id));
+    renderNotifications();
+    if (carryoverItems.length > 0) {
+      const shownKey = `og_carryover_shown_${carryoverBusinessDay}`;
+      if (!sessionStorage.getItem(shownKey)) {
+        sessionStorage.setItem(shownKey, '1');
+        showToast(`이전 영업일 미처리 테이블 ${carryoverItems.length}개가 있습니다.`, 'warning');
+        openNotificationSidebar();
+      }
+    }
+  } catch (e) {
+    console.error('carryover check error', e);
+  }
+}
+
 // 초기화 시 실행 (POS 페이지용)
 window.addEventListener('DOMContentLoaded', () => {
   if (window.location.pathname.includes('/pos/')) {
     loadStaffCallLogs();
+    loadCarryover();
   }
 });
 

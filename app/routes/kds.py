@@ -10,6 +10,7 @@ from app.models import (
     Order, Table, TableOrderList, Menu, MenuOption
 )
 from app.models.order import get_orders_by_store_id
+from app.utils.business_day import business_day_start
 
 kds_bp = Blueprint('kds', __name__)
 
@@ -92,7 +93,7 @@ def api_kds_completed():
         done = [o for o in done if o.menu_id in allowed_menu_ids]
 
     # 현재 영업일(매장 설정 기준 시각으로 하루 구분) 완료 건만 표시
-    day_start = _business_day_start(getattr(current_user, 'business_day_cutoff', None))
+    day_start = business_day_start(getattr(current_user, 'business_day_cutoff', None))
     done = [o for o in done if o.ordered_at and o.ordered_at >= day_start]
 
     # 최근 순 정렬 후 배치 그루핑, 최대 30배치
@@ -145,18 +146,6 @@ def on_join_kds(data):
 
 
 # ── 내부 헬퍼 ────────────────────────────────────────────────────────────────
-
-def _business_day_start(cutoff_str):
-    """영업일 시작 시각. cutoff_str='HH:MM'(미설정 시 06:00) 기준으로
-    현재가 오늘 cutoff 이후면 오늘 cutoff, 이전이면 어제 cutoff 반환."""
-    now = datetime.now()
-    try:
-        hh, mm = (int(x) for x in (cutoff_str or '06:00').split(':'))
-    except (ValueError, AttributeError):
-        hh, mm = 6, 0
-    cutoff_today = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
-    return cutoff_today if now >= cutoff_today else cutoff_today - timedelta(days=1)
-
 
 def _get_allowed_menu_ids(station):
     """show_all=False면 연동된 menu_id set, True면 None(제한없음)"""
