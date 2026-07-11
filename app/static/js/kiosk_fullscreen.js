@@ -8,6 +8,12 @@
     (window.matchMedia && window.matchMedia('(display-mode: fullscreen)').matches);
   if (isStandalone) return;
 
+  // iOS(iPad/iPhone)는 문서 전체화면 시 종료용 X 버튼이 강제로 뜨므로 자동 전체화면을 쓰지 않는다.
+  // → iOS에선 "홈 화면에 추가"(PWA 독립모드)로 주소창·X 없는 진짜 전체화면을 사용.
+  var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (isIOS) return;
+
   function isFullscreen() {
     return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement;
   }
