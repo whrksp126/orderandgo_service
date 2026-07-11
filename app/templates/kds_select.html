@@ -30,19 +30,21 @@
       min-height: calc(100dvh - 40px);
       padding: 20px;
       background: #f8f9fa;
+      display: block;
+    }
+
+    /* store.css(.set_menu_product main>*)가 자식에 씌우는 흰 패널 제거 → POS처럼 카드가 보드에 바로 놓임 */
+    body.kds-select main > * {
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      padding: 0;
     }
 
     .kds-select-wrap {
       width: 100%;
       max-width: 1200px;
       margin: 0 auto;
-    }
-
-    .kds-select-title {
-      font-size: 20px;
-      font-weight: 700;
-      color: #222;
-      margin-bottom: 16px;
     }
 
     .kds-station-grid {
@@ -145,8 +147,6 @@
 
     <main>
       <div class="kds-select-wrap">
-        <p class="kds-select-title">주방 주문 관리</p>
-
         {% if stations %}
         <div class="kds-station-grid">
           {% for s in stations %}

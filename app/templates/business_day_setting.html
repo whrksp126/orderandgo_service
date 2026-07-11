@@ -4,143 +4,132 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>OrderAndGo - 영업일 설정</title>
+  <title>OrderAndGo · 영업일 설정</title>
   <link rel="icon" type="image/x-icon" href="/static/images/common/logo.png">
 
   <link rel="stylesheet" href="/static/css/responsive.css">
   <link rel="stylesheet" href="/static/css/reset.css">
   <link rel="stylesheet" href="/static/css/common.css">
+  <link rel="stylesheet" href="/static/css/animation.css">
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <link rel="stylesheet" href="/static/css/store.css">
 
   <style>
-    body { background-color: #F8F9FA; min-height: 100vh; }
+    body { background-color: #F8F9FA; }
 
-    header {
-      display: flex;
-      align-items: center;
-      height: 56px;
-      padding: 0 20px;
-      background: #fff;
-      border-bottom: 1px solid #e0e0e0;
-      gap: 12px;
-    }
-
-    .back-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 36px;
-      height: 36px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 20px;
-      color: #333;
-      text-decoration: none;
-      transition: background .15s;
-    }
-
-    .back-btn:hover { background: #f1f3f5; }
-    .page-title { font-size: 17px; font-weight: 700; color: #222; }
-
-    main { max-width: 560px; margin: 32px auto; padding: 0 20px; }
-
-    .info-card {
-      background: #fff;
-      border-radius: 10px;
-      border: 1px solid #e0e0e0;
+    .biz_day_page main {
       padding: 24px;
       display: flex;
-      flex-direction: column;
-      gap: 20px;
+      justify-content: center;
+      align-items: flex-start;
+      background-color: #F8F9FA;
+      min-height: calc(100vh - 80px);
     }
+    .store_product.biz_day_page section { padding: 0; }
 
-    .field-row { display: flex; flex-direction: column; gap: 7px; }
-    .field-label { font-size: 13px; font-weight: 700; color: #495057; }
-
-    .field-input {
+    .settings_card {
       width: 100%;
-      padding: 12px;
-      border: 1px solid #CCC;
-      border-radius: 6px;
-      font-size: 15px;
-      color: #222;
+      max-width: 560px;
       background: #fff;
-      box-sizing: border-box;
-      transition: border-color .2s, box-shadow .2s;
+      border-radius: 14px;
+      border: 1px solid #E9ECEF;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, .05);
+      overflow: hidden;
     }
-
-    .field-input:focus {
-      outline: none;
-      border-color: #1FAA9C;
-      box-shadow: 0 0 0 3px rgba(31, 170, 156, 0.12);
+    .settings_header {
+      padding: 22px 24px;
+      border-bottom: 1px solid #F1F3F5;
     }
-
-    .field-hint { font-size: 12px; color: #868E96; line-height: 1.6; }
-
-    .save-btn {
-      width: 100%;
-      padding: 14px;
-      background: #1FAA9C;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-      margin-top: 4px;
-      transition: background .15s;
+    .settings_header h2 {
+      font-size: 1.2rem; font-weight: 800; color: #212529; letter-spacing: -0.5px;
+      display: flex; align-items: center; gap: 8px;
     }
+    .settings_header h2 i { color: #12b886; font-size: 1.25rem; }
+    .settings_header p { font-size: 0.85rem; color: #ADB5BD; margin-top: 6px; }
 
-    .save-btn:hover { background: #178f83; }
-    .save-btn:active { background: #12766d; }
+    .settings_body { padding: 24px; }
+    .settings_footer { padding: 18px 24px; border-top: 1px solid #F1F3F5; }
+
+    .field { margin-bottom: 0; }
+    .field_label { display: block; font-size: 0.85rem; font-weight: 700; color: #495057; margin-bottom: 10px; }
+
+    .time_input {
+      width: 160px;
+      padding: 11px 14px;
+      border: 1px solid #CED4DA;
+      border-radius: 8px;
+      font-size: 0.98rem;
+      color: #495057;
+    }
+    .time_input:focus { border-color: #12b886; outline: none; box-shadow: 0 0 0 3px rgba(18, 184, 134, .1); }
+
+    .field_hint {
+      font-size: 0.82rem; color: #868E96; line-height: 1.7; margin-top: 14px;
+    }
+    .field_hint b { color: #495057; }
+
+    .btn { border: none; border-radius: 8px; cursor: pointer; font-weight: 700; transition: all .18s ease; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    .btn-primary { background: #12b886; color: #fff; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(18, 184, 134, .3); }
+    .btn.block { width: 100%; padding: 14px; font-size: 0.98rem; }
 
     .toast {
-      position: fixed;
-      bottom: 32px;
-      left: 50%;
+      position: fixed; bottom: 32px; left: 50%;
       transform: translateX(-50%) translateY(16px);
-      background: #222;
-      color: #fff;
-      padding: 12px 22px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      opacity: 0;
-      pointer-events: none;
-      transition: all .3s;
-      white-space: nowrap;
-      z-index: 999;
+      background: #222; color: #fff; padding: 12px 22px;
+      border-radius: 8px; font-size: 14px; font-weight: 500;
+      opacity: 0; pointer-events: none; transition: all .3s; white-space: nowrap; z-index: 999;
     }
-
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   </style>
 </head>
 
-<body>
-  <header>
-    <a class="back-btn" href="/store/product" title="뒤로가기">
-      <i class="ph-bold ph-caret-left"></i>
-    </a>
-    <span class="page-title">영업일 설정</span>
-  </header>
-
-  <main>
-    <div class="info-card">
-      <div class="field-row">
-        <label class="field-label" for="input-cutoff">영업일 초기화 기준 시각</label>
-        <input class="field-input" id="input-cutoff" type="time" value="{{ business_day_cutoff }}">
-        <span class="field-hint">
-          이 시각을 기준으로 하루(영업일)가 나뉩니다.<br>
-          주방(KDS) <b>완료 목록</b>은 현재 영업일 건만 표시됩니다.<br>
-          예) <b>06:00</b> → 새벽 6시에 영업일이 바뀌며, 자정을 넘긴 심야 영업분도 전날 영업일로 집계됩니다.
-        </span>
+<body class="store_product biz_day_page">
+  <div id="container">
+    <header>
+      <a class="back_btn" href="/store/product">
+        <i class="ph-bold ph-caret-left"></i>
+      </a>
+      <div class="center">
+        <a onclick="location.reload();">
+          <h1><img src="/static/images/common/logo-order&go-white.png" alt=""></h1>
+        </a>
+        <div class="header_info">
+          <span class="cur_time"></span>
+          <span class="store_state" data-state="open">영업중</span>
+        </div>
       </div>
-      <button class="save-btn" onclick="saveCutoff()">저장</button>
-    </div>
-  </main>
+    </header>
+
+    <main>
+      <section class="settings_card">
+        <div class="settings_header">
+          <h2><i class="ph-bold ph-clock-countdown"></i> 영업일 설정</h2>
+          <p>하루(영업일)가 바뀌는 기준 시각을 설정합니다.</p>
+        </div>
+        <div class="settings_body">
+          <div class="field">
+            <span class="field_label">영업일 초기화 기준 시각</span>
+            <input type="time" class="time_input" id="input-cutoff" value="{{ business_day_cutoff }}">
+            <p class="field_hint">
+              이 시각을 기준으로 하루(영업일)가 나뉩니다.<br>
+              주방(ODS) <b>완료 목록</b>은 현재 영업일 건만 표시됩니다.<br>
+              예) <b>06:00</b> → 새벽 6시에 영업일이 바뀌며, 자정을 넘긴 심야 영업분도 전날 영업일로 집계됩니다.
+            </p>
+          </div>
+        </div>
+        <div class="settings_footer">
+          <button class="btn btn-primary block" onclick="saveCutoff()">
+            <i class="ph-bold ph-check"></i> 설정 저장
+          </button>
+        </div>
+      </section>
+    </main>
+  </div>
 
   <div class="toast" id="toast"></div>
 
+  <script src="/static/js/common.js"></script>
   <script>
     const showToast = (msg, isError = false) => {
       const toast = document.getElementById('toast');
