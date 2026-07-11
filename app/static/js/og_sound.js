@@ -139,6 +139,22 @@
   };
   window.ogSound = api;
 
+  // 무음 루프를 계속 흘려 iOS가 컨텍스트를 자동 suspend 하지 못하게 유지 → 모든 클릭 즉시 재생
+  var keepAliveStarted = false;
+  function startKeepAlive() {
+    if (keepAliveStarted || !ac) return;
+    try {
+      var s = ac.createBufferSource();
+      s.buffer = ac.createBuffer(1, SR, SR); // 1초 무음 버퍼
+      s.loop = true;
+      var g = ac.createGain();
+      g.gain.value = 0; // 완전 무음
+      s.connect(g); g.connect(ac.destination);
+      if (s.start) s.start(0); else if (s.noteOn) s.noteOn(0);
+      keepAliveStarted = true;
+    } catch (e) {}
+  }
+
   // ── Web Audio 정석 언락(빈 버퍼 재생 + resume) — 제스처 안에서 동기 실행 ──
   function unlockWebAudio() {
     initWebAudio();
@@ -149,7 +165,10 @@
       s.connect(ac.destination);
       if (s.start) s.start(0); else if (s.noteOn) s.noteOn(0);
     } catch (e) {}
-    if (ac.state === 'suspended') { try { ac.resume(); } catch (e) {} }
+    if (ac.state === 'suspended') {
+      try { var r = ac.resume(); if (r && r.then) r.then(startKeepAlive); } catch (e) {}
+    }
+    startKeepAlive();
   }
 
   // 첫 제스처: Web Audio 언락(우선) + HTML5 예열(폴백)
@@ -178,7 +197,8 @@
   // 매 터치마다 컨텍스트가 suspended면 재개(첫 resume이 안 붙는 기기 대비) — capture 단계 최상단
   function keepResumed() {
     if (!unlocked) unlockAudio();
-    if (ac && ac.state === 'suspended') { try { ac.resume(); } catch (e) {} }
+    if (ac && ac.state === 'suspended') { try { var r = ac.resume(); if (r && r.then) r.then(startKeepAlive); } catch (e) {} }
+    startKeepAlive();
   }
   document.addEventListener('pointerdown', keepResumed, true);
   document.addEventListener('touchstart', keepResumed, true);
