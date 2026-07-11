@@ -621,7 +621,7 @@ main section article .change_page_btn.next_page_btn {
   display: flex;
   flex-direction: column-reverse;
   gap: 0;
-  z-index: 2000;
+  z-index: 4000;
   pointer-events: none;
   perspective: 1000px;
 }
