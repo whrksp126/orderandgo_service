@@ -1713,7 +1713,8 @@ def api_confirm_staff_call():
                         o.order_status_id = 2
 
                 db.session.commit()
-                return jsonify({'message': 'Success'}), 200
+            # 주문이 이미 삭제/완료됐어도 알림 '확인'은 성공 처리(404 방지)
+            return jsonify({'message': 'Success'}), 200
         except Exception as e:
             print(f"Error confirming order: {e}")
             return jsonify({'message': 'Error'}), 500
