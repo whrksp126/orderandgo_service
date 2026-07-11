@@ -1022,16 +1022,29 @@ const _doDeleteCarryover = async (tableIds) => {
   }
 };
 
-// 삭제 확인 모달 (기존 모달 시스템 재사용)
+// 삭제 확인 모달 (경고 전용 · 알림 사이드바보다 위 z-index)
 const _confirmCarryoverDelete = (message, onConfirm) => {
-  const m = openDefaultModal(true);
-  m.top.innerHTML = modalTopHtml('삭제 확인', true);
-  m.middle.innerHTML = `<p style="padding:10px 4px;line-height:1.6;color:#333;">${message}<br><small style="color:#999;">삭제한 주문은 복구할 수 없습니다. (매출에는 영향 없음)</small></p>`;
-  window._coDeleteConfirm = () => { removeModal(); onConfirm(); };
-  m.bottom.innerHTML = modalBottomHtml([
-    { class: 'btn_cancel', text: '취소', fun: 'onclick="removeModal()"' },
-    { class: 'btn_confirm co-modal-del', text: '삭제', fun: 'onclick="_coDeleteConfirm()"' },
-  ]);
+  const old = document.getElementById('coModalOverlay');
+  if (old) old.remove();
+  const ov = document.createElement('div');
+  ov.className = 'co-modal-overlay';
+  ov.id = 'coModalOverlay';
+  ov.innerHTML = `
+    <div class="co-modal-box">
+      <div class="co-modal-icon"><i class="ph-fill ph-warning"></i></div>
+      <h3 class="co-modal-title">주문 삭제</h3>
+      <p class="co-modal-msg">${message}</p>
+      <p class="co-modal-note">삭제한 주문은 복구할 수 없습니다.<br>(매출에는 영향 없음)</p>
+      <div class="co-modal-actions">
+        <button class="co-modal-cancel">취소</button>
+        <button class="co-modal-confirm">삭제</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  const close = () => ov.remove();
+  ov.querySelector('.co-modal-cancel').addEventListener('click', close);
+  ov.querySelector('.co-modal-confirm').addEventListener('click', () => { close(); onConfirm(); });
+  ov.addEventListener('click', (e) => { if (e.target === ov) close(); });
 };
 
 // POS 진입 시 넘어온 테이블 조회
