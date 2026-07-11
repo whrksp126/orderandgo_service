@@ -57,45 +57,46 @@
     return 'data:audio/wav;base64,' + btoa(bin);
   }
 
-  // 사운드 정의 (WebAudio 버전 대비 진폭을 키워 HTML5 재생에서 잘 들리게)
+  // 사운드 정의 — POS에 어울리는 부드러운 톤(삼각/사인, 낮은 주파수, 짧게). 각진 square 지양.
   var DEFS = {
-    click: [{ f: 1500, at: 0, d: 0.028, v: 0.5, type: 'square' }],
-    tap: [{ f: 1100, at: 0, d: 0.022, v: 0.4, type: 'square' }],
-    success: [{ f: 988, at: 0, d: 0.07, v: 0.55, type: 'triangle' }, { f: 1319, at: 0.075, d: 0.11, v: 0.55, type: 'triangle' }],
-    error: [{ f: 320, at: 0, d: 0.12, v: 0.6, type: 'square' }, { f: 200, at: 0.12, d: 0.18, v: 0.6, type: 'square' }],
-    notify: [{ f: 784, at: 0, d: 0.09, v: 0.55, type: 'sine' }, { f: 1047, at: 0.10, d: 0.14, v: 0.55, type: 'sine' }],
-    call: [{ f: 1319, at: 0, d: 0.06, v: 0.5, type: 'square' }, { f: 1319, at: 0.12, d: 0.06, v: 0.5, type: 'square' }, { f: 1319, at: 0.24, d: 0.06, v: 0.5, type: 'square' }],
-    complete: [{ f: 1047, at: 0, d: 0.08, v: 0.55, type: 'triangle' }, { f: 1568, at: 0.085, d: 0.13, v: 0.55, type: 'triangle' }],
+    click: [{ f: 620, at: 0, d: 0.016, v: 0.40, type: 'triangle' }],                                  // 버튼 탭: 부드러운 "톡"
+    tap: [{ f: 520, at: 0, d: 0.014, v: 0.30, type: 'triangle' }],                                     // 보조 탭(더 약하게)
+    success: [{ f: 784, at: 0, d: 0.08, v: 0.5, type: 'sine' }, { f: 1175, at: 0.08, d: 0.12, v: 0.5, type: 'sine' }],   // 상승 2음
+    error: [{ f: 400, at: 0, d: 0.10, v: 0.5, type: 'triangle' }, { f: 300, at: 0.10, d: 0.16, v: 0.5, type: 'triangle' }], // 하강 2음(부드럽게)
+    notify: [{ f: 660, at: 0, d: 0.09, v: 0.5, type: 'sine' }, { f: 988, at: 0.10, d: 0.14, v: 0.5, type: 'sine' }],     // 새 주문: 맑은 딩동
+    call: [{ f: 880, at: 0, d: 0.07, v: 0.45, type: 'sine' }, { f: 880, at: 0.13, d: 0.07, v: 0.45, type: 'sine' }, { f: 880, at: 0.26, d: 0.07, v: 0.45, type: 'sine' }], // 직원호출 3연
+    complete: [{ f: 880, at: 0, d: 0.08, v: 0.5, type: 'sine' }, { f: 1319, at: 0.085, d: 0.13, v: 0.5, type: 'sine' }], // 조리완료: 상승 딩
   };
 
-  // 각 사운드를 data-URI 로 미리 렌더 + Audio 엘리먼트 생성
-  var URIS = {}, POOL = {};
+  // 각 사운드를 data-URI 로 미리 렌더
+  var URIS = {};
   for (var key in DEFS) {
     if (!DEFS.hasOwnProperty(key)) continue;
     try { URIS[key] = renderWav(DEFS[key]); } catch (e) { URIS[key] = null; }
-    POOL[key] = [];
   }
 
-  // 겹쳐 재생 가능하도록 사운드별 오디오 풀에서 재사용
-  function getAudio(key) {
-    var pool = POOL[key];
-    for (var i = 0; i < pool.length; i++) {
-      if (pool[i].paused || pool[i].ended) return pool[i];
+  // 지연 최소화: 사운드별로 예열된 Audio 풀(링버퍼)을 미리 만들어 두고 순환 재생
+  var POOL_SIZE = 4;
+  var POOL = {}, RING = {};
+  function buildPools() {
+    for (var k in URIS) {
+      if (!URIS[k]) continue;
+      POOL[k] = []; RING[k] = 0;
+      for (var i = 0; i < POOL_SIZE; i++) {
+        var a = new Audio(URIS[k]);
+        a.preload = 'auto';
+        POOL[k].push(a);
+      }
     }
-    if (URIS[key] && pool.length < 6) {
-      var a = new Audio(URIS[key]);
-      a.preload = 'auto';
-      pool.push(a);
-      return a;
-    }
-    return pool[0] || null;
   }
 
   function play(key) {
-    if (!enabled() || !URIS[key]) return;
-    var a = getAudio(key);
-    if (!a) return;
-    try { a.currentTime = 0; var p = a.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {}
+    if (!enabled()) return;
+    var pool = POOL[key];
+    if (!pool || !pool.length) return;
+    var a = pool[RING[key]];
+    RING[key] = (RING[key] + 1) % pool.length;
+    try { a.volume = 1; a.currentTime = 0; var p = a.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {}
   }
 
   var api = {
@@ -112,24 +113,25 @@
   };
   window.ogSound = api;
 
-  // ── 첫 제스처에서 HTML5 오디오 언락 (iOS 자동재생 정책) ──
+  // ── 첫 제스처에서 HTML5 오디오 언락 + 풀 전체 예열 (iOS 자동재생 정책 + 첫재생 지연 제거) ──
   var unlocked = false;
   function unlockAudio() {
     if (unlocked) return;
     unlocked = true;
+    buildPools();
+    // 모든 풀 인스턴스를 무음으로 한 번 재생→정지해 예열(첫 실사용 지연 제거). volume=0이라 소리 없음.
     for (var key in POOL) {
-      if (!POOL.hasOwnProperty(key) || !URIS[key]) continue;
-      var a = new Audio(URIS[key]);
-      a.preload = 'auto';
-      a.volume = 0;
-      POOL[key].push(a);
-      (function (au) {
-        try {
-          var p = au.play();
-          if (p && p.then) p.then(function () { au.pause(); au.currentTime = 0; au.volume = 1; }).catch(function () { au.volume = 1; });
-          else { try { au.pause(); au.currentTime = 0; } catch (e) {} au.volume = 1; }
-        } catch (e) { au.volume = 1; }
-      })(a);
+      if (!POOL.hasOwnProperty(key)) continue;
+      for (var i = 0; i < POOL[key].length; i++) {
+        (function (au) {
+          try {
+            au.volume = 0;
+            var p = au.play();
+            if (p && p.then) p.then(function () { au.pause(); au.currentTime = 0; au.volume = 1; }).catch(function () { au.volume = 1; });
+            else { try { au.pause(); au.currentTime = 0; } catch (e) {} au.volume = 1; }
+          } catch (e) { au.volume = 1; }
+        })(POOL[key][i]);
+      }
     }
     document.removeEventListener('pointerdown', unlockAudio, true);
     document.removeEventListener('touchend', unlockAudio, true);
