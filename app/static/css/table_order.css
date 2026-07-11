@@ -18,12 +18,12 @@ body.table_order {
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
   background-color: var(--bg-light);
   overflow: hidden;
-  height: 100vh;
+  height: 100dvh;
 }
 
 #container.order {
   display: flex;
-  height: 100vh;
+  height: 100dvh;
   width: 100vw;
 }
 
@@ -390,7 +390,7 @@ body.table_order {
   right: -360px;
   /* var(--cart-width) + some buffer */
   width: var(--cart-width);
-  height: 100vh;
+  height: 100dvh;
   background: var(--cart-bg);
   border-left: 1px solid var(--border-color);
   box-shadow: -4px 0 12px rgba(0, 0, 0, 0.1);

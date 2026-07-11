@@ -1,6 +1,13 @@
 // 키오스크 전체화면: 브라우저 정책상 로드 즉시 전체화면은 불가(사용자 제스처 필요)하므로
-// 첫 탭/클릭/키입력 시 자동으로 전체화면 전환한다. (POS·KDS·QR주문 페이지 공용)
+// 첫 탭/클릭/키입력 시 자동으로 전체화면 전환한다. (POS·KDS·테이블오더 공용)
+// 단, "홈 화면에 추가"한 PWA 독립모드로 실행 중이면 이미 주소창 없는 전체화면이므로
+// requestFullscreen을 호출하지 않는다(그래야 iPad에서 종료용 X 버튼이 안 뜬다).
 (function () {
+  var isStandalone = (window.navigator.standalone === true) ||
+    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+    (window.matchMedia && window.matchMedia('(display-mode: fullscreen)').matches);
+  if (isStandalone) return;
+
   function isFullscreen() {
     return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement;
   }

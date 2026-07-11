@@ -119,7 +119,7 @@ header .center .header_info .btn_alarm.active {
 
 main section article {
   position: relative;
-  height: calc(100vh - (40px + 49px));
+  height: calc(100dvh - (40px + 49px));
   padding: 20px;
   background: #f5f5f5;
   overflow: hidden;
@@ -127,11 +127,11 @@ main section article {
 }
 
 #container.order main section article {
-  height: calc(100vh - (40px + 50px + 49px));
+  height: calc(100dvh - (40px + 50px + 49px));
 }
 
 .payment #container.order main section article {
-  height: calc(100vh - (40px));
+  height: calc(100dvh - (40px));
 }
 
 main section article.disabled {
@@ -598,7 +598,7 @@ main section>aside .custom_btns button {
   display: flex;
   flex-flow: column;
   flex: 1;
-  max-height: calc(100vh - 90px - 184px - 16px);
+  max-height: calc(100dvh - 90px - 184px - 16px);
   height: 100%;
   overflow: auto;
 }
@@ -812,7 +812,7 @@ main section>aside .custom_btns button {
 }
 
 .payment .basket_container .basket {
-  max-height: calc(100vh - 40px - 10px - 160px);
+  max-height: calc(100dvh - 40px - 10px - 160px);
   padding: 10px 0;
 }
 
@@ -820,7 +820,7 @@ main section>aside .custom_btns button {
   display: flex;
   flex-flow: column;
   justify-content: space-between;
-  height: calc(100vh - (40px));
+  height: calc(100dvh - (40px));
   background: #F5F5F5;
 }
 
