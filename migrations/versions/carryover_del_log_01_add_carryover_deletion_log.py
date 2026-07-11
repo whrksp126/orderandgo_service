@@ -17,6 +17,10 @@ depends_on = None
 
 
 def upgrade():
+    # db.create_all()이 앱 시작 시 이미 테이블을 생성할 수 있으므로 존재 시 건너뜀(멱등)
+    bind = op.get_bind()
+    if 'carryover_deletion_log' in sa.inspect(bind).get_table_names():
+        return
     op.create_table(
         'carryover_deletion_log',
         sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
@@ -34,4 +38,6 @@ def upgrade():
 
 
 def downgrade():
-    op.drop_table('carryover_deletion_log')
+    bind = op.get_bind()
+    if 'carryover_deletion_log' in sa.inspect(bind).get_table_names():
+        op.drop_table('carryover_deletion_log')
