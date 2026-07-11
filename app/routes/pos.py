@@ -1303,21 +1303,29 @@ def api_get_staff_call_logs():
         key = f"order_{o['table_name']}_{o['ordered_at'].strftime('%Y%m%d%H%M%S')}"
 
         if key not in grouped_orders:
-            # 포스기 주문은 자동 확인 완료 처리
             grouped_orders[key] = {
                 'id': f"order_{o['id']}",
                 'type': 'order',
                 'table_name': o['table_name'],
                 'requestTime': o['ordered_at'],
-                'confirmTime': o['ordered_at'] if o['is_pos'] else None,
+                'confirmTime': None,
                 'source': '포스기' if o['is_pos'] else '테이블 오더',
-                'items': []
+                'items': [],
+                '_is_pos': o['is_pos'],
+                '_has_pending': False,
+                '_last_at': o['ordered_at'],
             }
 
         grouped_orders[key]['items'].append(o['item'])
-        # 비포스기 주문 중 미확인 항목이 있으면 미확인 유지
-        if not o['is_pos'] and o['status'] == 1:
-            grouped_orders[key]['confirmTime'] = None
+        if o['status'] == 1:   # 조리중(미확인) 항목이 하나라도 있으면 미확인
+            grouped_orders[key]['_has_pending'] = True
+        if o['ordered_at'] > grouped_orders[key]['_last_at']:
+            grouped_orders[key]['_last_at'] = o['ordered_at']
+
+    # 확인 상태 결정: 포스기 주문은 자동 확인, 그 외에는 그룹 내 모든 주문이 완료(status=2)면 확인됨
+    for g in grouped_orders.values():
+        if g['_is_pos'] or not g['_has_pending']:
+            g['confirmTime'] = g['_last_at']
 
     # Merge & Sort
     final_list = list(grouped_data.values()) + list(grouped_orders.values())
