@@ -116,8 +116,8 @@ main ul li a:hover {
 main ul li a:active {
   transform: scale(0.99);
 }
-main ul li a i {
-  font-size: 56px;
-  color: #1FAA9C;
-  line-height: 1;
+main ul li a .dash-ico {
+  width: 76px;
+  height: 76px;
+  filter: drop-shadow(0 6px 10px rgba(15, 61, 56, 0.14));
 }

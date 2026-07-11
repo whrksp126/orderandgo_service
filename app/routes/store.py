@@ -1187,6 +1187,31 @@ def api_update_store_info():
     return jsonify({'code': 200, 'msg': '저장되었습니다.'})
 
 
+@store_bp.route('/business_day_setting', methods=['GET'])
+@login_required
+def business_day_setting_page():
+    store = current_user
+    return render_template(
+        'business_day_setting.html',
+        business_day_cutoff=(store.business_day_cutoff or '06:00'),
+    )
+
+
+@store_bp.route('/update_business_day', methods=['POST'])
+@login_required
+def api_update_business_day():
+    import re
+    store = Store.query.filter_by(id=current_user.id).first()
+    if not store:
+        return jsonify({'code': 404, 'msg': '매장 정보를 찾을 수 없습니다.'}), 404
+    cutoff = (request.get_json() or {}).get('business_day_cutoff', '').strip()
+    if not re.fullmatch(r'([01]\d|2[0-3]):[0-5]\d', cutoff):
+        return jsonify({'code': 400, 'msg': '올바른 시각(HH:MM)을 입력해주세요.'}), 400
+    store.business_day_cutoff = cutoff
+    db.session.commit()
+    return jsonify({'code': 200, 'msg': '저장되었습니다.'})
+
+
 @store_bp.route('/get_receipt_store_info', methods=['GET'])
 @login_required
 def api_get_receipt_store_info():
