@@ -98,3 +98,25 @@ def sitemap_xml():
         f'{items}</urlset>'
     )
     return Response(xml, mimetype="application/xml")
+
+
+# PWA 매니페스트: scope "/" 로 전 화면(POS/KDS/테이블오더)이 홈 앱 안에서 전체화면 유지되게 함
+@main_bp.route('/manifest.json')
+def manifest_json():
+    import json
+    data = {
+        "name": "오더앤고",
+        "short_name": "오더앤고",
+        "start_url": "/dashboard",
+        "scope": "/",
+        "display": "standalone",
+        "orientation": "any",
+        "background_color": "#ffffff",
+        "theme_color": "#1FAA9C",
+        "icons": [
+            {"src": "/static/images/common/icon-192.png", "sizes": "192x192", "type": "image/png"},
+            {"src": "/static/images/common/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+            {"src": "/static/images/common/apple-touch-icon.png", "sizes": "180x180", "type": "image/png"},
+        ],
+    }
+    return Response(json.dumps(data, ensure_ascii=False), mimetype="application/manifest+json")
