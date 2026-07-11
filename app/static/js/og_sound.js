@@ -105,8 +105,15 @@
   function unlockAudio() {
     var c = ensureCtx();
     if (!c) return;
-    // 무음에 가까운 톤으로 오디오 파이프라인을 깨움
-    try { tone(1, 0, 0.01, 0.0001, 'sine'); } catch (e) {}
+    // iOS/모바일 잠금 해제: 1-샘플 무음 버퍼를 재생하면 오디오 파이프라인이 확실히 깨어난다(검증된 방식).
+    try {
+      var b = c.createBuffer(1, 1, 22050);
+      var s = c.createBufferSource();
+      s.buffer = b;
+      s.connect(c.destination);
+      if (s.start) s.start(0); else if (s.noteOn) s.noteOn(0);
+    } catch (e) {}
+    if (c.state === 'suspended') { try { c.resume(); } catch (e) {} }
     if (c.state === 'running') {
       document.removeEventListener('pointerdown', unlockAudio, true);
       document.removeEventListener('touchend', unlockAudio, true);
