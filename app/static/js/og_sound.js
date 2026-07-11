@@ -98,4 +98,22 @@
     api.click();
   }
   document.addEventListener('pointerdown', onDown, true);
+
+  // ── 오디오 잠금 해제 (모바일/태블릿 자동재생 정책) ──
+  // 모바일 브라우저는 AudioContext가 suspended로 시작하므로, 화면 어디든 첫 제스처에서
+  // 컨텍스트를 생성·resume 하고 무음 톤을 재생해 오디오를 확실히 깨운다. (클릭요소가 아니어도 동작)
+  function unlockAudio() {
+    var c = ensureCtx();
+    if (!c) return;
+    // 무음에 가까운 톤으로 오디오 파이프라인을 깨움
+    try { tone(1, 0, 0.01, 0.0001, 'sine'); } catch (e) {}
+    if (c.state === 'running') {
+      document.removeEventListener('pointerdown', unlockAudio, true);
+      document.removeEventListener('touchend', unlockAudio, true);
+      document.removeEventListener('keydown', unlockAudio, true);
+    }
+  }
+  document.addEventListener('pointerdown', unlockAudio, true);
+  document.addEventListener('touchend', unlockAudio, true);
+  document.addEventListener('keydown', unlockAudio, true);
 })();
