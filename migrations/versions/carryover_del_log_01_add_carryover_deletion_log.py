@@ -1,8 +1,8 @@
 """add carryover_deletion_log (이전 영업일 미결제/미완료 삭제 이력)
 
-Revision ID: b2c3d4e5f6a7
+Revision ID: carryover_del_log_01
 Revises: a1b2c3d4e5f6
-Create Date: 2026-07-11 13:10:00.000000
+Create Date: 2026-07-11 13:20:00.000000
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'b2c3d4e5f6a7'
+revision = 'carryover_del_log_01'
 down_revision = 'a1b2c3d4e5f6'
 branch_labels = None
 depends_on = None
