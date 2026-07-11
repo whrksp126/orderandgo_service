@@ -139,12 +139,25 @@
   };
   window.ogSound = api;
 
-  // ── 첫 제스처에서 언락: HTML5로 오디오 하드웨어를 깨운 뒤 AudioContext resume ──
+  // ── Web Audio 정석 언락(빈 버퍼 재생 + resume) — 제스처 안에서 동기 실행 ──
+  function unlockWebAudio() {
+    initWebAudio();
+    if (!ac) return;
+    try {
+      var s = ac.createBufferSource();
+      s.buffer = ac.createBuffer(1, 1, SR); // 1-샘플 무음 버퍼
+      s.connect(ac.destination);
+      if (s.start) s.start(0); else if (s.noteOn) s.noteOn(0);
+    } catch (e) {}
+    if (ac.state === 'suspended') { try { ac.resume(); } catch (e) {} }
+  }
+
+  // 첫 제스처: Web Audio 언락(우선) + HTML5 예열(폴백)
   var unlocked = false;
   function unlockAudio() {
     if (unlocked) return;
     unlocked = true;
-    // 1) HTML5 풀 구성 + 무음 예열 (iOS 오디오 세션 깨우기 + 폴백 대비)
+    unlockWebAudio();
     buildPools();
     for (var key in POOL) {
       if (!POOL.hasOwnProperty(key)) continue;
@@ -159,14 +172,16 @@
         })(POOL[key][i]);
       }
     }
-    // 2) Web Audio 생성 + resume (HTML5로 하드웨어가 깨어난 직후라 성공 확률↑)
-    initWebAudio();
-    if (ac && ac.state === 'suspended') { try { ac.resume(); } catch (e) {} }
-    document.removeEventListener('pointerdown', unlockAudio, true);
     document.removeEventListener('touchend', unlockAudio, true);
     document.removeEventListener('keydown', unlockAudio, true);
   }
-  document.addEventListener('pointerdown', unlockAudio, true);
+  // 매 터치마다 컨텍스트가 suspended면 재개(첫 resume이 안 붙는 기기 대비) — capture 단계 최상단
+  function keepResumed() {
+    if (!unlocked) unlockAudio();
+    if (ac && ac.state === 'suspended') { try { ac.resume(); } catch (e) {} }
+  }
+  document.addEventListener('pointerdown', keepResumed, true);
+  document.addEventListener('touchstart', keepResumed, true);
   document.addEventListener('touchend', unlockAudio, true);
   document.addEventListener('keydown', unlockAudio, true);
 
