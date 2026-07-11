@@ -184,12 +184,12 @@ def run():
         tcat = TableCategory(store_id=sid, category_name="1층 홀", position=1)
         db.session.add(tcat); db.session.commit()
         tables = []
-        # 12 테이블: 4열 × 3행, 각 카드 3×3 (제목+주문내역이 잘리지 않는 크기)
-        coords = [(gx, gy) for gy in (0, 4, 8) for gx in (0, 5, 10, 15)]
+        # 20 테이블: 5열 × 4행, 각 카드 4×3 → 캔버스(20열×12행)를 빈틈없이 꽉 채움
+        coords = [(gx, gy) for gy in (0, 3, 6, 9) for gx in (0, 4, 8, 12, 16)]
         for i, (gx, gy) in enumerate(coords, start=1):
             t = Table(name=f"{i}번", seat_count=4 if i % 2 else 2, is_group=0,
                       table_category_id=tcat.id, position=i,
-                      grid_x=gx, grid_y=gy, grid_w=3, grid_h=3,
+                      grid_x=gx, grid_y=gy, grid_w=4, grid_h=3,
                       qr_token=f"demoqr{i}", qr_generated_at=datetime.now())
             db.session.add(t); tables.append(t)
         db.session.commit()

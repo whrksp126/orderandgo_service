@@ -38,8 +38,8 @@
   <div class="lp-hero-visual">
     <div class="frame-browser">
       <div class="bar"><span></span><span></span><span></span></div>
-      <video autoplay muted loop playsinline poster="/static/images/landing/pos-tablelist.png?v=2">
-        <source src="/static/videos/landing/pos-tablelist.mp4?v=2" type="video/mp4">
+      <video autoplay muted loop playsinline poster="/static/images/landing/pos-tablelist.png?v=3">
+        <source src="/static/videos/landing/pos-tablelist.mp4?v=3" type="video/mp4">
       </video>
     </div>
   </div>
@@ -85,7 +85,7 @@
           {% for p in f.points %}<li><i class="ph ph-check-circle"></i>{{ p }}</li>{% endfor %}
         </ul>
       </div>
-      {% set media %}<video autoplay muted loop playsinline poster="/static/images/landing/{{ f.img }}?v=2"><source src="/static/videos/landing/{{ f.video }}?v=2" type="video/mp4"></video>{% endset %}
+      {% set media %}<video autoplay muted loop playsinline poster="/static/images/landing/{{ f.img }}?v=3"><source src="/static/videos/landing/{{ f.video }}?v=3" type="video/mp4"></video>{% endset %}
       {% if f.frame == 'phone' %}
       <div class="lp-showcase-media phone-wrap"><div class="frame-phone">{{ media }}</div></div>
       {% elif f.frame == 'browser' %}
