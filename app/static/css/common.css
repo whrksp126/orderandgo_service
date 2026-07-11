@@ -719,7 +719,7 @@ main section article .change_page_btn.next_page_btn {
   background: rgba(0, 0, 0, 0.4);
   z-index: 2001;
   display: none;
-  backdrop-filter: blur(2px);
+  /* backdrop-filter 제거: iOS에서 상위 z-index 토스트까지 흐릿하게 번지는 문제 방지 */
 }
 
 .notification-overlay.active {
