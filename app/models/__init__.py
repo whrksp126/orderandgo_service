@@ -83,6 +83,7 @@ class Store(db.Model):
     geofence_radius_m = db.Column(db.Integer, default=200)         # 지오펜스 허용 반경(m)
     qr_geofence_enabled = db.Column(db.Boolean, default=True)      # QR 주문 시 위치 검증 사용 여부
     qr_require_open_session = db.Column(db.Boolean, default=False) # 활성 테이블 세션일 때만 QR 주문 허용
+    business_day_cutoff = db.Column(db.String(5), nullable=True)   # 영업일 변경 기준 시각 'HH:MM' (미설정 시 06:00)
     created_at = db.Column(db.DateTime, default=datetime.now)
     last_logged_at = db.Column(db.DateTime, nullable=True)
 

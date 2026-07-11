@@ -61,7 +61,16 @@
     tap: [{ f: 520, at: 0, d: 0.014, v: 0.32, type: 'triangle' }],
     success: [{ f: 784, at: 0, d: 0.08, v: 0.5, type: 'sine' }, { f: 1175, at: 0.08, d: 0.12, v: 0.5, type: 'sine' }],
     error: [{ f: 400, at: 0, d: 0.10, v: 0.5, type: 'triangle' }, { f: 300, at: 0.10, d: 0.16, v: 0.5, type: 'triangle' }],
-    notify: [{ f: 660, at: 0, d: 0.09, v: 0.5, type: 'sine' }, { f: 988, at: 0.10, d: 0.14, v: 0.5, type: 'sine' }],
+    // 신규 주문 알림 — 도·미·솔·도 상승 멜로디 2회, 부드러운 벨(sine). 화면 안 봐도 인지되게 일정 시간 재생.
+    notify: [
+      { f: 523.25, at: 0.00, d: 0.16, v: 0.42, type: 'sine' }, // 도(C5)
+      { f: 659.25, at: 0.15, d: 0.16, v: 0.42, type: 'sine' }, // 미(E5)
+      { f: 783.99, at: 0.30, d: 0.16, v: 0.42, type: 'sine' }, // 솔(G5)
+      { f: 1046.5, at: 0.45, d: 0.28, v: 0.48, type: 'sine' }, // 도(C6)
+      { f: 659.25, at: 0.74, d: 0.15, v: 0.38, type: 'sine' }, // 미(E5)
+      { f: 783.99, at: 0.88, d: 0.15, v: 0.38, type: 'sine' }, // 솔(G5)
+      { f: 1046.5, at: 1.02, d: 0.34, v: 0.48, type: 'sine' }, // 도(C6)
+    ],
     call: [{ f: 880, at: 0, d: 0.07, v: 0.45, type: 'sine' }, { f: 880, at: 0.13, d: 0.07, v: 0.45, type: 'sine' }, { f: 880, at: 0.26, d: 0.07, v: 0.45, type: 'sine' }],
     complete: [{ f: 880, at: 0, d: 0.08, v: 0.5, type: 'sine' }, { f: 1319, at: 0.085, d: 0.13, v: 0.5, type: 'sine' }],
   };

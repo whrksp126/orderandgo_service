@@ -1161,6 +1161,7 @@ def store_info_page():
         'representative_name': store.representative_name or '',
         'address': store.address or '',
         'tel': store.tel or '',
+        'business_day_cutoff': store.business_day_cutoff or '06:00',
     }
     return render_template('store_info.html', store_data=store_data)
 
@@ -1176,6 +1177,12 @@ def api_update_store_info():
     store.representative_name = data.get('representative_name', '').strip() or None
     store.address = data.get('address', '').strip() or None
     store.tel = data.get('tel', '').strip() or None
+    # 영업일 변경 기준 시각 'HH:MM' (형식 검증, 잘못되면 무시)
+    cutoff = (data.get('business_day_cutoff') or '').strip()
+    if cutoff:
+        import re
+        if re.fullmatch(r'([01]\d|2[0-3]):[0-5]\d', cutoff):
+            store.business_day_cutoff = cutoff
     db.session.commit()
     return jsonify({'code': 200, 'msg': '저장되었습니다.'})
 

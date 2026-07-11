@@ -13,6 +13,8 @@ let cancelledOrderIds = new Set();
 let doneItemOrderIds = new Set();  // 개별 완료 처리된 item의 order_ids 키 (시각적 상태)
 let currentTab = 'pending';
 let elapsedInterval = null;
+let knownOrderIds = new Set();     // 알림음용: 이미 인지한 대기주문 order_id
+let initialLoadDone = false;       // 최초 로드 시엔 알림음 재생 안 함
 
 // ── 초기화 ────────────────────────────────────────────────────────────────
 
@@ -34,7 +36,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     socket.on('kds_new_order', () => {
-      loadOrders();
+      // 서버가 이 스테이션 룸으로만 emit → 도달했다면 관련 주문. 실제 신규건 있을 때만 알림음.
+      loadOrders({ notify: true });
     });
 
     socket.on('kds_order_completed', (data) => {
@@ -73,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // 이 스테이션과 연동된 항목만 알림
       const itemId = data.staff_call_item_id;
       if (STAFF_CALL_IDS.length === 0 || STAFF_CALL_IDS.includes(itemId)) {
+        try { if (window.ogSound) ogSound.call(); } catch (e) {}
         showStaffCallPopup(data);
       }
     });
@@ -92,10 +96,21 @@ function updateClock() {
 
 // ── 데이터 로드 ───────────────────────────────────────────────────────────
 
-async function loadOrders() {
+async function loadOrders(opts = {}) {
   try {
     const res = await fetch(`/kds/api/orders?station_id=${STATION_ID}`);
     pendingBatches = await res.json();
+
+    // 신규 주문 감지 → 이 스테이션에 실제 새 주문이 생겼을 때만 알림음 재생
+    const currentIds = new Set();
+    pendingBatches.forEach(b => (b.order_ids || []).forEach(id => currentIds.add(id)));
+    if (opts.notify && initialLoadDone) {
+      let hasNew = false;
+      currentIds.forEach(id => { if (!knownOrderIds.has(id)) hasNew = true; });
+      if (hasNew) { try { if (window.ogSound) ogSound.notify(); } catch (e) {} }
+    }
+    knownOrderIds = currentIds;
+    initialLoadDone = true;
 
     // 타이머 기준 시각 기록 (서버 elapsed_seconds + 이후 경과시간으로 계산)
     const loadedAt = Date.now();
@@ -255,7 +270,7 @@ function renderCard(batch, isDone = false) {
           <span class="card-ordered-time">${orderedTimeText}</span>
           <span class="card-elapsed"
             data-server-elapsed="${serverElapsed}"
-            data-loaded-at="${loadedAt}">⏱ ${elapsedText}</span>
+            data-loaded-at="${loadedAt}">${elapsedText}</span>
         </div>
       </div>
       <div class="card-items">${itemsHtml}</div>
@@ -359,7 +374,7 @@ function updateElapsed() {
     const serverElapsed = parseInt(el.dataset.serverElapsed || '0');
     const loadedAt = parseInt(el.dataset.loadedAt || now);
     const elapsed = serverElapsed + Math.floor((now - loadedAt) / 1000);
-    el.textContent = `⏱ ${formatElapsed(elapsed)}`;
+    el.textContent = formatElapsed(elapsed);
 
     const card = el.closest('.order-card');
     if (card && !card.classList.contains('done-card') && !card.classList.contains('cancelled-card')) {
@@ -373,9 +388,19 @@ function updateElapsed() {
 function formatElapsed(seconds) {
   if (seconds < 0) seconds = 0;
   if (seconds < 60) return `${seconds}초`;
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return s > 0 ? `${m}분 ${s}초` : `${m}분`;
+  if (seconds < 3600) {                       // 1시간 미만 → 분 초
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return s > 0 ? `${m}분 ${s}초` : `${m}분`;
+  }
+  if (seconds < 86400) {                       // 1일 미만 → 시간 분
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    return m > 0 ? `${h}시간 ${m}분` : `${h}시간`;
+  }
+  const d = Math.floor(seconds / 86400);       // 1일 이상 → 일 시간
+  const h = Math.floor((seconds % 86400) / 3600);
+  return h > 0 ? `${d}일 ${h}시간` : `${d}일`;
 }
 
 function getUrgencyClass(seconds) {

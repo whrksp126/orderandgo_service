@@ -20,84 +20,85 @@
 
   <link rel="stylesheet" href="/static/css/store.css">
   <style>
+    /* POS 테이블 목록과 동일한 다크 보드 + 화이트 카드 스타일 */
     .kds-select body,
     body.kds-select {
-      background: #F5F5F5;
+      background: #484848;
     }
 
     body.kds-select main {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
       min-height: calc(100dvh - 40px);
-      padding: 40px 20px;
-      background: #F5F5F5;
+      padding: 24px 20px 40px;
+      background: #484848;
     }
 
     .kds-select-wrap {
       width: 100%;
-      max-width: 800px;
+      max-width: 1100px;
+      margin: 0 auto;
     }
 
     .kds-select-title {
-      font-size: 22px;
-      font-weight: 900;
-      color: #111;
-      margin-bottom: 8px;
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 4px;
     }
 
     .kds-select-sub {
       font-size: 14px;
-      color: #999;
-      margin-bottom: 32px;
+      color: #b8b8b8;
+      margin-bottom: 24px;
     }
 
     .kds-station-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
       gap: 16px;
     }
 
+    /* POS view-card 룩: 흰 카드, 10px 라운드, 얇은 테두리 */
     .kds-station-card {
       background: #fff;
-      border: 2px solid #E0E0E0;
-      border-radius: 16px;
-      padding: 28px 24px;
+      border: 1.5px solid #d5d8de;
+      border-radius: 10px;
+      padding: 20px;
+      min-height: 128px;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: border-color 0.15s, box-shadow 0.1s;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
     }
 
     .kds-station-card:hover {
       border-color: #1FAA9C;
-      background: #F3FAFA;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(31, 170, 156, 0.15);
+    }
+
+    .kds-station-card:active {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
     }
 
     .kds-station-icon {
-      width: 48px;
-      height: 48px;
+      width: 44px;
+      height: 44px;
       background: #F0FAFA;
-      border-radius: 12px;
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
       color: #1FAA9C;
       font-size: 24px;
-      margin-bottom: 4px;
     }
 
     .kds-station-name {
-      font-size: 18px;
-      font-weight: 900;
-      color: #111;
+      font-size: 20px;
+      font-weight: 700;
+      color: #222;
     }
 
     .kds-station-meta {
+      margin-top: auto;
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
@@ -105,7 +106,7 @@
 
     .kds-badge {
       font-size: 11px;
-      font-weight: 700;
+      font-weight: 600;
       padding: 3px 10px;
       border-radius: 20px;
       background: #F1F3F5;
@@ -117,41 +118,30 @@
       color: #fff;
     }
 
-    .kds-station-arrow {
-      margin-top: auto;
-      color: #CCC;
-      font-size: 20px;
-      align-self: flex-end;
-      transition: color 0.2s;
-    }
-
-    .kds-station-card:hover .kds-station-arrow {
-      color: #1FAA9C;
-    }
-
     /* 빈 상태 */
     .kds-empty {
       text-align: center;
       padding: 60px 20px;
-      color: #CCC;
+      color: #ddd;
     }
 
     .kds-empty i {
       font-size: 56px;
       display: block;
       margin-bottom: 16px;
+      color: #888;
     }
 
     .kds-empty p {
       font-size: 16px;
       font-weight: 700;
       margin-bottom: 8px;
-      color: #BBB;
+      color: #e0e0e0;
     }
 
     .kds-empty small {
       font-size: 13px;
-      color: #CCC;
+      color: #aaa;
     }
 
     .btn-goto-mgmt {
@@ -217,7 +207,6 @@
               {% endif %}
               {% endif %}
             </div>
-            <i class="ph-bold ph-arrow-right kds-station-arrow"></i>
           </div>
           {% endfor %}
         </div>
@@ -236,7 +225,7 @@
     </main>
   </div>
 
-  <script src="/static/js/og_sound.js?v=9"></script>
+  <script src="/static/js/og_sound.js?v=10"></script>
   <script src="/static/js/common.js?v=4"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
