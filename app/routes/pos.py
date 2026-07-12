@@ -535,6 +535,7 @@ def submit_toss_result():
 @pos_bp.route('/toss/approval_status', methods=['GET'])
 def get_toss_approval_status():
     """단말기가 결제 승인 후 확정/취소 신호를 폴링"""
+    from app.models import TerminalToken
     token = request.args.get('token')
     payment_id = request.args.get('payment_id')
     if token:

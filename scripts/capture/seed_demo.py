@@ -82,8 +82,9 @@ def ensure_order_status():
 
 
 def ensure_payment_meta():
-    """payment_method(1=카드,2=현금) / payment_status(1=완료,2=취소,3=진행중) 보장."""
-    for i, name in {1: "카드", 2: "현금"}.items():
+    """payment_method(1=현금,2=카드) / payment_status(1=완료,2=취소,3=진행중) 보장.
+    프론트(payment.js)가 CASH=1, CARD=2로 보내므로 그 매핑을 따른다."""
+    for i, name in {1: "현금", 2: "카드"}.items():
         if not Payment_method.query.get(i):
             db.session.add(Payment_method(id=i, method=name))
     for i, name in {1: "결제 완료", 2: "결제 취소", 3: "결제 진행 중"}.items():

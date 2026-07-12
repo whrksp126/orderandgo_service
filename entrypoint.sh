@@ -41,6 +41,23 @@ with app.app_context():
         print('[Seed] order_status 초기 데이터 삽입 완료')
     else:
         print('[Seed] order_status 이미 존재')
+
+    # payment_method (프론트 매핑: CASH=1, CARD=2) / payment_status 참조 데이터 보장
+    pm_count = db.session.execute(text('SELECT COUNT(*) FROM payment_method')).scalar()
+    if pm_count == 0:
+        db.session.execute(text(\"INSERT INTO payment_method (id, method) VALUES (1,'현금'),(2,'카드')\"))
+        db.session.commit()
+        print('[Seed] payment_method 초기 데이터 삽입 완료')
+    else:
+        print('[Seed] payment_method 이미 존재')
+
+    ps_count = db.session.execute(text('SELECT COUNT(*) FROM payment_status')).scalar()
+    if ps_count == 0:
+        db.session.execute(text(\"INSERT INTO payment_status (id, status) VALUES (1,'결제 완료'),(2,'결제 취소'),(3,'결제 진행 중')\"))
+        db.session.commit()
+        print('[Seed] payment_status 초기 데이터 삽입 완료')
+    else:
+        print('[Seed] payment_status 이미 존재')
 " 2>/dev/null
 
 echo "[Entrypoint] 앱 시작"
