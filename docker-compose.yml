@@ -20,6 +20,12 @@ services:
       timeout: 5s
       retries: 10
     restart: always
+    # 공용 13GB/8코어 서버 — 한 프로젝트가 전체를 잡아먹지 않게 상한
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+          cpus: "1.0"
 
   orderandgo_service:
     container_name: orderandgo_service_prod
@@ -38,6 +44,12 @@ services:
     environment:
       APP_CMD: "gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:5000 --access-logfile - wsgi:app"
     command: /entrypoint.sh
+    # 공용 13GB/8코어 서버 — 상한 없으면 OOM 시 옆 프로젝트까지 죽음
+    deploy:
+      resources:
+        limits:
+          memory: 768m
+          cpus: "1.0"
 
 networks:
   orderandgo_prod:

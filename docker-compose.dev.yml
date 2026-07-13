@@ -20,6 +20,11 @@ services:
       timeout: 5s
       retries: 10
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "0.5"
 
   orderandgo_service:
     container_name: orderandgo_service_dev
@@ -37,6 +42,11 @@ services:
       - nginx_proxy
     restart: unless-stopped
     command: /entrypoint.sh
+    deploy:
+      resources:
+        limits:
+          memory: 640m
+          cpus: "0.75"
 
 networks:
   orderandgo_dev:
