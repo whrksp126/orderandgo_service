@@ -20,7 +20,6 @@ ssh -i ~/.ssh/ghmate_server -p 222 ghmate@ghmate.iptime.org "mkdir -p /srv/proje
 # compose 파일만 SCP로 전송
 scp -i ~/.ssh/ghmate_server -P 222 \
     docker-compose.dev.yml \
-    docker-compose.stg.yml \
     docker-compose.yml \
     ghmate@ghmate.iptime.org:/srv/projects/orderandgo/
 ```
@@ -38,9 +37,6 @@ cd /srv/projects/orderandgo
 
 # dev
 vi .env.dev
-
-# stg (필요 시)
-vi .env.stg
 
 # prod (필요 시)
 vi .env
@@ -82,7 +78,7 @@ ssh -i ~/.ssh/ghmate_server -p 222 ghmate@ghmate.iptime.org \
 로컬 맥에서:
 
 ```bash
-./deploy.sh dev   # 또는 stg, prod
+./deploy.sh dev   # 또는 prod
 ```
 
 ---
@@ -100,7 +96,6 @@ docker exec -i orderandgo_mysql_dev mysql -u root -p{MYSQL_ROOT_PASSWORD} ordera
 
 ```bash
 ./deploy.sh dev    # dev 배포
-./deploy.sh stg    # stg 배포
 ./deploy.sh prod   # prod 배포
 ```
 
@@ -111,7 +106,6 @@ docker exec -i orderandgo_mysql_dev mysql -u root -p{MYSQL_ROOT_PASSWORD} ordera
 | 환경 | 도메인 |
 |------|--------|
 | dev  | https://dev-order.ghmate.com |
-| stg  | https://stg-order.ghmate.com |
 | prod | https://order.ghmate.com |
 
 ---
@@ -120,6 +114,5 @@ docker exec -i orderandgo_mysql_dev mysql -u root -p{MYSQL_ROOT_PASSWORD} ordera
 
 ```bash
 docker logs -f orderandgo_service_dev   # dev
-docker logs -f orderandgo_service_stg   # stg
 docker logs -f orderandgo_service_prod  # prod
 ```

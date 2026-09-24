@@ -51,7 +51,7 @@ SITE = {
 
 # ---------------------------------------------------------------------------
 # Firebase 전화 인증 (웹 config — apiKey 는 클라이언트 노출값이라 비밀 아님)
-# 콘솔: Authentication > Phone 사용, 승인된 도메인에 dev/stg/prod 도메인 등록 필요
+# 콘솔: Authentication > Phone 사용, 승인된 도메인에 dev/prod 도메인 등록 필요
 # ---------------------------------------------------------------------------
 FIREBASE = {
     "apiKey": "AIzaSyDSQrz00mHmXYwGHtalnpTCjTlIgIWntp0",

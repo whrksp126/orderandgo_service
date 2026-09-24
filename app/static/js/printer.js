@@ -161,7 +161,6 @@ const PrinterManager = (() => {
     let env = 'PRODUCTION';
     if (/^(localhost|127\.|192\.|10\.)/.test(hostname)) env = 'LOCAL';
     else if (hostname.startsWith('dev-')) env = 'DEV';
-    else if (hostname.startsWith('stg-')) env = 'STAGING';
 
     // 네트워크 정보 (NetworkInformation API — Chrome 지원)
     const online = navigator.onLine ? '온라인' : '오프라인';
