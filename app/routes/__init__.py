@@ -21,11 +21,12 @@ def require_login(bp, public=()):
 
     @bp.before_request
     def _require_login():
-        from flask import request
+        from flask import request, current_app
         from flask_login import current_user
-        from app import login_manager
         view = (request.endpoint or '').rsplit('.', 1)[-1]
         if view in public:
             return None
         if not current_user.is_authenticated:
-            return login_manager.unauthorized()
+            # current_app.login_manager: LoginManager 인스턴스 (from app import login_manager는
+            # 요청 시점에 app/login_manager.py 서브모듈로 가려질 수 있어 사용하지 않음)
+            return current_app.login_manager.unauthorized()
