@@ -9,6 +9,14 @@ from app.models.menu_category import create_main_category, create_sub_category, 
 from app.models.store import create_store, delete_store, update_store
 from app.models.menu import create_menu, create_menu_option, delete_menu, update_menu
 from app.models.table import update_table_name, update_table_position, create_table, delete_table
+from app import login_manager
+
+
+# /adm/* 전체 로그인 필수 (개별 @login_required 누락 방지)
+@adm_bp.before_request
+def require_login():
+    if not current_user.is_authenticated:
+        return login_manager.unauthorized()
 
 @adm_bp.route('/')
 def index():

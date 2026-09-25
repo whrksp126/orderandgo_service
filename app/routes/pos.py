@@ -225,22 +225,24 @@ def get_toss_pending():
     from app.models import TerminalToken
     from datetime import datetime
     token = request.args.get('token')
-    record = TerminalToken.query.filter_by(token=token).first() if token else None
+    # 토큰 필수: 토큰 없이 호출하면 매장 필터 없이 타 매장 결제를 가져갈 수 있으므로 차단
+    if not token:
+        return jsonify({'error': '인증 실패'}), 401
+    record = TerminalToken.query.filter_by(token=token).first()
 
-    # 토큰이 제공됐는데 DB에 없으면 → 로그아웃 처리됨
-    if token and not record:
+    # 토큰이 DB에 없으면 → 로그아웃 처리됨
+    if not record:
         return jsonify({'logout': True})
 
-    store_id = record.store_id if record else None
+    store_id = record.store_id
 
     # 마지막 폴링 시각 갱신 → 실제 연결 상태 감지용
-    if record:
-        record.last_polled_at = datetime.now()
-        db.session.commit()
+    record.last_polled_at = datetime.now()
+    db.session.commit()
 
     for payment_id, payment in list(_pending_payments.items()):
         if payment['status'] == 'pending':
-            if store_id and payment.get('store_id') != store_id:
+            if payment.get('store_id') != store_id:
                 continue
             payment['status'] = 'processing'
             return jsonify({'pending': True, **payment})
