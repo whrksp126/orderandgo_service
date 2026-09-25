@@ -14,6 +14,9 @@ from app.utils.business_day import business_day_start
 
 kds_bp = Blueprint('kds', __name__)
 
+from app.routes import require_login
+require_login(kds_bp)
+
 
 # ── 페이지 라우트 ────────────────────────────────────────────────────────────
 
@@ -126,7 +129,7 @@ def api_complete_batch():
         # POS 테이블 목록 실시간 갱신
         socketio.emit('kds_order_completed', {
             'order_ids': order_ids,
-        }, room='pos_group')
+        }, room=f'pos_{int(store_id)}')
 
         return jsonify({'code': 200, 'message': 'Success'})
     except Exception as e:
@@ -140,9 +143,10 @@ from app import socketio
 
 @socketio.on('join_kds')
 def on_join_kds(data):
-    store_id = data.get('store_id')
-    if store_id:
-        join_room(f'store_{store_id}_kds')
+    # 로그인한 매장 자신의 KDS 룸만 참여 (클라이언트가 보낸 store_id는 신뢰하지 않음)
+    if not current_user.is_authenticated:
+        return
+    join_room(f'store_{int(current_user.id)}_kds')
 
 
 # ── 내부 헬퍼 ────────────────────────────────────────────────────────────────

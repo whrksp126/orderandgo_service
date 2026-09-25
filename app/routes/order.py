@@ -1,5 +1,7 @@
 from flask import render_template, request, jsonify
-from app.routes import order_bp
+from app.routes import order_bp, require_login
+
+require_login(order_bp)
 from flask_login import login_required, current_user
 import traceback
 
@@ -27,7 +29,7 @@ def menu_order():
                 'message': '새로운 주문이 들어왔습니다.',
                 'is_pos': is_pos,
                 'order_list': order_list
-            }, room='pos_group')
+            }, room=f'pos_{int(store_id)}')
         # 테이블 오더(손님)에게 알림 전송
         socketio.emit('new_order_notification', {'message': '새로운 주문이 등록되었습니다.'}, room=f'table_{store_id}_{table_id}')
         # KDS에 새 주문 알림
@@ -53,7 +55,9 @@ def menu_order():
 @login_required
 def api_delete_order():
     order_id_list = request.get_json()['order_id_list']
-    print("order###", order_id_list)
+    from app.utils.ownership import owns_order, forbidden
+    if not all(owns_order(oid) for oid in order_id_list):
+        return forbidden()
     res = delete_order(order_id_list)
     if res:
         from app import socketio

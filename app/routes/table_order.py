@@ -1,7 +1,7 @@
 from app.routes import table_order_bp
 from app.models.order import make_order
 from app.models.staff_call import get_staff_call_items, record_staff_call
-from app.models.table import get_table_by_qr_token, has_active_table_session
+from app.models.table import get_table_by_qr_token, has_active_table_session, get_store_id_by_table_id
 
 from flask import render_template, request, jsonify, redirect, make_response
 from flask_login import login_required, current_user
@@ -21,6 +21,15 @@ from datetime import datetime
 #   kind ∈ {'store'(테이블 오더 매장 로그인), 'customer'(QR 손님)}
 # 한 테이블에 여러 기기가 동시에 접속할 수 있어 sid 단위로 관리한다.
 CONNECTED_TABLES = {}
+
+
+def _table_belongs(store_id, table_id):
+    """table_id가 store_id 매장의 테이블인지 (로그인 매장 모드에서 클라이언트가 준 table_id 검증용)."""
+    try:
+        owner = get_store_id_by_table_id(int(table_id))
+        return owner is not None and int(owner) == int(store_id)
+    except (TypeError, ValueError):
+        return False
 
 
 def get_active_tables(store_id):
@@ -75,6 +84,8 @@ def on_join_table_order(data):
     if current_user.is_authenticated:
         store_id = str(int(current_user.id))
         table_id = str(data.get('table_id'))
+        if not _table_belongs(store_id, table_id):
+            return
         kind = 'store'
     else:
         c_store, c_table = resolve_customer_context()
@@ -99,7 +110,10 @@ def on_join_table_order(data):
 
 @socketio.on('join_login_page')
 def on_join_login_page(data):
-    store_id = data.get('store_id')
+    # 로그인한 매장 자신의 착석 보드만 구독 가능
+    if not current_user.is_authenticated:
+        return
+    store_id = int(current_user.id)
     if store_id:
         join_room(f'store_{store_id}_login')
         # 현재 접속 상태 즉시 전송
@@ -163,13 +177,25 @@ def new_order_pos_update(data):
     elif current_user.is_authenticated:
         store_id = int(current_user.id)
         table_id = data.get('table_id')
+        if not _table_belongs(store_id, table_id):
+            msg = '주문 권한이 없습니다.'
+            emit('order_rejected', {'reason': 'unauthorized', 'message': msg})
+            return {'ok': False, 'reason': 'unauthorized', 'message': msg}
     else:
         msg = '주문 권한이 없습니다. QR을 다시 스캔해 주세요.'
         emit('order_rejected', {'reason': 'unauthorized', 'message': msg})
         return {'ok': False, 'reason': 'unauthorized', 'message': msg}
 
     order_list = data.get('order_list')
-    make_order(store_id, table_id, order_list)
+    from app.models.order import OrderOwnershipError
+    try:
+        make_order(store_id, table_id, order_list)
+    except (OrderOwnershipError, KeyError, TypeError, ValueError):
+        from app.models import db
+        db.session.rollback()
+        msg = '주문할 수 없는 메뉴가 포함되어 있습니다.'
+        emit('order_rejected', {'reason': 'invalid_order', 'message': msg})
+        return {'ok': False, 'reason': 'invalid_order', 'message': msg}
 
     # 포스기에 주문 업데이트 요청
     from app.models import Table
@@ -181,7 +207,7 @@ def new_order_pos_update(data):
         'message': '새로운 주문이 들어왔습니다.',
         'is_pos': False,
         'order_list': order_list,
-    }, room='pos_group')
+    }, room=f'pos_{int(store_id)}')
     # KDS에 새 주문 알림
     socketio.emit('kds_new_order', {'table_id': table_id, 'store_id': store_id}, room=f'store_{store_id}_kds')
 
@@ -218,6 +244,10 @@ def _order_context():
         return None, None, '', '', None
 
     table_id = request.args.get('table_id') or ctx_table
+    if mode == 'customer':
+        table_id = ctx_table  # 손님은 QR 세션의 테이블만
+    elif table_id and not _table_belongs(store_id, table_id):
+        return None, None, '', '', None
     from app.models import Table, Store
     table_name = ''
     if table_id:
@@ -261,6 +291,8 @@ def get_order_history(table_id):
     # 손님은 자기 테이블만 조회 가능
     if mode == 'customer':
         table_id = ctx_table
+    elif not _table_belongs(store_id, table_id):
+        return jsonify({'error': 'Forbidden', 'code': 403}), 403
 
     from app.models.order import find_order_list
     from app.models import Menu, MenuOption
@@ -310,6 +342,8 @@ def get_payment_history():
     if store_id is None:
         return jsonify({'error': 'Unauthorized', 'code': 401}), 401
     table_id = ctx_table if mode == 'customer' else request.args.get('table_id')
+    if mode != 'customer' and table_id and not _table_belongs(store_id, table_id):
+        return jsonify({'error': 'Forbidden', 'code': 403}), 403
     if not table_id:
         return jsonify({'message': 'Success', 'code': 200, 'data': []})
 
@@ -360,6 +394,8 @@ def get_current_receipt():
     if store_id is None:
         return jsonify({'error': 'Unauthorized', 'code': 401}), 401
     table_id = ctx_table if mode == 'customer' else request.args.get('table_id')
+    if mode != 'customer' and table_id and not _table_belongs(store_id, table_id):
+        return jsonify({'error': 'Forbidden', 'code': 403}), 403
 
     empty = {
         'in_use': False, 'order_total': 0, 'discount': 0, 'extra_charge': 0,
@@ -469,6 +505,8 @@ def api_request_staff_call():
 
     data = request.get_json() or {}
     table_id = ctx_table if mode == 'customer' else data.get('table_id')
+    if mode != 'customer' and table_id and not _table_belongs(store_id, table_id):
+        return jsonify({'error': 'Forbidden', 'code': 403}), 403
     requests_data = data.get('requests', [])  # List of {item_id, quantity}
 
     if not table_id:
@@ -516,6 +554,6 @@ def api_request_staff_call():
         'table_name': table_name,
         'calls': call_messages,
         'timestamp': datetime.now().strftime('%H:%M:%S')
-    }, room='pos_group')
+    }, room=f'pos_{int(store_id)}')
 
     return jsonify({'message': 'Success'}), 200

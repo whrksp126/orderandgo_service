@@ -22,8 +22,31 @@ def get_orders_by_store_id(store_id):
     return orders
 
 # 주문하기 클릭 시
+class OrderOwnershipError(ValueError):
+    """주문 대상(테이블/메뉴/옵션)이 해당 매장 소유가 아님"""
+
+
+def _validate_order_ownership(store_id, table_id, order_list):
+    """테이블·메뉴·옵션이 모두 store_id 매장 것인지 확인 (다른 매장 테이블/메뉴로 주문 주입 차단)"""
+    from app.models import MenuOptionGroup
+    table = db.session.get(Table, table_id)
+    category = db.session.get(TableCategory, table.table_category_id) if table else None
+    if not category or int(category.store_id) != int(store_id):
+        raise OrderOwnershipError('table')
+    for o in order_list:
+        menu = db.session.get(Menu, int(o['id']))
+        if not menu or int(menu.store_id) != int(store_id):
+            raise OrderOwnershipError('menu')
+        for option in o.get('options') or []:
+            opt = db.session.get(MenuOption, int(option['id']))
+            group = db.session.get(MenuOptionGroup, opt.group_id) if opt else None
+            if not group or int(group.menu_id) != int(menu.id):
+                raise OrderOwnershipError('option')
+
+
 def make_order(store_id, table_id, order_list, is_pos=False):
     table_id = int(table_id)
+    _validate_order_ownership(store_id, table_id, order_list)
 
     # 현재 이용중인 TableOrderList를 가져옴
     table_order_list_item = db.session\

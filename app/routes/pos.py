@@ -6,7 +6,18 @@ from datetime import datetime
 from app.models.menu import select_main_category, select_sub_category, select_menu_all, select_menu, select_menu_option, select_menu_option_all, select_menu_all_to_main_category
 from app.models.order import find_order_list, get_orders_by_store_id
 from flask_login import login_required, current_user
-from app.routes import pos_bp
+from app.routes import pos_bp, require_login
+from app.utils.ownership import forbidden, owns_table
+
+# /pos/* 로그인 필수. 예외: 단말기 API(토큰/payment_id로 자체 인가), QR 손님 메뉴 조회(QR 세션으로 자체 인가)
+require_login(pos_bp, public=(
+    'terminal_auth_verify', 'terminal_auth_login', 'terminal_register',
+    'get_toss_pending', 'get_payment_type_status', 'get_cash_ready_status',
+    'terminal_update_type', 'get_toss_status', 'submit_toss_result',
+    'get_toss_approval_status', 'submit_toss_cancel_result',
+    'get_cash_receipt_cancel_status', 'submit_cash_receipt_cancel_result',
+    'get_main_sub_menu_list',
+))
 from app.models.table import \
     move_table, \
     select_table_category, \
@@ -22,10 +33,35 @@ from flask_socketio import join_room, emit
 from flask import request as flask_request
 
 
+def pos_room(store_id):
+    """매장별 POS 소켓 룸 (다른 매장 POS로 이벤트가 새지 않도록 매장 단위로 분리)"""
+    return f'pos_{int(store_id)}'
+
+
+def _is_my_store(store_id):
+    try:
+        return current_user.is_authenticated and int(store_id) == int(current_user.id)
+    except (TypeError, ValueError):
+        return False
+
+
+def _terminal_store_id(token):
+    """단말기 토큰 → store_id (없거나 무효면 None). 폴링 시각도 갱신한다."""
+    from app.models import TerminalToken
+    if not token:
+        return None
+    record = TerminalToken.query.filter_by(token=token).first()
+    if not record:
+        return None
+    record.last_polled_at = datetime.now()
+    db.session.commit()
+    return record.store_id
+
+
 @socketio.on('pos_login')
 def pos_login(data):
-    if data.get('user_type') == 'pos':
-        join_room('pos_group')
+    if data.get('user_type') == 'pos' and current_user.is_authenticated:
+        join_room(pos_room(current_user.id))
         emit('login_response', {'message': '로그인이 성공하여 POS 그룹에 추가되었습니다.'})
         return {'msg': '로그인이 성공하여 POS 그룹에 추가되었습니다.'}
 
@@ -33,7 +69,10 @@ def pos_login(data):
 @socketio.on('store_history_login')
 def store_history_login(data):
     """결제 이력 페이지 소켓 룸 참여 (환불 결과 수신용)"""
-    store_id = data.get('store_id')
+    # 로그인한 매장 자신의 결제 이력 룸만 참여 (클라이언트가 보낸 store_id는 신뢰하지 않음)
+    if not current_user.is_authenticated:
+        return
+    store_id = int(current_user.id)
     if store_id:
         join_room(f'store_history_{store_id}')
         emit('store_history_login_response', {'status': 'ok'})
@@ -137,7 +176,7 @@ def terminal_join(data):
     _socket_store_map[flask_request.sid] = store_id
 
     emit('terminal_join_success', {'store_id': store_id})
-    socketio.emit('terminal_online', {'store_id': store_id}, to='pos_group')
+    socketio.emit('terminal_online', {'store_id': store_id}, to=pos_room(store_id))
     print(f'[Terminal] 연결됨: store={store_id}, sid={flask_request.sid}')
 
 
@@ -155,17 +194,21 @@ def terminal_status_update(data):
         'status': data.get('status'),
         'payment_id': data.get('payment_id'),
         'store_id': record.store_id,
-    }, to='pos_group')
+    }, to=pos_room(record.store_id))
 
 
 @socketio.on('request_cancel_payment')
 def request_cancel_payment(data):
     """POS에서 결제 취소 요청 → 단말기 전달"""
+    if not current_user.is_authenticated:
+        return
     payment_id = data.get('payment_id')
-    store_id = data.get('store_id')
+    store_id = int(current_user.id)
+    payment = _pending_payments.get(payment_id) if payment_id else None
+    if not payment or not _is_my_store(payment.get('store_id')):
+        return
 
-    if payment_id and payment_id in _pending_payments:
-        _pending_payments[payment_id]['status'] = 'cancelled'
+    payment['status'] = 'cancelled'
 
     socketio.emit('payment_cancelled', {'payment_id': payment_id}, to=f'terminal_{store_id}')
     print(f'[Toss] 결제 취소 요청: payment_id={payment_id}, store={store_id}')
@@ -177,7 +220,7 @@ def on_disconnect():
     sid = flask_request.sid
     if sid in _socket_store_map:
         store_id = _socket_store_map.pop(sid)
-        socketio.emit('terminal_offline', {'store_id': store_id}, to='pos_group')
+        socketio.emit('terminal_offline', {'store_id': store_id}, to=pos_room(store_id))
         print(f'[Terminal] 연결 해제: store={store_id}')
 
 
@@ -187,7 +230,7 @@ def create_toss_pending():
     """POS 카드결제 클릭 시 pending payment 생성 + 단말기에 소켓 푸시"""
     from app.models import Store
     data = request.get_json()
-    payment_id = str(uuid.uuid4())[:8]
+    payment_id = uuid.uuid4().hex   # 추측 불가 (결과 제출 API는 payment_id 보유로 인가)
     store = Store.query.get(current_user.id)
     store_id = store.id
 
@@ -254,7 +297,8 @@ def update_toss_pending():
     """POS에서 display pending → card/cash 전환 또는 order 데이터 갱신"""
     data = request.get_json()
     payment_id = data.get('payment_id')
-    if not payment_id or payment_id not in _pending_payments:
+    if not payment_id or payment_id not in _pending_payments \
+            or not _is_my_store(_pending_payments[payment_id].get('store_id')):
         return jsonify({'error': 'not_found'}), 404
     payment = _pending_payments[payment_id]
     if 'payment_type' in data and data['payment_type']:
@@ -284,12 +328,11 @@ def get_payment_type_status():
     from datetime import datetime
     token = request.args.get('token')
     payment_id = request.args.get('payment_id')
-    if token:
-        record = TerminalToken.query.filter_by(token=token).first()
-        if record:
-            record.last_polled_at = datetime.now()
-            db.session.commit()
-    if not payment_id or payment_id not in _pending_payments:
+    store_id = _terminal_store_id(token)
+    if store_id is None:
+        return jsonify({'error': '인증 실패'}), 401
+    if not payment_id or payment_id not in _pending_payments \
+            or _pending_payments[payment_id].get('store_id') != store_id:
         return jsonify({'cancelled': True})
     payment = _pending_payments[payment_id]
     if payment.get('status') == 'cancelled':
@@ -317,7 +360,8 @@ def cash_payment_ready():
     """POS에서 현금 금액 확인 + 영수증 정보 확정 → 단말기가 폴링으로 감지"""
     data = request.get_json()
     payment_id = data.get('payment_id')
-    if payment_id and payment_id in _pending_payments:
+    if payment_id and payment_id in _pending_payments \
+            and _is_my_store(_pending_payments[payment_id].get('store_id')):
         _pending_payments[payment_id]['cash_ready'] = True
         _pending_payments[payment_id]['identity_number'] = data.get('identity_number')
         _pending_payments[payment_id]['issuer_type'] = data.get('issuer_type')
@@ -332,13 +376,12 @@ def get_cash_ready_status():
     token = request.args.get('token')
     payment_id = request.args.get('payment_id')
 
-    if token:
-        record = TerminalToken.query.filter_by(token=token).first()
-        if record:
-            record.last_polled_at = datetime.now()
-            db.session.commit()
+    store_id = _terminal_store_id(token)
+    if store_id is None:
+        return jsonify({'error': '인증 실패'}), 401
 
-    if not payment_id or payment_id not in _pending_payments:
+    if not payment_id or payment_id not in _pending_payments \
+            or _pending_payments[payment_id].get('store_id') != store_id:
         return jsonify({'ready': False, 'cancelled': True})
     payment = _pending_payments[payment_id]
     if payment.get('status') == 'cancelled':
@@ -367,7 +410,8 @@ def terminal_update_type():
     if not record:
         return jsonify({'error': '인증 실패'}), 401
 
-    if payment_id not in _pending_payments:
+    if payment_id not in _pending_payments \
+            or _pending_payments[payment_id].get('store_id') != record.store_id:
         return jsonify({'error': 'not_found'}), 404
 
     _pending_payments[payment_id]['payment_type'] = payment_type
@@ -375,7 +419,7 @@ def terminal_update_type():
     socketio.emit('terminal_payment_type_changed', {
         'payment_id': payment_id,
         'payment_type': payment_type,
-    }, to='pos_group')
+    }, to=pos_room(record.store_id))
     print(f'[Terminal] 결제 방식 선택: payment_id={payment_id}, type={payment_type}')
     return jsonify({'status': 'ok'})
 
@@ -391,7 +435,8 @@ def cancel_toss_pending():
         except Exception:
             data = {}
     payment_id = data.get('payment_id')
-    if payment_id and payment_id in _pending_payments:
+    if payment_id and payment_id in _pending_payments \
+            and _is_my_store(_pending_payments[payment_id].get('store_id')):
         _pending_payments[payment_id]['status'] = 'cancelled'
     print(f'[Toss] 결제 취소: payment_id={payment_id}')
     return jsonify({'status': 'ok'})
@@ -401,10 +446,13 @@ def cancel_toss_pending():
 def get_toss_status():
     """단말기가 결제 취소 여부를 폴링"""
     payment_id = request.args.get('payment_id')
+    store_id = _terminal_store_id(request.args.get('token'))
+    if store_id is None:
+        return jsonify({'error': '인증 실패'}), 401
     if not payment_id:
         return jsonify({'status': 'not_found'})
     payment = _pending_payments.get(payment_id)
-    if not payment:
+    if not payment or payment.get('store_id') != store_id:
         return jsonify({'status': 'not_found'})
     status = payment.get('status', 'processing')
     if status == 'cancelled':
@@ -415,16 +463,20 @@ def get_toss_status():
 @pos_bp.route('/toss/result', methods=['POST'])
 def submit_toss_result():
     """단말기 플러그인이 결제 결과 제출 → POS에 socket emit"""
-    data = request.get_json()
+    data = request.get_json() or {}
     payment_id = data.get('payment_id')
-    table_id = data.get('table_id')
-    result = data.get('result')
+    result = data.get('result') or {}
     tax = data.get('tax')
     supply_value = data.get('supply_value')
 
-    # pop 전에 payment_type 추출 (현금/카드 구분)
-    pending = _pending_payments.get(payment_id)
-    payment_type = pending.get('payment_type', 'card') if pending else data.get('payment_type', 'card')
+    # 단말기는 이 요청에 토큰을 싣지 않는다 → 서버가 발급한(추측 불가) payment_id 보유로 인가하고,
+    # 매장·테이블·결제이력 id는 클라이언트 값이 아니라 서버 보관값만 사용한다.
+    pending = _pending_payments.get(payment_id) if payment_id else None
+    if not pending:
+        return jsonify({'error': 'not_found'}), 404
+    store_id = pending.get('store_id')
+    table_id = pending.get('table_id')
+    payment_type = pending.get('payment_type', 'card')
 
     # ── payment_type == 'cancel': 이력 페이지 뒤늦은 취소 처리 ──────────────
     if payment_type == 'cancel':
@@ -432,9 +484,9 @@ def submit_toss_result():
         _s.stdout.write(f'[Toss][CANCEL] payment_id={payment_id} pending={bool(pending)} tpl_id={pending.get("table_payment_list_id") if pending else None} result={_j.dumps(result, ensure_ascii=False)}\n')
         _s.stdout.flush()
         _pending_payments.pop(payment_id, None)
-        tpl_id = pending.get('table_payment_list_id') if pending else data.get('table_payment_list_id')
-        cancel_store_id = pending.get('store_id') if pending else data.get('store_id')
-        db_payment_id = pending.get('db_payment_id') if pending else None
+        tpl_id = pending.get('table_payment_list_id')
+        cancel_store_id = store_id
+        db_payment_id = pending.get('db_payment_id')
         result_type = result.get('type') if result else None
 
         # 1차 DB 저장 시도 (실패해도 소켓 전송은 반드시 수행)
@@ -442,7 +494,7 @@ def submit_toss_result():
             if result and result_type in ('SUCCESS', 'CANCEL_SUCCESS') and tpl_id:
                 from app.models import TablePaymentList, Payment
                 from datetime import datetime as dt
-                tpl = db.session.query(TablePaymentList).filter_by(id=tpl_id).first()
+                tpl = db.session.query(TablePaymentList).filter_by(id=tpl_id, store_id=cancel_store_id).first()
                 if tpl:
                     now_iso = dt.now().isoformat()
                     if db_payment_id:
@@ -479,13 +531,13 @@ def submit_toss_result():
             'table_payment_list_id': tpl_id,   # 프론트 2차 저장용
             'db_payment_id': db_payment_id,
         }
-        socketio.emit('toss_history_cancel_result', event_data, to='pos_group')
+        socketio.emit('toss_history_cancel_result', event_data, to=pos_room(cancel_store_id))
         if cancel_store_id:
             socketio.emit('toss_history_cancel_result', event_data, to=f'store_history_{cancel_store_id}')
         return jsonify({'status': 'ok'})
 
     result_type = result.get('type') if result else None
-    if result_type != 'SUCCESS' and pending:
+    if result_type != 'SUCCESS':
         # 결제 실패(취소·타임아웃·금액오류 등) → display로 복귀 (단말기가 주문 내역 재표시)
         _pending_payments[payment_id]['payment_type'] = 'display'
         _pending_payments[payment_id]['status'] = 'pending'   # pop 대신 pending 복귀 (KeyError 방지)
@@ -501,6 +553,7 @@ def submit_toss_result():
     if result.get('type') == 'SUCCESS' and payment_type != 'cash':
         _completed_payments[payment_id] = {
             'payment_id': payment_id,
+            'store_id': store_id,
             'table_id': table_id,
             'result': result,
             'tax': tax,
@@ -513,6 +566,7 @@ def submit_toss_result():
         resp = result.get('response') or {}
         if resp.get('cash'):
             _cash_receipt_cancels[payment_id] = {
+                'store_id': store_id,
                 'status': 'pending',
                 'table_id': table_id,
                 'table_payment_list_id': None,
@@ -520,7 +574,7 @@ def submit_toss_result():
 
     # POS에 결과 전송 (payment_type 포함 — 현금/카드 구분용)
     # pending은 이미 pop됐어도 변수에 참조가 남아있음
-    orig_payment_key = pending.get('payment_key', '') if pending else ''
+    orig_payment_key = pending.get('payment_key', '')
     socketio.emit('toss_payment_result', {
         'payment_id': payment_id,
         'table_id': table_id,
@@ -529,7 +583,7 @@ def submit_toss_result():
         'tax': tax,
         'supply_value': supply_value,
         'payment_key': orig_payment_key,
-    }, to='pos_group')
+    }, to=pos_room(store_id))
 
     return jsonify({'status': 'ok'})
 
@@ -540,15 +594,13 @@ def get_toss_approval_status():
     from app.models import TerminalToken
     token = request.args.get('token')
     payment_id = request.args.get('payment_id')
-    if token:
-        record = TerminalToken.query.filter_by(token=token).first()
-        if record:
-            record.last_polled_at = datetime.now()
-            db.session.commit()
+    store_id = _terminal_store_id(token)
+    if store_id is None:
+        return jsonify({'error': '인증 실패'}), 401
     if not payment_id:
         return jsonify({'status': 'not_found'})
     payment = _completed_payments.get(payment_id)
-    if not payment:
+    if not payment or payment.get('store_id') != store_id:
         return jsonify({'status': 'not_found'})
     return jsonify({'status': payment['status']})
 
@@ -560,7 +612,7 @@ def cancel_toss_approval():
     data = request.get_json()
     payment_id = data.get('payment_id')
     payment = _completed_payments.get(payment_id)
-    if not payment:
+    if not payment or not _is_my_store(payment.get('store_id')):
         return jsonify({'error': '결제 정보를 찾을 수 없습니다.'}), 404
     payment['status'] = 'cancel_requested'
     print(f'[Toss] 승인 취소 요청: payment_id={payment_id}')
@@ -574,7 +626,7 @@ def confirm_toss_approval():
     data = request.get_json()
     payment_id = data.get('payment_id')
     payment = _completed_payments.get(payment_id)
-    if payment:
+    if payment and _is_my_store(payment.get('store_id')):
         payment['status'] = 'confirmed'
     print(f'[Toss] 승인 확정: payment_id={payment_id}')
     return jsonify({'status': 'ok'})
@@ -583,12 +635,15 @@ def confirm_toss_approval():
 @pos_bp.route('/toss/cancel_result', methods=['POST'])
 def submit_toss_cancel_result():
     """단말기가 requestPaymentCancel() 결과 전송 → POS에 socket emit"""
-    data = request.get_json()
+    data = request.get_json() or {}
     payment_id = data.get('payment_id')
-    table_id = data.get('table_id')
     result = data.get('result')
 
-    _completed_payments.pop(payment_id, None)
+    # 토큰 없는 요청 → 서버가 보관 중인 승인건(payment_id)일 때만 수락, 매장·테이블은 서버값 사용
+    completed = _completed_payments.pop(payment_id, None) if payment_id else None
+    if not completed:
+        return jsonify({'error': 'not_found'}), 404
+    table_id = completed.get('table_id')
 
     print(f'[Toss] 승인 취소 결과: payment_id={payment_id}, type={result.get("type") if result else "N/A"}')
 
@@ -596,7 +651,7 @@ def submit_toss_cancel_result():
         'payment_id': payment_id,
         'table_id': table_id,
         'result': result,
-    }, to='pos_group')
+    }, to=pos_room(completed.get('store_id')))
 
     return jsonify({'status': 'ok'})
 
@@ -627,6 +682,8 @@ def tableList():
 @pos_bp.route('/set_group', methods=['GET', 'POST'])
 def set_group():
     group_data = request.get_json()
+    if not all(owns_table(t.get('table_id')) for t in group_data or []):
+        return forbidden()
     return set_table_group(group_data)
 
 
@@ -827,7 +884,7 @@ def carryover_delete():
     if all_order_ids:
         # 삭제된 주문 반영: KDS는 재로드(취소 카드 노이즈 방지), 다른 POS 단말도 테이블 목록 갱신
         socketio.emit('kds_order_completed', {'order_ids': all_order_ids}, room=f'store_{store_id}_kds')
-        socketio.emit('kds_order_completed', {'order_ids': all_order_ids}, room='pos_group')
+        socketio.emit('kds_order_completed', {'order_ids': all_order_ids}, room=pos_room(store_id))
     return jsonify({'code': 200, 'deleted': deleted})
 
     # # JSON 파일 로드
@@ -841,11 +898,15 @@ def carryover_delete():
 # 테이블 -> 메뉴리스트 페이지
 @pos_bp.route('/menuList/<table_id>', methods=['GET'])
 def menuList(table_id):
+    if not owns_table(table_id):
+        return forbidden()
     return render_template('pos/pos_shell.html')
 
 # 테이블 주문내역 조회
 @pos_bp.route('/get_table_order_list/<table_id>', methods=['GET'])
 def get_table_order_list(table_id):
+    if not owns_table(table_id):
+        return forbidden()
     orders = find_order_list(table_id)
     order_list = []
     for order in orders:
@@ -1069,6 +1130,11 @@ def get_menu_list(table_id):
 @pos_bp.route('/set_table', methods=['PUT'])
 def set_table_list():
     table_data = request.get_json()
+    # 이동 대상·출발 테이블 모두 로그인 매장 소유여야 함 (다른 매장 주문 이동 차단)
+    for data in table_data:
+        starts = data['start_table_id'] if isinstance(data['start_table_id'], list) else [data['start_table_id']]
+        if not owns_table(data['end_table_id']) or not all(owns_table(sid) for sid in starts):
+            return forbidden()
     for data in table_data:       
         end_id = data['end_table_id']
         start_id = data['start_table_id'] # end_id로 이동할 테이블
@@ -1083,6 +1149,8 @@ def set_table_list():
 @pos_bp.route('/payment/<table_id>', methods=['GET'])
 def payment(table_id):
     from app.models import Table
+    if not owns_table(table_id):
+        return forbidden()
     t = Table.query.get(table_id)
     return render_template('pos/pos_shell.html', pos_table_name=(t.name if t else None))
 
@@ -1115,7 +1183,8 @@ def update_cash_receipt():
     db.session.commit()
     # 현금영수증 취소 대기에 tpl_id 연결
     payment_id = data.get('payment_id')
-    if payment_id and payment_id in _cash_receipt_cancels:
+    if payment_id and payment_id in _cash_receipt_cancels \
+            and _cash_receipt_cancels[payment_id].get('store_id') == store_id:
         _cash_receipt_cancels[payment_id]['table_payment_list_id'] = tpl_id
     return jsonify({'status': 'ok'})
 
@@ -1153,7 +1222,8 @@ def cash_receipt_cancel():
     """POS에서 현금영수증 취소 요청 → 단말기 폴링으로 감지"""
     data = request.get_json()
     payment_id = data.get('payment_id')
-    if not payment_id or payment_id not in _cash_receipt_cancels:
+    if not payment_id or payment_id not in _cash_receipt_cancels \
+            or not _is_my_store(_cash_receipt_cancels[payment_id].get('store_id')):
         return jsonify({'error': '취소 정보를 찾을 수 없습니다.'}), 404
     _cash_receipt_cancels[payment_id]['status'] = 'cancel_requested'
     print(f'[Toss] 현금영수증 취소 요청: payment_id={payment_id}')
@@ -1167,12 +1237,11 @@ def get_cash_receipt_cancel_status():
     from datetime import datetime
     token = request.args.get('token')
     payment_id = request.args.get('payment_id')
-    if token:
-        record = TerminalToken.query.filter_by(token=token).first()
-        if record:
-            record.last_polled_at = datetime.now()
-            db.session.commit()
-    if not payment_id or payment_id not in _cash_receipt_cancels:
+    store_id = _terminal_store_id(token)
+    if store_id is None:
+        return jsonify({'error': '인증 실패'}), 401
+    if not payment_id or payment_id not in _cash_receipt_cancels \
+            or _cash_receipt_cancels[payment_id].get('store_id') != store_id:
         return jsonify({'status': 'expired'})
     return jsonify({'status': _cash_receipt_cancels[payment_id].get('status', 'pending')})
 
@@ -1182,16 +1251,20 @@ def submit_cash_receipt_cancel_result():
     """단말기가 현금영수증 취소 결과 전송 → DB 저장 + POS emit"""
     from app.models import TablePaymentList, Payment
     from datetime import datetime as dt
-    data = request.get_json()
+    data = request.get_json() or {}
     payment_id = data.get('payment_id')
-    table_id = data.get('table_id')
     result = data.get('result')
 
-    cancel_info = _cash_receipt_cancels.pop(payment_id, None)
-    tpl_id = cancel_info.get('table_payment_list_id') if cancel_info else None
+    # 토큰 없는 요청 → 서버 보관 중인 취소 대기건일 때만 수락, 매장·테이블은 서버값 사용
+    cancel_info = _cash_receipt_cancels.pop(payment_id, None) if payment_id else None
+    if not cancel_info:
+        return jsonify({'error': 'not_found'}), 404
+    store_id = cancel_info.get('store_id')
+    table_id = cancel_info.get('table_id')
+    tpl_id = cancel_info.get('table_payment_list_id')
 
     if result and result.get('type') == 'SUCCESS' and tpl_id:
-        tpl = db.session.query(TablePaymentList).filter_by(id=tpl_id).first()
+        tpl = db.session.query(TablePaymentList).filter_by(id=tpl_id, store_id=store_id).first()
         if tpl:
             for p in Payment.query.filter_by(table_payment_list_id=tpl_id).all():
                 if p.payment_status != 2:
@@ -1207,7 +1280,7 @@ def submit_cash_receipt_cancel_result():
         'payment_id': payment_id,
         'table_id': table_id,
         'result': result,
-    }, to='pos_group')
+    }, to=pos_room(store_id))
     return jsonify({'status': 'ok'})
 
 
@@ -1218,6 +1291,8 @@ def payment_history(table_id):
 
     from app.models.payment import make_payment_history, create_payment_database
     store_id = current_user.id
+    if not owns_table(table_id):
+        return forbidden()
 
     if request.method == 'GET':     # 첫 결제하기 들어왔을 때
         print("###",'get')
@@ -1225,6 +1300,8 @@ def payment_history(table_id):
     else:                           # 결제중
         print("###",'post')
         payment_data = request.get_json()
+        if not owns_table(payment_data.get('table_id')):
+            return forbidden()
         table_payment_data = create_payment_database(store_id, payment_data)
 
     return table_payment_data

@@ -2,7 +2,9 @@ import json
 from flask import render_template, request, jsonify
 from flask_login import login_required, current_user
 from app.models.menu_category import get_main_and_sub_category_by_menu_id
-from app.routes import payment_bp
+from app.routes import payment_bp, require_login
+
+require_login(payment_bp)
 
 from app.models import db, Store
 from app.models.store import create_store, update_store

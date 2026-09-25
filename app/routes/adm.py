@@ -2,21 +2,55 @@ from flask import render_template, jsonify, request, session
 from flask_login import current_user
 import os
 
-from app.routes import adm_bp
+from app.routes import adm_bp, require_login
 from app.models import db, Store, TableCategory, Table, MainCategory, SubCategory, Menu, Order
 # from app.models.user import create_user
 from app.models.menu_category import create_main_category, create_sub_category, find_last_main_category_position, find_last_sub_category_position
 from app.models.store import create_store, delete_store, update_store
 from app.models.menu import create_menu, create_menu_option, delete_menu, update_menu
-from app.models.table import update_table_name, update_table_position, create_table, delete_table
-from app import login_manager
-
+from app.models.table import update_table_name, update_table_position, create_table, delete_table, get_store_id_by_table_id
 
 # /adm/* 전체 로그인 필수 (개별 @login_required 누락 방지)
-@adm_bp.before_request
-def require_login():
-    if not current_user.is_authenticated:
-        return login_manager.unauthorized()
+require_login(adm_bp)
+
+
+# ── 소유권 확인 헬퍼 (다른 매장 데이터 접근 차단) ──
+def _forbidden():
+    return jsonify({'code': 403, 'msg': '접근 권한이 없습니다.'}), 403
+
+def _is_mine(store_id):
+    try:
+        return store_id is not None and int(store_id) == int(current_user.id)
+    except (TypeError, ValueError):
+        return False
+
+def _get(model, obj_id):
+    try:
+        return db.session.get(model, int(obj_id))
+    except (TypeError, ValueError):
+        return None
+
+def _menu_store(menu_id):
+    m = _get(Menu, menu_id)
+    return m.store_id if m else None
+
+def _main_category_store(main_category_id):
+    mc = _get(MainCategory, main_category_id)
+    return mc.store_id if mc else None
+
+def _sub_category_store(sub_category_id):
+    sc = _get(SubCategory, sub_category_id)
+    return _main_category_store(sc.main_category_id) if sc else None
+
+def _table_category_store(table_category_id):
+    tc = _get(TableCategory, table_category_id)
+    return tc.store_id if tc else None
+
+def _table_store(table_id):
+    try:
+        return get_store_id_by_table_id(int(table_id))
+    except (TypeError, ValueError):
+        return None
 
 @adm_bp.route('/')
 def index():
@@ -108,15 +142,12 @@ def update_store_py(store_id=None):
     if request.method == 'PATCH':
         store_data = request.get_json()
         
-        user_id = current_user.id
-        store_id = store_data.get('store_id') # 프론트에서 전달받거나 쿼리 스트링 등 사용
-        if not store_id:
-            # 현재 사용자의 첫 번째 스토어를 기본값으로 (예시)
-            store = Store.query.filter_by(user_id=user_id).first()
-            if store:
-                store_id = store.id
-            else:
-                return jsonify({'message': '스토어를 찾을 수 없습니다.'}), 404
+        # 로그인한 매장 자신만 수정 가능 (current_user = Store, current_user.id = Store.id)
+        requested_store_id = store_data.get('store_id') or (store_id if store_id not in (None, 'current') else None)
+        if requested_store_id is not None and not _is_mine(requested_store_id):
+            return _forbidden()
+        store_id = current_user.id
+        user_id = current_user.user_id  # 소유자(User) 유지 — Store.id를 user_id로 덮어쓰지 않도록
 
         name = store_data.get('name')
         address = store_data.get('address')
@@ -142,6 +173,8 @@ def update_store_py(store_id=None):
 # 스토어 삭제
 @adm_bp.route('/store/<store_id>', methods=['DELETE'])
 def delete_store_py(store_id):
+    if not _is_mine(store_id):
+        return _forbidden()
     if request.method == 'DELETE':
         delete_store(store_id)
         print('스토어 삭제 성공')
@@ -170,8 +203,10 @@ def create_menu_py():
         main_description = menu_data['main_description']
         sub_description = menu_data['sub_description']
         is_soldout = menu_data['is_soldout']
-        store_id = 1 #menu_data['store_id']
+        store_id = current_user.id
         menu_category_id = menu_data['menu_category_id']
+        if not _is_mine(_sub_category_store(menu_category_id)):
+            return _forbidden()
         menu = create_menu(name, price, image, main_description, sub_description, is_soldout, store_id, menu_category_id)
         print("메뉴생성 성공", menu)
         response = jsonify({'message': 'Success'})
@@ -193,7 +228,8 @@ def update_menu_py(menu_id):
     if request.method == 'PATCH':
         menu_data = request.get_json()
 
-        menu_id = 5 # temp
+        if not _is_mine(_menu_store(menu_id)):
+            return _forbidden()
 
         name = menu_data['name']
         price = menu_data['price']
@@ -214,6 +250,8 @@ def update_menu_py(menu_id):
 # 메뉴 삭제
 @adm_bp.route('/menu/<menu_id>', methods=['DELETE'])
 def delete_menu_py(menu_id):
+    if not _is_mine(_menu_store(menu_id)):
+        return _forbidden()
     if request.method == 'DELETE':
         delete_menu(menu_id)
         print('메뉴 삭제 성공')
@@ -233,7 +271,7 @@ def create_menu_option_py():
         name = menu_option_data['optionName']
         price = menu_option_data['optionPrice']
         description = menu_option_data['optionDescription']
-        store_id = 1 #menu_option_data['store_id']
+        store_id = current_user.id
         menu_option = create_menu_option(name, price, description,store_id)
         print("메뉴생성 성공", menu_option)
         print('Received JSON data:', menu_option_data)
@@ -268,8 +306,7 @@ def create_menu_main_category():
     # 메뉴 메인 카테고리 생성 로직 수행
     if request.method == 'POST':
         menu_main_category_data = request.get_json()
-        # store_id  = menu_main_category_data['store_id']
-        store_id = 1    # temp
+        store_id = current_user.id
         name = menu_main_category_data['mainCategoryName']
         last_position = find_last_main_category_position(store_id)
         main_category = create_main_category(store_id, name, last_position)
@@ -306,6 +343,8 @@ def create_menu_sub_category():
     menu_sub_category_data = request.get_json()
     main_category_id = menu_sub_category_data['mainCategoryId']
     name = menu_sub_category_data['subCategoryName']
+    if not _is_mine(_main_category_store(main_category_id)):
+        return _forbidden()
 
     last_position = find_last_sub_category_position(main_category_id)
     create_sub_category(main_category_id, name, last_position)
@@ -339,11 +378,8 @@ def delete_menu_sub_category(menu_sub_category_id):
 def create_table_category():
     # 테이블 카테고리 생성 로직 수행
     table_category_data = request.get_json()
-    store_id = int(table_category_data['storeId'])
     category_name = table_category_data['categoryName']
-    print('Received JSON data:', table_category_data)
-
-    store_id = 1    # temp
+    store_id = current_user.id
 
     table_category = TableCategory(store_id=store_id, category_name=category_name)
     db.session.add(table_category)
@@ -391,22 +427,28 @@ def update_table(table_id):
 @adm_bp.route('/table/<table_id>', methods=['DELETE'])
 def api_delete_table(table_id):
     # 테이블 삭제 로직 수행
+    if not _is_mine(_table_store(table_id)):
+        return _forbidden()
     if delete_table(table_id):
         return jsonify({'message': '테이블을 성공적으로 삭제되었습니다.'}), 204
+    return jsonify({'message': '테이블 삭제에 실패했습니다.'}), 400
 
 
 
 @adm_bp.route('/create_table', methods=['POST'])
 def api_create_table():
     data = request.get_json()
+    if not _is_mine(_table_category_store(data.get('table_category'))):
+        return _forbidden()
     return create_table(data)
 
 @adm_bp.route('/update_table_name', methods=['PATCH'])
 def api_update_table_name():
     data = request.get_json()
-    print(data)
     table_id = data['table_id']
     name = data['name']
+    if not _is_mine(_table_store(table_id)):
+        return _forbidden()
 
     return update_table_name(table_id, name)
 
@@ -414,9 +456,10 @@ def api_update_table_name():
 @adm_bp.route('/update_table_position', methods=['PATCH'])
 def api_update_table_position():
     data = request.get_json()
-    print('data,',data)
     table_id_fir = data['table_id_fir']
     table_id_sec = data['table_id_sec']
+    if not (_is_mine(_table_store(table_id_fir)) and _is_mine(_table_store(table_id_sec))):
+        return _forbidden()
 
     return update_table_position(table_id_fir, table_id_sec)
 
@@ -500,6 +543,8 @@ def api_update_sub_category():
                                     .scalar()
     else:
         return jsonify({'code': 400, 'msg': 'main_category_id가 필요합니다.'}), 400
+    if not _is_mine(_main_category_store(main_category_id)):
+        return _forbidden()
     sub_categories = db.session.query(SubCategory)\
                                     .filter(SubCategory.main_category_id == main_category_id)\
                                     .all()
@@ -539,8 +584,9 @@ def api_check_delete_category():
     main_category_id = request.args.get('main_category_id', None)
     sub_category_id = request.args.get('sub_category_id', None)
 
-    store_id = current_user.id
     if main_category_id is not None:
+        if not _is_mine(_main_category_store(main_category_id)):
+            return _forbidden()
         check = db.session.query(Order)\
                             .join(Menu, Menu.id == Order.menu_id)\
                             .join(SubCategory, SubCategory.id == Menu.menu_category_id)\
@@ -548,6 +594,8 @@ def api_check_delete_category():
                             .filter(MainCategory.id == main_category_id)\
                             .all()
     elif sub_category_id is not None:
+        if not _is_mine(_sub_category_store(sub_category_id)):
+            return _forbidden()
         check = db.session.query(Order)\
                             .join(Menu, Menu.id == Order.menu_id)\
                             .join(SubCategory, SubCategory.id == Menu.menu_category_id)\

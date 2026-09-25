@@ -7,7 +7,10 @@ from flask_login import login_required, current_user
 from sqlalchemy import or_, func
 from app.models.menu_category import get_main_and_sub_category_by_menu_id, select_main_and_sub_category_by_store_id
 from app.models.table import create_table_category, delete_table, select_table, select_table_category, select_table_id, select_table_yn, update_table_layout
-from app.routes import store_bp
+from app.routes import store_bp, require_login
+
+# /store/* 로그인 필수 (@login_required가 @route 위에 있어 무효였던 라우트 포함). 예외: 공개 페이지
+require_login(store_bp, public=('login', 'create'))
 from app.models import MainCategory, SubCategory, db, Menu, MenuOption, MenuOptionGroup, Store
 
 
@@ -16,6 +19,10 @@ from app.models.menu import check_image_exsit, check_options_exist, create_menu,
 from app.login_manager import update_store_session
 from app.models.staff_call import get_staff_call_items, create_staff_call_item, update_staff_call_item, delete_staff_call_item, get_staff_call_logs, confirm_staff_call
 from app.models import Order
+from app.utils.ownership import (
+    forbidden, owns_menu, owns_sub_category, owns_table, owns_table_category,
+    owns_order, owns_staff_call_item, owns_staff_call_log,
+)
 
 # 매장 생성
 @login_required
@@ -25,8 +32,9 @@ def api_create_or_update_store():
         return render_template('/store_register.html')  # TODO
     
     if request.method == 'POST':
-        store_id = request.form.get('store_id')
-        user_id = request.form.get('user_id')
+        # 사용 중단: 호출처 없음 + 클라이언트가 보낸 store_id/user_id로 임의 매장을 덮어쓸 수 있어 차단.
+        # 매장 정보 수정은 current_user 기준 API를 사용한다.
+        return jsonify({'code': 410, 'msg': '더 이상 지원하지 않는 API입니다.'}), 410
         name = request.form.get('name')
         address = request.form.get('address')
         tel = request.form.get('tel')
@@ -140,6 +148,10 @@ def get_sub_category():
         if not main_categorys:
             return []
         main_category_id = main_categorys[0].id
+    else:
+        mc = MainCategory.query.get(main_category_id)
+        if not mc or mc.store_id != current_user.id:
+            return jsonify({'code': 403, 'msg': '접근 권한이 없습니다.'}), 403
 
     items = select_sub_category(main_category_id)
     
@@ -268,6 +280,8 @@ def all_menu_list():
 @store_bp.route('/get_menu', methods=['GET'])
 def get_menu():
     menu_id = request.args.get('menu_id')
+    if not owns_menu(menu_id):
+        return forbidden()
     menu = select_menu(menu_id)[0]
     options = select_menu_option_all(menu_id)
     menu_data = {}
@@ -325,6 +339,8 @@ def set_menu():
         is_soldout = False # null 허용X -> false 기본값으로 넣고 있음
         print(type(json_data['main_category']))
         menu_category_id = json_data['sub_category']
+        if not owns_sub_category(menu_category_id):
+            return forbidden()
         option_groups = json_data.get('option_groups', [])
         
         '''
@@ -394,6 +410,8 @@ def set_menu():
         #sub_description = json_data['sub_description']
         is_soldout = False # null 허용X -> false 기본값으로 넣고 있음
         menu_category_id = json_data['sub_category']
+        if not owns_menu(menu_id) or not owns_sub_category(menu_category_id):
+            return forbidden()
         #page = menu_data['page']
         #position = menu_data['position']
         option_groups = json_data.get('option_groups', [])
@@ -441,6 +459,8 @@ def set_menu():
     # 메뉴 삭제
     if request.method == 'DELETE':
         menu_id = request.args.get('id')
+        if not owns_menu(menu_id):
+            return forbidden()
         # 해당 메뉴가 이용 중인 테이블에 있는지 조회
         menu_yn = select_menu_yn(menu_id) # 삭제 가능 True, 삭제 불가능 False
         if menu_yn == True:
@@ -470,6 +490,8 @@ def set_table():
     # 테이블 삭제
     if request.method == 'DELETE':
         table_id = request.args.get('id')
+        if not owns_table(table_id):
+            return forbidden()
         # 해당 테이블 이용 유무 확인
         table_yn = select_table_yn(table_id) # 삭제 가능 True, 삭제 불가능 False
         if table_yn == True:
@@ -513,6 +535,12 @@ def get_table():
 def api_update_table_layout():
     json_data = request.get_json()
     tables = json_data.get('tables', [])
+    # 전부 로그인 매장의 테이블이어야 저장 (다른 매장 배치 변경 차단)
+    from app.models.table import get_store_id_by_table_id
+    for t in tables:
+        owner = get_store_id_by_table_id(t.get('id'))
+        if owner is None or int(owner) != int(current_user.id):
+            return jsonify({'code': 403, 'msg': '접근 권한이 없습니다.'}), 403
     result = update_table_layout(tables)
     if result:
         return jsonify({'code': 200, 'msg': '레이아웃이 저장되었습니다.'})
@@ -527,6 +555,9 @@ def set_menu_position():
     # 메뉴 위치 수정
     if request.method == 'PATCH':
         json_data = request.get_json()
+        for m in json_data or []:
+            if not owns_menu(m.get('menu_id')) or not owns_sub_category(m.get('sub_category_id')):
+                return forbidden()
         set_menu_psn = move_menu(json_data)
         if set_menu_psn == True:
             return jsonify({
@@ -581,6 +612,8 @@ def set_table_category():
 def get_table_id_yn():
     if request.method == 'GET':
         table_category_id = request.args.get('id')
+        if not owns_table_category(table_category_id):
+            return forbidden()
         table_id_yn = select_table_id(table_category_id)
         if table_id_yn == True:
             return jsonify({'status': True}), 200
@@ -863,6 +896,8 @@ def api_set_staff_call_item():
         use_quantity = data.get('use_quantity') == 'true' if not request.is_json else data.get('use_quantity', False)
         position = int(data.get('position', 0))
         item_id = data.get('id')
+        if request.method == 'PATCH' and not owns_staff_call_item(item_id):
+            return forbidden()
         
         image_url = data.get('image') if request.is_json else None
         
@@ -886,6 +921,8 @@ def api_set_staff_call_item():
         
     if request.method == 'DELETE':
         item_id = request.args.get('id')
+        if not owns_staff_call_item(item_id):
+            return forbidden()
         if delete_staff_call_item(item_id):
             return jsonify({'message': 'Success', 'code': 200}), 200
         return jsonify({'message': 'Not Found'}), 404
@@ -1540,7 +1577,7 @@ def cancel_toss_payment_item():
     if not cancel_data.get('paymentKey'):
         return jsonify({'error': '환불에 필요한 정보(결제 키)가 저장되어 있지 않습니다.\n해당 결제는 단말기 직접 취소가 필요합니다.'}), 400
 
-    tmp_id = str(_uuid.uuid4())[:8]
+    tmp_id = _uuid.uuid4().hex
     _pending_payments[tmp_id] = {
         'payment_id': tmp_id,
         'store_id': current_user.id,
@@ -1620,7 +1657,7 @@ def cancel_toss_payment():
     if not cancel_data.get('paymentKey'):
         return jsonify({'error': '환불에 필요한 정보(결제 키)가 저장되어 있지 않습니다.\n해당 결제는 단말기 직접 취소가 필요합니다.'}), 400
 
-    payment_id = str(_uuid.uuid4())[:8]
+    payment_id = _uuid.uuid4().hex
     _pending_payments[payment_id] = {
         'payment_id': payment_id,
         'store_id': current_user.id,
@@ -1696,6 +1733,11 @@ def api_confirm_staff_call():
             # But we passed `id: "order_{id}"` as representative.
             
             # Let's find the order.
+            if not owns_order(order_id):
+                # 이미 삭제된 주문은 기존처럼 성공 처리(404 방지), 다른 매장 주문은 차단
+                if Order.query.get(order_id):
+                    return forbidden()
+                return jsonify({'message': 'Success'}), 200
             order = Order.query.get(order_id)
             if order:
                 from datetime import datetime as _dt, timedelta
@@ -1723,6 +1765,8 @@ def api_confirm_staff_call():
             return jsonify({'message': 'Error'}), 500
             
     # Regular Staff Call
+    if not owns_staff_call_log(log_id):
+        return forbidden()
     if confirm_staff_call(log_id):
         return jsonify({'message': 'Success'}), 200
     return jsonify({'message': 'Not Found'}), 404
@@ -1814,6 +1858,9 @@ def api_set_kds_station_items():
     station = KdsStation.query.filter_by(id=station_id, store_id=store_id).first()
     if not station:
         return jsonify({'message': 'Not Found', 'code': 404}), 404
+
+    if not all(owns_menu(mid) for mid in menu_ids) or not all(owns_staff_call_item(sc) for sc in staff_call_ids):
+        return forbidden()
 
     # 전체 교체
     KdsStationMenu.query.filter_by(station_id=station_id).delete()
