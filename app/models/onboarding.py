@@ -26,7 +26,7 @@ def _unique_store_name(name):
         i += 1
 
 
-def create_store_from_onboarding(user_id, password, data):
+def create_store_from_onboarding(user_id, password, data, password_hash=None):
     """온보딩(localStorage) 데이터를 실제 매장/메뉴/테이블로 커밋.
 
     data = { storeName, menus:[{name, price}], tables:int, industry, hasTerminal, hasPrinter }
@@ -44,7 +44,7 @@ def create_store_from_onboarding(user_id, password, data):
         store = Store(
             user_id=user_id,
             store_id=_unique_store_id(),
-            store_pw=bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()),
+            store_pw=password_hash or bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()),
             name=_unique_store_name(store_name),
             logo_img='',
         )

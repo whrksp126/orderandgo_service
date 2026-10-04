@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{# 로그인 · 회원가입 · 비밀번호 재설정 · 매장 선택/생성 공통 레이아웃 #}
+{% block robots %}noindex, follow{% endblock %}
+{% block viewport_extra %}, interactive-widget=resizes-content{% endblock %}
+
+{% block head %}<link rel="stylesheet" href="/static/css/auth.css?v={{ static_v }}">{% endblock %}
+
+{% block footer %}{% endblock %}
+
+{% block body %}
+<div class="au-shell">
+  <aside class="au-brand">
+    <a href="/" class="au-brand-logo"><img src="/static/images/common/logo-order&go-white.png" alt="오더앤고"></a>
+    <div class="au-brand-copy">
+      <h2>포스기부터 테이블오더까지,<br>오더앤고 하나로</h2>
+      <ul>
+        <li><i class="ph ph-qr-code"></i>테이블 QR 주문과 직원 호출</li>
+        <li><i class="ph ph-credit-card"></i>토스플레이스 단말기 카드결제</li>
+        <li><i class="ph ph-chart-line-up"></i>주문 접수부터 매출 정산까지</li>
+      </ul>
+    </div>
+    <p class="au-brand-foot">설치 없이 지금 바로 · 신용카드 등록 불필요</p>
+  </aside>
+
+  <main class="au-main">
+    <div class="au-card">
+      <a class="au-logo" href="/"><img src="/static/images/common/logo-order&go-color.png" alt="오더앤고"></a>
+      {% block auth %}{% endblock %}
+    </div>
+    <p class="au-legal"><a href="/terms">이용약관</a><span>·</span><a href="/privacy">개인정보처리방침</a></p>
+  </main>
+</div>
+<div class="au-toasts" id="toast_wrap" aria-live="polite"></div>
+{% endblock %}
+
+{% block scripts %}
+{% block auth_scripts_before %}{% endblock %}
+<script src="/static/js/auth.js?v={{ static_v }}"></script>
+{% endblock %}

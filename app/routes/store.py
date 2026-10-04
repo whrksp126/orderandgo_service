@@ -2,7 +2,7 @@ import json
 import os
 from datetime import datetime
 from app.utils.storage import upload_image, delete_image, delete_prefix, menu_image_key, staff_call_image_key, image_url_for_key, url_to_key
-from flask import render_template, request, jsonify
+from flask import render_template, request, jsonify, redirect
 from flask_login import login_required, current_user
 from sqlalchemy import or_, func
 from app.models.menu_category import get_main_and_sub_category_by_menu_id, select_main_and_sub_category_by_store_id
@@ -101,7 +101,7 @@ def login():
 
 @store_bp.route('/create')
 def create():
-    return render_template('store_create.html')
+    return redirect('/stores/new')
 
   
 @store_bp.route('/product')

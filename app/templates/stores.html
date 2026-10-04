@@ -1,0 +1,41 @@
+{% extends "auth_layout.html" %}
+{% block title %}매장 선택 — 오더앤고{% endblock %}
+
+{% block auth %}
+{% if store_list %}
+<h1 class="au-title">매장 선택</h1>
+<p class="au-sub">들어갈 매장을 선택해주세요.</p>
+
+<ul class="au-stores" id="storeList">
+  {% for store in store_list %}
+  <li>
+    <button type="button" class="au-store" data-store-id="{{ store.store_id }}">
+      <span class="au-store-ico"><i class="ph ph-storefront"></i></span>
+      <span class="au-store-info">
+        <strong>{{ store.name }}</strong>
+        <small>매장 아이디 {{ store.store_id }}</small>
+      </span>
+      {% if store.current %}<em class="au-chip">사용 중</em>{% endif %}
+      <i class="ph ph-caret-right au-store-go"></i>
+    </button>
+  </li>
+  {% endfor %}
+  <li>
+    <a class="au-store au-store--new" href="/stores/new">
+      <span class="au-store-ico"><i class="ph ph-plus"></i></span>
+      <span class="au-store-info"><strong>새 매장 만들기</strong></span>
+    </a>
+  </li>
+</ul>
+<div class="au-msg" id="msg_stores" role="alert"></div>
+{% else %}
+<div class="au-empty">
+  <span class="au-empty-ico"><i class="ph ph-storefront"></i></span>
+  <h1 class="au-title">아직 매장이 없어요</h1>
+  <p class="au-sub">매장을 만들면 바로 메뉴 등록과 주문 받기를 시작할 수 있어요.</p>
+  <a class="au-btn" href="/stores/new"><span class="au-btn-label">매장 만들기</span></a>
+</div>
+{% endif %}
+
+<div class="au-links"><button type="button" class="au-link js-logout"><i class="ph ph-sign-out"></i>로그아웃</button></div>
+{% endblock %}

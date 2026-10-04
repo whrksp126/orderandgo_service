@@ -1,19 +1,54 @@
 from flask import render_template, request, jsonify, session
 from flask_login import current_user, login_required, logout_user, login_user
-from app.models import User
+from app.models import User, Store
 from app.routes import auth_bp
 from flask import redirect, url_for
 
 
-from app.models.user import create_admin_user, create_store_user, get_store_user_login, get_admin_user_login, update_store_logo_img, get_user_by_tel, reset_user_password
+from app.models.user import create_admin_user, create_store_user, get_store_user_login, get_admin_user_login, update_store_logo_img, get_user_by_tel, get_user_by_id, reset_user_password
 from app.models.store import get_store
-from app.models.onboarding import create_store_from_onboarding
+from app.models.onboarding import create_store_from_onboarding, _unique_store_id
 from app.site_config import FIREBASE
 import json
+import os
+import time
+import requests
+from google.auth import jwt as google_jwt
+
+MIN_PASSWORD_LEN = 8
+
+# Firebase ID 토큰 서명 검증용 Google 공개 인증서 (1시간 캐시)
+_FIREBASE_CERTS_URL = 'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com'
+_firebase_certs = {'certs': None, 'fetched_at': 0}
+
+
+def _get_firebase_certs():
+    if _firebase_certs['certs'] and time.time() - _firebase_certs['fetched_at'] < 3600:
+        return _firebase_certs['certs']
+    res = requests.get(_FIREBASE_CERTS_URL, timeout=5)
+    res.raise_for_status()
+    _firebase_certs['certs'] = res.json()
+    _firebase_certs['fetched_at'] = time.time()
+    return _firebase_certs['certs']
+
+
+def _verify_firebase_phone_local(id_token):
+    """ID 토큰을 서버에서 직접 검증(서명·만료·발급자·대상). 요청마다 Google 을 호출하지 않아 빠르다."""
+    project_id = FIREBASE.get('projectId')
+    claims = google_jwt.decode(id_token, certs=_get_firebase_certs(), audience=project_id)
+    if claims.get('iss') != f'https://securetoken.google.com/{project_id}' or not claims.get('sub'):
+        return None
+    return claims.get('phone_number')
 
 
 def _verify_firebase_phone(id_token):
-    """Firebase ID 토큰을 Google Identity Toolkit 로 검증하고 인증된 전화번호(E.164) 반환. 실패 시 None."""
+    """Firebase ID 토큰을 검증하고 인증된 전화번호(E.164) 반환. 실패 시 None."""
+    try:
+        return _verify_firebase_phone_local(id_token)
+    except ValueError:
+        return None  # 서명/만료/형식 오류 = 유효하지 않은 토큰
+    except Exception as e:
+        print(f'[Firebase] 로컬 검증 불가, Identity Toolkit 로 폴백: {e}')
     try:
         api_key = FIREBASE.get('apiKey')
         res = requests.post(
@@ -36,137 +71,105 @@ def _same_phone(e164, local):
     b = ''.join(filter(str.isdigit, local or ''))
     return a == b
 
-import os
-import random
-import requests
+
+# ── 세션 구조 ──
+#   session['admin_user_id'] : 사장님(휴대폰 번호) 계정 로그인 상태. 매장에 들어간 뒤에도 유지 → 매장 전환/추가 가능
+#   session['user_type']     : 'admin' = 사장님 로그인만 된 상태(매장 미선택), 'store' = 매장에 들어간 상태
+#   Flask-Login current_user : 항상 Store (선택된 매장). 사장님(User)은 login_user 하지 않는다.
+def _admin_user_id():
+    return session.get('admin_user_id')
+
+
+def _enter_store(store):
+    login_user(store)
+    session['user_type'] = 'store'
+
+
+def _store_item(store, current_id=None):
+    return {'store_id': store.store_id, 'name': store.name, 'current': store.id == current_id}
+
 
 # 로그인
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'GET':
-        # 관리자로 로그인된 경우 → 매장 선택 화면
-        # (user_loader가 Store만 로드하므로 current_user.is_authenticated로 판단 불가, session 직접 사용)
-        if session.get('user_type') == 'admin' and session.get('admin_user_id'):
-            stores = get_store(session['admin_user_id'])
-            store_list = [{'store_id': s.store_id, 'name': s.name} for s in stores]
-            return render_template('login.html', store_list=store_list)
-        # 스토어로 이미 로그인된 경우 → 대시보드로
         if current_user.is_authenticated:
             return redirect(url_for('main.dashboard'))
-
+        if _admin_user_id():
+            return redirect('/stores')
         return render_template('login.html')
-    
-    if request.method == 'POST':
-        json_data = {}
-        if request.form.get('admin_tel') is not None:       # 관리자 로그인
-            tel = request.form.get('admin_tel')
-            password = request.form.get('password')
-            result = get_admin_user_login(tel, password)
-            if result:
-                session['user_type'] = 'admin'
-                session['admin_user_id'] = result.id
-                stores = get_store(result.id)
-                json_data['store_list'] = [{'store_id': s.store_id, 'name': s.name} for s in stores]
-        elif session.get('user_type') == 'admin':           # 관리자가 매장 선택 (비밀번호 불필요)
-            from app.models import Store
-            store_id_str = request.form.get('store_id')
-            admin_user_id = session.get('admin_user_id')
-            store = Store.query.filter_by(store_id=store_id_str, user_id=admin_user_id).first()
-            if store:
-                login_user(store)
-                session['user_type'] = 'store'
-                session.pop('admin_user_id', None)
-                result = store
-            else:
-                result = False
-        else:                                               # 스토어 직접 로그인
-            store_id = request.form.get('store_id')
-            password = request.form.get('password')
-            result = get_store_user_login(store_id, password)
-            if result:
-                session['user_type'] = 'store'
-                session.pop('admin_user_id', None)
-        if result == False:
-            print("로그인 실패")
-            response = jsonify({
-                'message': '로그인 실패, 일치하는 정보가 없습니다.',
-                'code' : 400
-            })
-            return response
-        
-        response = jsonify({
-            'message': 'Success',
-            'code' : 200,
-            'json_data' : json_data
-            })
-        return response
+
+    if request.form.get('admin_tel') is not None:       # 사장님 로그인 (휴대폰 번호)
+        user = get_admin_user_login(request.form.get('admin_tel'), request.form.get('password'))
+        if not user:
+            return jsonify({'code': 400, 'message': '휴대폰 번호 또는 비밀번호가 올바르지 않습니다.'})
+        logout_user()
+        session['admin_user_id'] = user.id
+        session['user_type'] = 'admin'
+        stores = get_store(user.id)
+        if len(stores) == 1:                            # 매장이 하나면 바로 입장
+            _enter_store(stores[0])
+            return jsonify({'code': 200, 'message': 'Success', 'redirect': '/dashboard'})
+        return jsonify({'code': 200, 'message': 'Success', 'redirect': '/stores' if stores else '/stores/new'})
+
+    # 매장 기기 로그인 (매장 아이디)
+    result = get_store_user_login(request.form.get('store_id'), request.form.get('password'))
+    if not result:
+        return jsonify({'code': 400, 'message': '매장 아이디 또는 비밀번호가 올바르지 않습니다.'})
+    session['user_type'] = 'store'
+    session.pop('admin_user_id', None)
+    return jsonify({'code': 200, 'message': 'Success', 'redirect': '/dashboard'})
 
 
-# 인증번호 발송
-@auth_bp.route('/send_verify_code', methods=['POST'])
-def send_verify_code():
-    tel = request.form.get('tel')
-    if not tel or len(tel) < 11:
-        return jsonify({'code': 400, 'message': '올바른 전화번호를 입력해주세요.'})
+# 매장 선택 (사장님 로그인 상태)
+@auth_bp.route('/stores', methods=['GET'])
+def stores():
+    if not _admin_user_id():
+        return redirect('/login')
+    current_id = current_user.id if current_user.is_authenticated else None
+    store_list = [_store_item(s, current_id) for s in get_store(_admin_user_id())]
+    return render_template('stores.html', store_list=store_list)
 
-    code = str(random.randint(100000, 999999))
-    session['verify_code'] = code
-    session['verify_tel'] = tel
 
-    appkey    = os.environ.get('NHN_SMS_APPKEY')
-    secret    = os.environ.get('NHN_SMS_SECRET_KEY')
-    sender    = os.environ.get('NHN_SMS_SENDER')
-    sms_url   = os.environ.get('NHN_SMS_URL')
+@auth_bp.route('/stores/enter', methods=['POST'])
+def stores_enter():
+    if not _admin_user_id():
+        return jsonify({'code': 401, 'message': '로그인이 필요합니다.', 'redirect': '/login'})
+    store = Store.query.filter_by(store_id=request.form.get('store_id'), user_id=_admin_user_id()).first()
+    if not store:
+        return jsonify({'code': 404, 'message': '매장을 찾을 수 없습니다.'})
+    _enter_store(store)
+    return jsonify({'code': 200, 'message': 'Success', 'redirect': '/dashboard'})
 
-    url = f'{sms_url}/sms/v3.0/appKeys/{appkey}/sender/sms'
-    headers = {
-        'Content-Type': 'application/json;charset=UTF-8',
-        'X-Secret-Key': secret,
-    }
-    body = {
-        'body': f'[orderandgo] 인증번호 [{code}]를 입력해주세요.',
-        'sendNo': sender,
-        'recipientList': [{'recipientNo': tel}]
-    }
 
-    try:
-        res = requests.post(url, json=body, headers=headers, timeout=5)
-        result = res.json()
-        header = result.get('header', {})
-        if not header.get('isSuccessful'):
-            print(f'[SMS 발송 실패] {result}')
-            return jsonify({'code': 200, 'message': 'SMS 발송 실패 (임시: 코드 확인)', 'verify_code': code})
-    except Exception as e:
-        print(f'[SMS 오류] {e}')
-        return jsonify({'code': 200, 'message': 'SMS 오류 (임시: 코드 확인)', 'verify_code': code})
-
-    return jsonify({'code': 200, 'message': '인증번호가 발송되었습니다.', 'verify_code': code})
+# 매장 만들기 (사장님 로그인 상태)
+@auth_bp.route('/stores/new', methods=['GET'])
+def stores_new():
+    if not _admin_user_id():
+        return redirect('/login')
+    return render_template('store_create.html', has_store=bool(get_store(_admin_user_id())))
 
 
 # 관리자 회원가입
 @auth_bp.route("/register_admin", methods=['GET', 'POST'])
 def register_admin_user():
     if request.method == 'GET':
-        return render_template('/register.html')
+        return render_template('phone_flow.html', mode='register')
 
     if request.method == 'POST':
         tel = request.form.get('tel')
-        password = request.form.get('password')
-        code_number = request.form.get('code_number')
+        password = request.form.get('password') or ''
         firebase_token = request.form.get('firebase_id_token')
 
-        # 전화번호 인증 검증: Firebase 우선, 없으면 세션 코드(폴백)
-        if firebase_token:
-            verified_phone = _verify_firebase_phone(firebase_token)
-            if not verified_phone:
-                return jsonify({'code': 400, 'message': '전화번호 인증에 실패했습니다.'})
-            if not _same_phone(verified_phone, tel):
-                return jsonify({'code': 400, 'message': '인증한 번호와 입력한 번호가 다릅니다.'})
-        else:
-            saved_code = session.get('verify_code')
-            saved_tel = session.get('verify_tel')
-            if not saved_code or saved_code != code_number or saved_tel != tel:
-                return jsonify({'code': 400, 'message': '인증번호가 올바르지 않습니다.'})
+        if len(password) < MIN_PASSWORD_LEN:
+            return jsonify({'code': 400, 'message': f'비밀번호는 {MIN_PASSWORD_LEN}자 이상으로 입력해주세요.'})
+
+        # 전화번호 인증 검증 (Firebase 전화 인증 토큰 필수)
+        verified_phone = _verify_firebase_phone(firebase_token) if firebase_token else None
+        if not verified_phone:
+            return jsonify({'code': 400, 'message': '전화번호 인증에 실패했습니다.'})
+        if not _same_phone(verified_phone, tel):
+            return jsonify({'code': 400, 'message': '인증한 번호와 입력한 번호가 다릅니다.'})
 
         result = create_admin_user(tel, password)
 
@@ -175,64 +178,60 @@ def register_admin_user():
         if result == False:
             return jsonify({'code': 400, 'message': '회원가입 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'})
 
-        # ── 온보딩 데이터가 있으면 매장/메뉴/테이블 즉시 생성 후 매장으로 자동 로그인 ──
+        # 가입 즉시 사장님 계정으로 로그인 상태가 됨 (다시 로그인할 필요 없음)
+        user = get_user_by_tel(tel)
+        logout_user()
+        session['admin_user_id'] = user.id
+        session['user_type'] = 'admin'
+
+        # ── 온보딩 데이터가 있으면 매장/메뉴/테이블 즉시 생성 후 매장으로 입장 ──
         onboarding_raw = request.form.get('onboarding')
         if onboarding_raw:
             try:
                 onboarding = json.loads(onboarding_raw)
             except (ValueError, TypeError):
                 onboarding = None
-            user = get_user_by_tel(tel)
-            store = create_store_from_onboarding(user.id, password, onboarding) if (user and onboarding) else None
+            # 매장 비밀번호 = 가입 비밀번호 (해시 재사용 → bcrypt 를 한 번 더 돌리지 않음)
+            store = create_store_from_onboarding(user.id, password, onboarding, password_hash=user.password) if onboarding else None
             if store:
-                login_user(store)
-                session['user_type'] = 'store'
-                session.pop('admin_user_id', None)
+                _enter_store(store)
                 return jsonify({'code': 200, 'message': 'Success', 'redirect': '/setup?welcome=1'})
-            # 매장 생성 실패 시: 가입만 완료 → 로그인 유도
-            return jsonify({'code': 200, 'message': 'Success',
-                            'redirect': '/login',
-                            'note': '가입이 완료됐어요. 로그인 후 매장을 만들어 주세요.'})
 
-        return jsonify({'code': 200, 'message': 'Success'})
-    
+        # 매장이 아직 없음 → 매장 만들기로
+        return jsonify({'code': 200, 'message': 'Success', 'redirect': '/stores/new'})
 
-# 스토어 회원가입
-@login_required
+
+# 매장 생성
 @auth_bp.route("/register_store", methods=['GET', 'POST'])
 def register_store_user():
     if request.method == 'GET':
-        return render_template('/store_create.html')
-    
-    if request.method == 'POST':
-        user_id = current_user.id
-        store_id = request.form.get('store_id')
-        name = request.form.get('name')
-        password = request.form.get('password')
-        logo_img = ''
-        result = create_store_user(user_id, store_id, password, name, logo_img)
+        return redirect('/stores/new')
 
-        # # store 이미지 넣기
-        # store_image = request.files['store_image']
-        # UPLOAD_FOLDER = 'app/static/images/user/'
-        # upload_path = '{}{}/{}/store_img'.format(UPLOAD_FOLDER, user_id, result.id)
-        # if not os.path.exists(upload_path):
-        #     os.makedirs(upload_path)        
-        # store_image.save(os.path.join(upload_path, store_image))
-        # store_image_path = '{}/{}'.format(upload_path, store_image.filename)
+    user = get_user_by_id(_admin_user_id()) if _admin_user_id() else None
+    if not user:
+        return jsonify({'message': '로그인이 필요합니다.', 'code': 401, 'redirect': '/login'})
 
-        # update_store_logo_img(result, upload_path)
+    name = (request.form.get('name') or '').strip()
+    store_id = (request.form.get('store_id') or '').strip()
+    password = request.form.get('password') or ''
+    if not name:
+        return jsonify({'message': '매장 이름을 입력해주세요.', 'code': 400, 'field': 'name'})
+    if password and len(password) < MIN_PASSWORD_LEN:
+        return jsonify({'message': f'매장 비밀번호는 {MIN_PASSWORD_LEN}자 이상으로 입력해주세요.', 'code': 400, 'field': 'password'})
 
-        if result == 'duplicate':
-            return jsonify({'message': '이미 사용 중인 스토어 아이디입니다.', 'code': 409})
-        if result == 'duplicate_name':
-            return jsonify({'message': '이미 사용 중인 매장 이름입니다.', 'code': 409})
-        if result == False:
-            print("회원가입 실패")
-            return jsonify({'message': '회원가입 실패', 'code': 400})
+    # 매장 기기용 아이디/비밀번호를 비워두면: 아이디 자동 발급, 비밀번호 = 사장님 계정 비밀번호
+    result = create_store_user(user.id, store_id or _unique_store_id(), password, name, '',
+                               password_hash=None if password else user.password)
 
-        print("회원가입 성공", result)
-        return jsonify({'message': 'Success', 'code': 200})
+    if result == 'duplicate':
+        return jsonify({'message': '이미 사용 중인 매장 아이디입니다.', 'code': 409, 'field': 'store_id'})
+    if result == 'duplicate_name':
+        return jsonify({'message': '이미 사용 중인 매장 이름입니다.', 'code': 409, 'field': 'name'})
+    if result == False:
+        return jsonify({'message': '매장을 만드는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.', 'code': 400})
+
+    _enter_store(result)
+    return jsonify({'message': 'Success', 'code': 200, 'redirect': '/setup?welcome=1'})
 
 # 전화번호 가입 여부 확인 (가입=중복 방지 / 재설정=존재 확인)
 @auth_bp.route('/check_tel', methods=['GET'])
@@ -246,7 +245,7 @@ def check_tel():
 @auth_bp.route('/find_password', methods=['GET', 'POST'])
 def find_password():
     if request.method == 'GET':
-        return render_template('find_password.html')
+        return render_template('phone_flow.html', mode='reset')
 
     tel = request.form.get('tel')
     new_password = request.form.get('new_password')
@@ -254,6 +253,8 @@ def find_password():
 
     if not tel or not new_password:
         return jsonify({'code': 400, 'message': '전화번호와 새 비밀번호를 입력해주세요.'})
+    if len(new_password) < MIN_PASSWORD_LEN:
+        return jsonify({'code': 400, 'message': f'비밀번호는 {MIN_PASSWORD_LEN}자 이상으로 입력해주세요.'})
 
     # 전화번호 인증 필수 (본인 확인)
     if not firebase_token:
@@ -271,7 +272,6 @@ def find_password():
 
 
 # 로그아웃
-@login_required
 @auth_bp.route("/logout", methods=['GET'])
 def logout():
     logout_user()

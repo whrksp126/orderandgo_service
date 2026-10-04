@@ -64,4 +64,4 @@ FIREBASE = {
 
 # robots.txt 에서 크롤러에 허용할 공개 경로 (그 외 앱 화면은 Disallow)
 PUBLIC_PATHS = ["/", "/start", "/login", "/terms", "/privacy"]
-DISALLOW_PATHS = ["/pos", "/kds", "/store", "/adm", "/order", "/payment", "/table_order", "/dashboard"]
+DISALLOW_PATHS = ["/pos", "/kds", "/store", "/stores", "/adm", "/order", "/payment", "/table_order", "/dashboard"]

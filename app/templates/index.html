@@ -44,6 +44,11 @@
         <li onclick="location.href='/store/store_info'">
           <i class="ph ph-storefront"></i> 매장 정보 관리
         </li>
+        {% if session.get('admin_user_id') %}
+        <li onclick="location.href='/stores'">
+          <i class="ph ph-swap"></i> 매장 전환 · 추가
+        </li>
+        {% endif %}
         <li class="logout-item" onclick="clickLogout(event)">
           <i class="ph ph-sign-out"></i> 로그아웃
         </li>

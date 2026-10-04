@@ -68,7 +68,7 @@ def create_admin_user(tel, password):
     return True
 
 # 스토어 회원가입
-def create_store_user(user_id, store_id, password, name, logo_img):
+def create_store_user(user_id, store_id, password, name, logo_img, password_hash=None):
     existing = Store.query.filter_by(store_id=store_id).first()
     if existing:
         print(f"[중복] store_id='{store_id}' 이미 존재: id={existing.id}, name={existing.name}")
@@ -78,7 +78,7 @@ def create_store_user(user_id, store_id, password, name, logo_img):
         print(f"[중복] name='{name}' 이미 존재: id={existing_name.id}, store_id={existing_name.store_id}")
         return 'duplicate_name'
     try:
-        store = Store(user_id=user_id, store_id=store_id, store_pw=bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()), name=name, logo_img=logo_img)
+        store = Store(user_id=user_id, store_id=store_id, store_pw=password_hash or bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()), name=name, logo_img=logo_img)
         db.session.add(store)
         db.session.commit()
     except Exception as e:
@@ -112,15 +112,15 @@ def logout():
 # 관리자 유저 로그인
 def get_admin_user_login(tel, password):
     user = User.query.filter_by(tel=tel).first()
-    if user and bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
-        login_user(user)        # current_user로 조회 가능
+    # 사장님(User)은 login_user 하지 않는다 — current_user 는 항상 Store (user_loader 가 Store.id 로 조회)
+    if user and password and bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
         return user
     return False
 
 # 스토어 유저 로그인
 def get_store_user_login(store_id, password):
     store_user = Store.query.filter_by(store_id=store_id).first()
-    if store_user and bcrypt.checkpw(password.encode('utf-8'), store_user.store_pw.encode('utf-8')):
+    if store_user and password and bcrypt.checkpw(password.encode('utf-8'), store_user.store_pw.encode('utf-8')):
         if current_user:
             logout()
         login_user(store_user)        # current_user로 조회 가능

@@ -1,0 +1,83 @@
+{% extends "auth_layout.html" %}
+{# 휴대폰 인증 3단계 흐름 — mode: 'register'(회원가입) | 'reset'(비밀번호 재설정) #}
+{% set is_register = (mode == 'register') %}
+{% block title %}{{ '회원가입' if is_register else '비밀번호 재설정' }} — 오더앤고{% endblock %}
+
+{% block auth %}
+<div class="au-progress" id="flowProgress" aria-hidden="true"><span class="on"></span><span></span><span></span></div>
+
+{% if is_register %}
+<div class="au-banner" id="onboardingBanner" hidden>
+  <i class="ph ph-storefront"></i>
+  <span><strong id="onboardingStore"></strong> 매장이 준비됐어요. 가입하면 그대로 저장돼요.</span>
+</div>
+{% endif %}
+
+<form id="phoneFlow" class="au-form" data-mode="{{ mode }}" novalidate>
+
+  <!-- 1단계: 휴대폰 번호 -->
+  <section class="au-step" data-step="1">
+    <h1 class="au-title">{{ '휴대폰 번호로 시작해요' if is_register else '비밀번호를 다시 설정해요' }}</h1>
+    <p class="au-sub">{{ '본인 확인을 위해 인증번호를 문자로 보내드려요.' if is_register else '가입한 휴대폰 번호로 인증번호를 보내드려요.' }}</p>
+    <label class="au-field">
+      <span class="au-label">휴대폰 번호</span>
+      <span class="au-input"><i class="ph ph-phone"></i>
+        <input type="tel" id="flow_tel" class="js-tel" inputmode="numeric" autocomplete="tel-national" placeholder="010-0000-0000" maxlength="13" enterkeyhint="send">
+      </span>
+    </label>
+    <div class="au-msg" id="msg_step1" role="alert"></div>
+    <button type="button" class="au-btn" id="sendCodeBtn" disabled><span class="au-btn-label">인증번호 받기</span></button>
+  </section>
+
+  <!-- 2단계: 인증번호 -->
+  <section class="au-step" data-step="2" hidden>
+    <h1 class="au-title">인증번호를 입력해주세요</h1>
+    <p class="au-sub"><strong id="sentTel"></strong> 번호로 보낸 6자리 숫자예요.</p>
+    <label class="au-field">
+      <span class="au-label">인증번호</span>
+      <span class="au-input au-input--code">
+        <input type="text" id="flow_code" inputmode="numeric" autocomplete="one-time-code" placeholder="000000" maxlength="6" enterkeyhint="done">
+      </span>
+    </label>
+    <div class="au-msg" id="msg_step2" role="alert"></div>
+    <button type="button" class="au-btn" id="verifyCodeBtn" disabled><span class="au-btn-label">확인</span></button>
+    <div class="au-links au-links--split">
+      <button type="button" class="au-link" id="changeTelBtn"><i class="ph ph-arrow-left"></i>번호 다시 입력</button>
+      <button type="button" class="au-link" id="resendBtn" disabled>재전송</button>
+    </div>
+  </section>
+
+  <!-- 3단계: 비밀번호 -->
+  <section class="au-step" data-step="3" hidden>
+    <div class="au-verified"><i class="ph ph-check-circle"></i><span><span id="verifiedTel"></span> 인증 완료</span></div>
+    <h1 class="au-title">{{ '비밀번호를 설정해주세요' if is_register else '새 비밀번호를 설정해주세요' }}</h1>
+    <p class="au-sub">8자 이상으로 입력해주세요.</p>
+    <label class="au-field">
+      <span class="au-label">{{ '비밀번호' if is_register else '새 비밀번호' }}</span>
+      <span class="au-input"><i class="ph ph-lock-simple"></i>
+        <input type="password" id="flow_password" autocomplete="new-password" placeholder="8자 이상" enterkeyhint="next">
+        <button type="button" class="au-eye js-eye" aria-label="비밀번호 보기"><i class="ph ph-eye"></i></button>
+      </span>
+    </label>
+    <label class="au-field">
+      <span class="au-label">비밀번호 확인</span>
+      <span class="au-input"><i class="ph ph-lock-simple"></i>
+        <input type="password" id="flow_password2" autocomplete="new-password" placeholder="한 번 더 입력" enterkeyhint="done">
+        <button type="button" class="au-eye js-eye" aria-label="비밀번호 보기"><i class="ph ph-eye"></i></button>
+      </span>
+      <span class="au-field-hint" id="pwMatchHint"></span>
+    </label>
+    <div class="au-msg" id="msg_step3" role="alert"></div>
+    <button type="submit" class="au-btn" id="finishBtn" disabled><span class="au-btn-label">{{ '가입 완료' if is_register else '비밀번호 변경' }}</span></button>
+  </section>
+
+  <div id="recaptcha-container"></div>
+</form>
+
+<div class="au-foot">{{ '이미 계정이 있으신가요?' if is_register else '비밀번호가 기억나셨나요?' }} <a href="/login">로그인</a></div>
+{% endblock %}
+
+{% block auth_scripts_before %}
+<script>window.FIREBASE_CONFIG = {{ firebase | tojson }};</script>
+<script type="module" src="/static/js/firebase-phone.js?v={{ static_v }}"></script>
+{% endblock %}
