@@ -257,8 +257,13 @@ const clickVerifyCode = (event) => {
       document.querySelectorAll('input[type="tel"]').forEach(el => el.disabled = true);
       const codeEl = document.getElementById('code_number'); if (codeEl) codeEl.disabled = true;
       btn.style.display = 'none';
+      // 인증이 끝난 전화번호·인증번호 영역은 숨기고, 인증된 번호만 한 줄로 표시
+      document.querySelectorAll('.js-verify').forEach(el => { el.style.display = 'none'; });
+      const tel = [...document.querySelectorAll('input[type="tel"]')].map(el => el.value.trim()).join('-');
+      const badgeText = document.getElementById('verified_text'); if (badgeText) badgeText.textContent = tel + ' 인증 완료';
       const badge = document.getElementById('verified_badge'); if (badge) badge.style.display = '';
       document.querySelectorAll('.js-secret').forEach(el => { el.style.display = ''; });
+      const pwEl = document.getElementById('password') || document.getElementById('new_password'); if (pwEl) pwEl.focus();
       showToast('전화번호 인증이 완료되었습니다', 'success');
     })
     .catch(() => { showToast('인증번호가 올바르지 않습니다', 'error'); btn.disabled = false; });
@@ -278,6 +283,10 @@ const onSubmitRegister = (event) => {
   }
   if (!password || password.length < 4) {
     showFormMsg('form_msg', '비밀번호를 입력해주세요.');
+    return;
+  }
+  if (password !== form.querySelector('#password_confirm').value) {
+    showFormMsg('form_msg', '비밀번호가 서로 일치하지 않습니다.');
     return;
   }
 
@@ -328,7 +337,9 @@ const checkRegisterValid = () => {
   const code = form.querySelector('#code_number')?.value.trim() ?? '';
   const pwEl = form.querySelector('#password') || form.querySelector('#new_password');
   const password = pwEl?.value.trim() ?? '';
-  submit.disabled = !(tels.length >= 11 && code.length > 0 && password.length > 0);
+  const confirmEl = form.querySelector('#password_confirm');
+  const confirmOk = !confirmEl || confirmEl.value.trim().length > 0;
+  submit.disabled = !(tels.length >= 11 && code.length > 0 && password.length > 0 && confirmOk);
 };
 
 // ── 매장 생성 (store_create.html) ──
@@ -366,6 +377,7 @@ document.addEventListener('DOMContentLoaded', () => {
     form.querySelector('#code_number')?.addEventListener('input', checkRegisterValid);
     form.querySelector('#password')?.addEventListener('input', checkRegisterValid);
     form.querySelector('#new_password')?.addEventListener('input', checkRegisterValid);
+    form.querySelector('#password_confirm')?.addEventListener('input', checkRegisterValid);
     checkRegisterValid();
     return;
   }

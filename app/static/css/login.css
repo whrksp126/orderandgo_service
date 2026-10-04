@@ -318,3 +318,17 @@ form.input_error select {
   from { opacity: 1; transform: translateY(0); }
   to   { opacity: 0; transform: translateY(12px); }
 }
+
+/* ── 전화번호 인증 완료 표시 ── */
+form > div.verified_badge {
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 5px;
+  background: #E9F7F5;
+  color: #1FAA9C;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1;
+}
+.verified_badge i { font-size: 20px; line-height: 1; }
