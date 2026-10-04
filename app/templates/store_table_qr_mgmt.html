@@ -13,33 +13,10 @@
   <link rel="stylesheet" href="/static/css/animation.css">
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
-  <link rel="stylesheet" href="/static/css/store.css">
-  <link rel="stylesheet" href="/static/css/canvas.css">
+  <link rel="stylesheet" href="/static/css/store.css?v={{ static_v }}">
+  <link rel="stylesheet" href="/static/css/canvas.css?v={{ static_v }}">
+  <link rel="stylesheet" href="/static/css/store_settings.css?v={{ static_v }}">
 
-  <style>
-    /* QR 발급용 카드 — 이름만 표시 */
-    .qr-card { cursor: pointer; }
-    .qr-card .card-title { display: flex; align-items: center; padding: 16px 16px; }
-    .qr-card .card-title h2 { padding: 0; font-size: 18px; }
-
-    /* QR 모달 */
-    .qr-modal { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; align-items: center; justify-content: center; z-index: 1000; }
-    .qr-modal.active { display: flex; }
-    .qr-modal-inner { background: #fff; border-radius: 18px; padding: 26px; width: 360px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,.25); }
-    .qr-modal-inner h3 { font-size: 1.15rem; font-weight: 800; margin-bottom: 4px; color: #212529; }
-    .qr-modal-inner .sub { font-size: 0.8rem; color: #ADB5BD; margin-bottom: 18px; }
-    .qr-frame { border: 1px solid #E9ECEF; border-radius: 14px; padding: 16px; display: inline-block; min-height: 100px; }
-    .qr-modal-inner img { width: 240px; height: 240px; object-fit: contain; display: block; }
-    .qr-modal-inner .qr-url { font-size: 0.72rem; color: #ADB5BD; word-break: break-all; margin: 14px 0 18px; }
-    .qr-empty-state { padding: 40px 10px; color: #868E96; font-size: 0.92rem; }
-    .qr-empty-state i { font-size: 42px; color: #DEE2E6; display: block; margin-bottom: 12px; }
-    .qr-modal-actions { display: flex; gap: 8px; }
-    .qr-btn { flex: 1; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; padding: 12px; font-size: 0.92rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: all .18s; }
-    .qr-btn.primary { background: #12b886; color: #fff; }
-    .qr-btn.primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(18,184,134,.3); }
-    .qr-btn.ghost { background: #F1F3F5; color: #495057; }
-    .qr-btn.ghost:hover { background: #E9ECEF; }
-  </style>
 </head>
 
 <body class="set_table_position qr_issue_page">
@@ -81,14 +58,13 @@
   <div class="qr-modal" id="qrModal" onclick="closeQrModal(event)">
     <div class="qr-modal-inner" onclick="event.stopPropagation()">
       <h3 id="qrModalTitle">테이블 QR</h3>
-      <p class="sub" id="qrModalSub">손님이 스캔하면 주문 화면으로 이동합니다</p>
       <div id="qrModalContent"><!-- JS 렌더 --></div>
     </div>
   </div>
 
   <script src="/static/js/common.js?v={{ static_v }}"></script>
   <script src="/static/js/device-notice.js?v={{ static_v }}"></script>
-  <script src="/static/js/store_table_qr_mgmt.js"></script>
+  <script src="/static/js/store_table_qr_mgmt.js?v={{ static_v }}"></script>
 </body>
 
 </html>

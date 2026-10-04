@@ -9,82 +9,14 @@
 
   <link rel="stylesheet" href="/static/css/responsive.css">
   <link rel="stylesheet" href="/static/css/reset.css">
-  <link rel="stylesheet" href="/static/css/common.css">
+  <link rel="stylesheet" href="/static/css/common.css?v={{ static_v }}">
   <link rel="stylesheet" href="/static/css/animation.css">
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
-  <link rel="stylesheet" href="/static/css/store.css">
-
-  <style>
-    body { background-color: #F8F9FA; }
-
-    .biz_day_page main {
-      padding: 24px;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      background-color: #F8F9FA;
-      min-height: calc(100vh - 80px);
-    }
-    .store_product.biz_day_page section { padding: 0; }
-
-    .settings_card {
-      width: 100%;
-      max-width: 560px;
-      background: #fff;
-      border-radius: 14px;
-      border: 1px solid #E9ECEF;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, .05);
-      overflow: hidden;
-    }
-    .settings_header {
-      padding: 22px 24px;
-      border-bottom: 1px solid #F1F3F5;
-    }
-    .settings_header h2 {
-      font-size: 1.2rem; font-weight: 800; color: #212529; letter-spacing: -0.5px;
-      display: flex; align-items: center; gap: 8px;
-    }
-    .settings_header h2 i { color: #12b886; font-size: 1.25rem; }
-    .settings_header p { font-size: 0.85rem; color: #ADB5BD; margin-top: 6px; }
-
-    .settings_body { padding: 24px; }
-    .settings_footer { padding: 18px 24px; border-top: 1px solid #F1F3F5; }
-
-    .field { margin-bottom: 0; }
-    .field_label { display: block; font-size: 0.85rem; font-weight: 700; color: #495057; margin-bottom: 10px; }
-
-    .time_input {
-      width: 160px;
-      padding: 11px 14px;
-      border: 1px solid #CED4DA;
-      border-radius: 8px;
-      font-size: 0.98rem;
-      color: #495057;
-    }
-    .time_input:focus { border-color: #12b886; outline: none; box-shadow: 0 0 0 3px rgba(18, 184, 134, .1); }
-
-    .field_hint {
-      font-size: 0.82rem; color: #868E96; line-height: 1.7; margin-top: 14px;
-    }
-    .field_hint b { color: #495057; }
-
-    .btn { border: none; border-radius: 8px; cursor: pointer; font-weight: 700; transition: all .18s ease; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
-    .btn-primary { background: #12b886; color: #fff; }
-    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(18, 184, 134, .3); }
-    .btn.block { width: 100%; padding: 14px; font-size: 0.98rem; }
-
-    .toast {
-      position: fixed; bottom: 32px; left: 50%;
-      transform: translateX(-50%) translateY(16px);
-      background: #222; color: #fff; padding: 12px 22px;
-      border-radius: 8px; font-size: 14px; font-weight: 500;
-      opacity: 0; pointer-events: none; transition: all .3s; white-space: nowrap; z-index: 999;
-    }
-    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-  </style>
+  <link rel="stylesheet" href="/static/css/store.css?v={{ static_v }}">
+  <link rel="stylesheet" href="/static/css/store_settings.css?v={{ static_v }}">
 </head>
 
-<body class="store_product biz_day_page">
+<body class="setting_page setting_form_page biz_day_page">
   <div id="container">
     <header>
       <a class="back_btn" href="/store/product">
@@ -102,48 +34,31 @@
     </header>
 
     <main>
-      <section class="settings_card">
-        <div class="settings_header">
-          <h2><i class="ph-bold ph-clock-countdown"></i> 영업일 설정</h2>
-          <p>하루(영업일)가 바뀌는 기준 시각을 설정합니다.</p>
+      <div class="setting_row">
+        <h2>영업일 초기화 시각</h2>
+        <div class="setting_field">
+          <input type="time" class="setting_input short" id="input-cutoff" value="{{ business_day_cutoff }}">
+          <p class="setting_note">이 시각에 영업일이 바뀝니다. 자정을 넘긴 주문도 이 시각 전까지는 전날 영업일로 집계됩니다.</p>
         </div>
-        <div class="settings_body">
-          <div class="field">
-            <span class="field_label">영업일 초기화 기준 시각</span>
-            <input type="time" class="time_input" id="input-cutoff" value="{{ business_day_cutoff }}">
-            <p class="field_hint">
-              이 시각을 기준으로 하루(영업일)가 나뉩니다.<br>
-              주문 접수(ODS) <b>완료 목록</b>은 현재 영업일 건만 표시됩니다.<br>
-              예) <b>06:00</b> → 새벽 6시에 영업일이 바뀌며, 자정을 넘긴 심야 영업분도 전날 영업일로 집계됩니다.
-            </p>
+      </div>
+      <div class="setting_row">
+        <h2></h2>
+        <div class="setting_field">
+          <div class="setting_line">
+            <button class="setting_btn fill large" onclick="saveCutoff()">저장</button>
           </div>
         </div>
-        <div class="settings_footer">
-          <button class="btn btn-primary block" onclick="saveCutoff()">
-            <i class="ph-bold ph-check"></i> 설정 저장
-          </button>
-        </div>
-      </section>
+      </div>
     </main>
   </div>
-
-  <div class="toast" id="toast"></div>
 
   <script src="/static/js/common.js?v={{ static_v }}"></script>
   <script src="/static/js/device-notice.js?v={{ static_v }}"></script>
   <script>
-    const showToast = (msg, isError = false) => {
-      const toast = document.getElementById('toast');
-      toast.textContent = msg;
-      toast.style.background = isError ? '#F43E25' : '#222';
-      toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 2500);
-    };
-
     const saveCutoff = () => {
       const val = document.getElementById('input-cutoff').value.trim();
       if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(val)) {
-        showToast('올바른 시각을 입력해주세요.', true);
+        showToast('올바른 시각을 입력해주세요.', 'error');
         return;
       }
       fetch('/store/update_business_day', {
@@ -153,10 +68,10 @@
       })
         .then(res => res.json())
         .then(result => {
-          if (result.code === 200) showToast('저장되었습니다.');
-          else showToast(result.msg || '저장에 실패했습니다.', true);
+          if (result.code === 200) showToast('저장되었습니다.', 'success');
+          else showToast(result.msg || '저장에 실패했습니다.', 'error');
         })
-        .catch(() => showToast('저장에 실패했습니다.', true));
+        .catch(() => showToast('저장에 실패했습니다.', 'error'));
     };
   </script>
 </body>

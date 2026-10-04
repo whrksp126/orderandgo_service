@@ -21,7 +21,7 @@ const loadTerminalInfo = () => {
       merchantEl.textContent = data.toss_merchant_id;
       merchantEl.classList.remove('empty');
     } else {
-      merchantEl.textContent = '단말기 로그인 시 자동 등록됩니다';
+      merchantEl.textContent = '미등록';
       merchantEl.classList.add('empty');
     }
 
@@ -29,7 +29,7 @@ const loadTerminalInfo = () => {
       bizEl.textContent = data.toss_business_number;
       bizEl.classList.remove('empty');
     } else {
-      bizEl.textContent = '단말기 로그인 시 자동 등록됩니다';
+      bizEl.textContent = '미등록';
       bizEl.classList.add('empty');
     }
 

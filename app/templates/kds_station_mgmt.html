@@ -4,497 +4,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>OrderAndGo - 주문 접수 스테이션 관리</title>
+  <title>OrderAndGo · 주문 접수 스테이션 관리</title>
   <link rel="icon" type="image/x-icon" href="/static/images/common/logo.png">
 
+  <link rel="stylesheet" href="/static/css/responsive.css">
   <link rel="stylesheet" href="/static/css/reset.css">
-  <link rel="stylesheet" href="/static/css/common.css">
+  <link rel="stylesheet" href="/static/css/common.css?v={{ static_v }}">
   <link rel="stylesheet" href="/static/css/animation.css">
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
-
-  <link rel="stylesheet" href="/static/css/store.css">
-  <style>
-    .kds-station-mgmt main {
-      display: flex;
-      height: calc(100vh - 40px);
-      gap: 20px;
-      padding: 20px;
-      background: #F5F5F5;
-      overflow: hidden;
-    }
-
-    /* ── 좌측 aside: 스테이션 목록 + 편집 패널 ── */
-    .kds-station-mgmt aside {
-      width: 360px;
-      height: 100%;
-      background: #fff;
-      border-radius: 12px;
-      padding: 24px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-      border: 1px solid #CCC;
-      overflow: hidden;
-    }
-
-    .aside-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 16px;
-    }
-
-    .aside-top h2 {
-      font-weight: 900;
-      font-size: 18px;
-      color: #000;
-    }
-
-    .btn-add-station {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 14px;
-      background: #1FAA9C;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-weight: 800;
-      font-size: 14px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .btn-add-station:hover {
-      background: #178a7e;
-    }
-
-    /* 스테이션 카드 목록 */
-    .station-list {
-      flex: 1;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-bottom: 16px;
-    }
-
-    .station-card {
-      padding: 14px 16px;
-      border-radius: 10px;
-      border: 2px solid #EEE;
-      cursor: pointer;
-      transition: all 0.2s;
-      background: #FDFDFD;
-    }
-
-    .station-card:hover {
-      border-color: #1FAA9C;
-      background: #F3FAFA;
-    }
-
-    .station-card.active {
-      border-color: #1FAA9C;
-      background: #F3FAFA;
-      box-shadow: 0 0 0 3px rgba(31, 170, 156, 0.1);
-    }
-
-    .station-card-name {
-      font-weight: 800;
-      font-size: 15px;
-      color: #222;
-      margin-bottom: 4px;
-    }
-
-    .station-card-meta {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .badge-show-all {
-      background: #1FAA9C;
-      color: #fff;
-      font-size: 11px;
-      font-weight: 800;
-      padding: 2px 8px;
-      border-radius: 20px;
-    }
-
-    .station-card-count {
-      font-size: 12px;
-      color: #999;
-    }
-
-    .station-empty-msg {
-      padding: 30px 0;
-      text-align: center;
-      color: #CCC;
-      font-size: 14px;
-    }
-
-    /* ── 편집 패널 (하단 고정) ── */
-    .edit-panel {
-      border-top: 1px solid #EEE;
-      padding-top: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .edit-panel-title {
-      font-weight: 900;
-      font-size: 15px;
-      color: #333;
-    }
-
-    .edit-panel input[type="text"] {
-      width: 100%;
-      padding: 11px 14px;
-      border: 1px solid #CCC;
-      border-radius: 8px;
-      font-size: 14px;
-      background: #FDFDFD;
-      box-sizing: border-box;
-    }
-
-    .edit-panel input[type="text"]:focus {
-      border-color: #1FAA9C;
-      outline: none;
-    }
-
-    .show-all-toggle-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 14px;
-      background: #F9F9F9;
-      border-radius: 8px;
-      border: 1px solid #EEE;
-    }
-
-    .show-all-toggle-label {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .show-all-toggle-label span {
-      font-weight: 700;
-      font-size: 14px;
-      color: #333;
-    }
-
-    .show-all-toggle-label small {
-      font-size: 11px;
-      color: #999;
-    }
-
-    .toggle_btn {
-      width: 44px;
-      height: 24px;
-      background: #DDD;
-      border-radius: 12px;
-      position: relative;
-      transition: 0.3s;
-      border: none;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-
-    .toggle_btn[data-active="true"] {
-      background: #1FAA9C;
-    }
-
-    .toggle_btn .ball {
-      width: 18px;
-      height: 18px;
-      background: #fff;
-      border-radius: 50%;
-      position: absolute;
-      top: 3px;
-      left: 3px;
-      transition: 0.3s;
-    }
-
-    .toggle_btn[data-active="true"] .ball {
-      left: 23px;
-    }
-
-    .edit-btns {
-      display: flex;
-      gap: 8px;
-    }
-
-    .edit-btns button {
-      flex: 1;
-      padding: 12px;
-      border-radius: 8px;
-      font-weight: 800;
-      font-size: 14px;
-      cursor: pointer;
-      border: 1px solid transparent;
-      transition: all 0.2s;
-    }
-
-    .btn-save-station {
-      background: #1FAA9C;
-      color: #fff;
-    }
-
-    .btn-save-station:hover {
-      background: #178a7e;
-    }
-
-    .btn-delete-station {
-      background: #fff;
-      color: #F43E25;
-      border-color: #F43E25 !important;
-    }
-
-    .btn-delete-station:hover {
-      background: #fff5f5;
-    }
-
-    .btn-cancel-edit {
-      background: #EEE;
-      color: #666;
-    }
-
-    /* ── 우측 article: 아이템 연동 ── */
-    .kds-station-mgmt article {
-      flex: 1;
-      height: 100%;
-      background: #fff;
-      border-radius: 12px;
-      padding: 24px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-      display: flex;
-      flex-direction: column;
-      border: 1px solid #CCC;
-      overflow: hidden;
-    }
-
-    .article-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 16px;
-    }
-
-    .article-header h2 {
-      font-weight: 900;
-      font-size: 18px;
-      color: #000;
-    }
-
-    .article-header h2 span {
-      color: #1FAA9C;
-    }
-
-    .article-placeholder {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: #CCC;
-      gap: 12px;
-    }
-
-    .article-placeholder i {
-      font-size: 48px;
-    }
-
-    .article-placeholder p {
-      font-size: 15px;
-      font-weight: 600;
-    }
-
-    /* 아이템 연동 패널 */
-    .item-panel {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .item-panel-body {
-      flex: 1;
-      overflow-y: auto;
-      display: flex;
-      gap: 20px;
-    }
-
-    .item-section {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-    }
-
-    .item-section-title {
-      font-weight: 900;
-      font-size: 14px;
-      color: #666;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      margin-bottom: 12px;
-      padding-bottom: 8px;
-      border-bottom: 2px solid #F1F3F5;
-    }
-
-    .category-group {
-      margin-bottom: 16px;
-    }
-
-    .item-check-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 9px 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-
-    .item-check-row:hover {
-      background: #F3FAFA;
-    }
-
-    .item-check-row input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
-      accent-color: #1FAA9C;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-
-    .item-check-label {
-      flex: 1;
-      font-size: 14px;
-      font-weight: 600;
-      color: #333;
-    }
-
-    .item-check-price {
-      font-size: 13px;
-      color: #999;
-    }
-
-    /* 일관처리 행 */
-    .bulk-check-row {
-      display: flex;
-      align-items: center;
-      padding: 8px 12px;
-      margin-bottom: 8px;
-      background: #F3FAFA;
-      border: 1px solid #D0EFED;
-      border-radius: 8px;
-    }
-
-    .bulk-check-row label {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 700;
-      color: #1FAA9C;
-    }
-
-    .bulk-check-row input[type="checkbox"] {
-      width: 15px;
-      height: 15px;
-      accent-color: #1FAA9C;
-      cursor: pointer;
-    }
-
-    .category-group-title {
-      font-weight: 800;
-      font-size: 13px;
-      color: #888;
-      margin-bottom: 8px;
-      padding: 4px 0;
-    }
-
-    .category-group-title label {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      cursor: pointer;
-    }
-
-    .category-group-title input[type="checkbox"] {
-      width: 14px;
-      height: 14px;
-      accent-color: #1FAA9C;
-      cursor: pointer;
-    }
-
-    .show-all-notice {
-      display: none;
-      align-items: center;
-      gap: 8px;
-      padding: 12px 16px;
-      background: #F3FAFA;
-      border: 1px solid #1FAA9C;
-      border-radius: 8px;
-      margin-bottom: 16px;
-      font-size: 13px;
-      color: #1FAA9C;
-      font-weight: 700;
-    }
-
-    .show-all-notice.visible {
-      display: flex;
-    }
-
-    .item-panel-footer {
-      padding-top: 16px;
-      border-top: 1px solid #EEE;
-      display: flex;
-      justify-content: flex-end;
-    }
-
-    .btn-save-items {
-      padding: 13px 32px;
-      background: #1FAA9C;
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      font-weight: 800;
-      font-size: 15px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .btn-save-items:hover {
-      background: #178a7e;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(31, 170, 156, 0.3);
-    }
-
-    .divider-v {
-      width: 1px;
-      background: #F1F3F5;
-      flex-shrink: 0;
-    }
-  </style>
+  <link rel="stylesheet" href="/static/css/store.css?v={{ static_v }}">
+  <link rel="stylesheet" href="/static/css/store_settings.css?v={{ static_v }}">
 </head>
 
-<body class="kds-station-mgmt set_menu_product">
+<body class="setting_page kds-station-mgmt">
   <div id="container">
     <header>
-      <a class="back_btn" onclick="history.back();">
+      <a class="back_btn" href="/store/product">
         <i class="ph-bold ph-caret-left"></i>
       </a>
       <div class="center">
         <a onclick="location.reload();">
-          <h1>
-            <img src="/static/images/common/logo-order&go-white.png" alt="">
-          </h1>
+          <h1><img src="/static/images/common/logo-order&go-white.png" alt=""></h1>
         </a>
         <div class="header_info">
           <span class="cur_time"></span>
@@ -505,38 +35,32 @@
 
     <main>
       <!-- 좌측: 스테이션 목록 + 편집 패널 -->
-      <aside>
-        <div class="aside-top">
-          <h2>주문 접수 스테이션</h2>
-          <button class="btn-add-station" onclick="clickAddStation()">
-            <i class="ph ph-plus"></i>
-            <span>파트 추가</span>
-          </button>
+      <aside class="setting_panel">
+        <div class="setting_panel_top">
+          <h2>스테이션</h2>
+          <button class="setting_btn brand" onclick="clickAddStation()">추가</button>
         </div>
 
         <div class="station-list scrollbar_hidden" id="stationList">
-          <div class="station-empty-msg">로딩 중...</div>
+          <div class="setting_empty">불러오는 중</div>
         </div>
 
         <div class="edit-panel" id="editPanel">
-          <p class="edit-panel-title" id="editPanelTitle">파트 추가</p>
+          <p class="setting_label" id="editPanelTitle">스테이션 추가</p>
 
-          <input type="text" id="stationNameInput" placeholder="예: 핫라인파트, 카운터파트">
+          <input type="text" class="setting_input" id="stationNameInput" placeholder="스테이션 이름">
 
-          <div class="show-all-toggle-row">
-            <div class="show-all-toggle-label">
-              <span>전체 내역 표시</span>
-              <small>모든 주문 아이템을 이 파트에 표시합니다</small>
-            </div>
+          <div class="setting_toggle_row">
+            <span>전체 주문 표시</span>
             <button class="toggle_btn" id="showAllToggle" data-active="false" onclick="toggleShowAll()">
               <div class="ball"></div>
             </button>
           </div>
 
-          <div class="edit-btns">
-            <button class="btn-delete-station" id="deleteBtnPanel" onclick="deleteStation()" style="display:none;">삭제</button>
-            <button class="btn-cancel-edit" onclick="resetEditPanel()">취소</button>
-            <button class="btn-save-station" onclick="saveStation()">저장</button>
+          <div class="setting_panel_bottom">
+            <button class="setting_btn red" id="deleteBtnPanel" onclick="deleteStation()" style="display:none;">삭제</button>
+            <button class="setting_btn gray" onclick="resetEditPanel()">취소</button>
+            <button class="setting_btn fill" onclick="saveStation()">저장</button>
           </div>
 
           <input type="hidden" id="editingStationId" value="">
@@ -544,20 +68,13 @@
       </aside>
 
       <!-- 우측: 아이템 연동 패널 -->
-      <article id="itemArticle">
-        <div class="article-placeholder" id="articlePlaceholder">
-          <i class="ph ph-cooking-pot"></i>
-          <p>좌측에서 스테이션을 선택하거나 추가하세요</p>
-        </div>
+      <article class="setting_panel" id="itemArticle">
+        <div class="setting_empty" id="articlePlaceholder">스테이션을 선택해주세요.</div>
 
         <div class="item-panel" id="itemPanel" style="display: none;">
-          <div class="article-header">
-            <h2>연동 설정 — <span id="selectedStationName"></span></h2>
-          </div>
-
-          <div class="show-all-notice" id="showAllNotice">
-            <i class="ph-bold ph-check-circle"></i>
-            <span>전체 내역 표시가 활성화되어 있습니다. 모든 주문이 이 파트에 표시됩니다.</span>
+          <div class="setting_panel_top">
+            <h2><span id="selectedStationName"></span> 표시 항목</h2>
+            <span class="show-all-notice" id="showAllNotice">전체 주문 표시 중</span>
           </div>
 
           <div class="item-panel-body scrollbar_hidden">
@@ -567,20 +84,16 @@
               <div id="menuCheckList"></div>
             </div>
 
-            <div class="divider-v"></div>
 
             <!-- 직원호출 섹션 -->
             <div class="item-section">
-              <p class="item-section-title">직원호출 항목</p>
+              <p class="item-section-title">직원 호출</p>
               <div id="staffCallCheckList"></div>
             </div>
           </div>
 
           <div class="item-panel-footer">
-            <button class="btn-save-items" onclick="saveItemAssignment()">
-              <i class="ph ph-floppy-disk"></i>
-              저장하기
-            </button>
+            <button class="setting_btn fill large" onclick="saveItemAssignment()">저장</button>
           </div>
         </div>
       </article>
@@ -597,17 +110,8 @@
     let editMode = 'add';     // 'add' | 'edit'
 
     document.addEventListener('DOMContentLoaded', () => {
-      updateTime();
-      setInterval(updateTime, 1000);
       Promise.all([loadStations(), loadAllMenus(), loadAllStaffCallItems()]);
     });
-
-    function updateTime() {
-      const now = new Date();
-      const pad = n => String(n).padStart(2, '0');
-      document.querySelector('.cur_time').textContent =
-        `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-    }
 
     // ── 데이터 로드 ──────────────────────────────────────────────
 
@@ -650,19 +154,19 @@
     function renderStationList() {
       const list = document.getElementById('stationList');
       if (stations.length === 0) {
-        list.innerHTML = '<div class="station-empty-msg">아직 스테이션이 없습니다.<br>파트를 추가해보세요.</div>';
+        list.innerHTML = '<div class="setting_empty">스테이션이 없습니다.</div>';
         return;
       }
       list.innerHTML = '';
       stations.forEach(s => {
         const card = document.createElement('div');
-        card.className = 'station-card' + (s.id === selectedStationId ? ' active' : '');
+        card.className = 'setting_item station-card' + (s.id === selectedStationId ? ' active' : '');
         const menuCount = s.menu_ids.length;
         const staffCount = s.staff_call_ids.length;
         card.innerHTML = `
           <div class="station-card-name">${s.name}</div>
           <div class="station-card-meta">
-            ${s.show_all ? '<span class="badge-show-all">전체내역</span>' : ''}
+            ${s.show_all ? '<span class="setting_tag">전체 주문</span>' : ''}
             <span class="station-card-count">메뉴 ${menuCount}개 · 직원호출 ${staffCount}개</span>
           </div>
         `;
@@ -680,7 +184,7 @@
 
       // 편집 패널에 선택된 스테이션 정보 채우기
       editMode = 'edit';
-      document.getElementById('editPanelTitle').textContent = '파트 편집';
+      document.getElementById('editPanelTitle').textContent = '스테이션 수정';
       document.getElementById('stationNameInput').value = station.name;
       document.getElementById('showAllToggle').dataset.active = station.show_all ? 'true' : 'false';
       document.getElementById('editingStationId').value = station.id;
@@ -710,7 +214,7 @@
       container.innerHTML = '';
 
       if (allMenus.length === 0) {
-        container.innerHTML = '<p style="color:#CCC; font-size:13px; padding:20px 0;">등록된 메뉴가 없습니다.</p>';
+        container.innerHTML = '<div class="setting_empty">등록된 메뉴가 없습니다.</div>';
         return;
       }
 
@@ -795,7 +299,7 @@
       container.innerHTML = '';
 
       if (allStaffCallItems.length === 0) {
-        container.innerHTML = '<p style="color:#CCC; font-size:13px; padding:20px 0;">등록된 직원호출 항목이 없습니다.</p>';
+        container.innerHTML = '<div class="setting_empty">등록된 직원 호출 항목이 없습니다.</div>';
         return;
       }
 
@@ -816,7 +320,7 @@
     function clickAddStation() {
       resetEditPanel();
       editMode = 'add';
-      document.getElementById('editPanelTitle').textContent = '파트 추가';
+      document.getElementById('editPanelTitle').textContent = '스테이션 추가';
       document.getElementById('stationNameInput').focus();
     }
 
@@ -827,7 +331,7 @@
 
     function resetEditPanel() {
       editMode = 'add';
-      document.getElementById('editPanelTitle').textContent = '파트 추가';
+      document.getElementById('editPanelTitle').textContent = '스테이션 추가';
       document.getElementById('stationNameInput').value = '';
       document.getElementById('showAllToggle').dataset.active = 'false';
       document.getElementById('editingStationId').value = '';
@@ -870,35 +374,16 @@
       if (!stationId) return;
 
       const { top, middle, bottom } = openDefaultModal();
-      top.innerHTML = modalTopHtml('파트 삭제 확인');
+      top.innerHTML = modalTopHtml('스테이션 삭제');
       middle.innerHTML = `
-        <div style="padding: 30px; text-align: center;">
-          <i class="ph ph-warning-circle" style="font-size: 48px; color: #F43E25; margin-bottom: 15px; display: block;"></i>
-          <p style="font-size: 16px; font-weight: 700; color: #333; line-height: 1.6;">
-            정말 이 파트를 삭제하시겠습니까?<br>
-            <span style="font-size: 14px; color: #999; font-weight: 400;">연동된 메뉴 및 직원호출 설정도 함께 삭제됩니다.</span>
-          </p>
-        </div>
+        <p class="setting_confirm">이 스테이션을 삭제할까요?
+          <span>표시 항목 설정도 함께 삭제됩니다.</span>
+        </p>
       `;
       bottom.innerHTML = modalBottomHtml([
-        { class: 'btn_cancel', text: '취소', fun: 'onclick="removeModal()"' },
-        { class: 'btn_delete', text: '삭제하기', fun: 'onclick="confirmDeleteStation()"' }
+        { class: 'gray', text: '취소', fun: 'onclick="removeModal()"' },
+        { class: 'red_fill', text: '삭제', fun: 'onclick="confirmDeleteStation()"' }
       ]);
-
-      const modalBtns = bottom.querySelectorAll('button');
-      modalBtns.forEach(btn => {
-        btn.style.flex = '1';
-        btn.style.padding = '15px';
-        btn.style.borderRadius = '8px';
-        btn.style.fontWeight = '800';
-        if (btn.classList.contains('btn_delete')) {
-          btn.style.background = '#F43E25';
-          btn.style.color = '#fff';
-        } else {
-          btn.style.background = '#EEE';
-          btn.style.color = '#666';
-        }
-      });
     }
 
     async function confirmDeleteStation() {
@@ -938,7 +423,7 @@
           staff_call_ids: staffCallIds
         });
         if (res.code === 200) {
-          showToast('연동 설정이 저장되었습니다.', 'success');
+          showToast('저장되었습니다.', 'success');
           await loadStations();
         } else {
           showToast(res.message || '저장 중 오류가 발생했습니다.', 'error');

@@ -1,0 +1,1061 @@
+/* ============================================================
+ * 매장 관리 설정 화면 공통 규격
+ * 기준: 매장 관리(/store/product) · 상품 정보 수정(/store/set_menu)
+ *  - 바탕 #F5F5F5, 흰 패널 + 1px #CCC 테두리, 그림자 없음
+ *  - 모서리: 패널 10px, 버튼·입력 5px
+ *  - 색: 브랜드 #1FAA9C, 삭제 #F43E25, 글자 #000 / #666 / #888
+ * ============================================================ */
+
+.setting_page main {
+  display: flex;
+  gap: 20px;
+  height: calc(100vh - 40px);
+  height: calc(100dvh - 40px);
+  padding: 20px;
+  background: #F5F5F5;
+  overflow: hidden;
+}
+
+/* ---------- 패널 ---------- */
+.setting_panel {
+  display: flex;
+  flex-flow: column;
+  gap: 15px;
+  min-width: 0;
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #CCC;
+  background: #FFF;
+}
+
+.setting_panel_top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 36px;
+}
+
+.setting_panel_top h2 {
+  color: #000;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.setting_panel_top .buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.setting_panel_body {
+  display: flex;
+  flex-flow: column;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.setting_panel_bottom {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.setting_panel_bottom .setting_btn {
+  flex: 1;
+  padding: 12px 10px;
+}
+
+/* ---------- 버튼 ---------- */
+.setting_btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 15px;
+  border-radius: 5px;
+  border: 1px solid #111;
+  background: #FFF;
+  color: #000;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 18px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.setting_btn.brand {
+  border-color: #1FAA9C;
+  color: #1FAA9C;
+}
+
+.setting_btn.red {
+  border-color: #F43E25;
+  color: #F43E25;
+}
+
+.setting_btn.gray {
+  border-color: #CCC;
+  color: #666;
+}
+
+.setting_btn.fill {
+  border-color: #1FAA9C;
+  background: #1FAA9C;
+  color: #FFF;
+}
+
+.setting_btn.large {
+  min-width: 120px;
+  padding: 12px 20px;
+}
+
+.setting_btn:disabled {
+  border-color: #CCC;
+  background: #F5F5F5;
+  color: #999;
+  cursor: default;
+}
+
+/* ---------- 입력 ---------- */
+.setting_label {
+  color: #000;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.setting_input {
+  width: 100%;
+  height: 44px;
+  padding: 10px 12px;
+  border-radius: 5px;
+  border: 1px solid #CCC;
+  background: #FFF;
+  color: #000;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.setting_input::placeholder {
+  color: #999;
+}
+
+.setting_input:focus {
+  outline: none;
+  border-color: #1FAA9C;
+}
+
+.setting_input[readonly] {
+  background: #F5F5F5;
+  cursor: pointer;
+}
+
+.setting_input.error {
+  border-color: #F43E25;
+}
+
+.setting_input.short {
+  width: 160px;
+}
+
+/* 읽기 전용 값 */
+.setting_value {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 44px;
+  padding: 10px 12px;
+  border-radius: 5px;
+  border: 1px solid #CCC;
+  background: #F5F5F5;
+  color: #000;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.setting_value.empty {
+  color: #999;
+}
+
+.setting_note {
+  color: #888;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.setting_error {
+  display: none;
+  color: #F43E25;
+  font-size: 13px;
+}
+
+.setting_error.show {
+  display: block;
+}
+
+/* ---------- 토글 ---------- */
+.setting_page .toggle_btn,
+.setting_switch span {
+  position: relative;
+  display: block;
+  flex-shrink: 0;
+  width: 40px;
+  height: 20px;
+  padding: 2px;
+  border: none;
+  border-radius: 10px;
+  background: #CCC;
+  cursor: pointer;
+  transition: background .25s;
+}
+
+.setting_page .toggle_btn .ball,
+.setting_switch span::before {
+  content: '';
+  position: static;
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #FFF;
+  transition: transform .25s;
+}
+
+.setting_page .toggle_btn[data-active="true"],
+.setting_switch input:checked+span {
+  background: #1FAA9C !important;
+}
+
+.setting_page .toggle_btn[data-active="true"] .ball,
+.setting_switch input:checked+span::before {
+  left: auto;
+  transform: translateX(20px);
+}
+
+.setting_switch input {
+  display: none;
+}
+
+/* ---------- 상태 표시 (헤더 '영업중'과 같은 형태) ---------- */
+.setting_state {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.setting_state::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: #CCC;
+}
+
+.setting_state.connected {
+  color: #000;
+}
+
+.setting_state.connected::before {
+  background: #1FAA9C;
+}
+
+/* ---------- 표식 ---------- */
+.setting_tag {
+  display: inline-block;
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: #E8F8F5;
+  color: #1FAA9C;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ---------- 빈 상태 ---------- */
+.setting_empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 48px 20px;
+  color: #BBB;
+  font-size: 14px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* ---------- 선택 목록 항목 ---------- */
+.setting_item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 5px;
+  border: 1px solid #CCC;
+  background: #FFF;
+  cursor: pointer;
+}
+
+.setting_item.active {
+  border-color: #1FAA9C;
+  background: #F3FAFA;
+}
+
+/* ---------- 입력형 설정 (매장 관리와 같은 '왼쪽 제목 + 오른쪽 내용') ---------- */
+.setting_form_page main {
+  display: block;
+  overflow-y: auto;
+}
+
+.setting_row {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 20px 0;
+}
+
+.setting_row>h2 {
+  flex: 0 0 150px;
+  padding-top: 12px;
+  color: #000;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.setting_field {
+  display: flex;
+  flex-flow: column;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  max-width: 480px;
+}
+
+.setting_line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+}
+
+.setting_line .setting_input {
+  flex: 1;
+}
+
+.setting_line .setting_input.short {
+  flex: none;
+}
+
+.setting_line .setting_btn {
+  height: 44px;
+}
+
+.setting_line>span {
+  color: #666;
+  font-size: 14px;
+}
+
+/* ---------- 표 (상품 정보 수정 목록과 같은 규격) ---------- */
+.setting_table {
+  flex: 1;
+  min-height: 0;
+  border-radius: 5px;
+  border: 1px solid #CCC;
+  font-size: 14px;
+  overflow: auto;
+}
+
+.setting_table li {
+  display: grid;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 8px 16px;
+  border-bottom: 1px solid #CCC;
+}
+
+.setting_table li.table_header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #F5F5F5;
+  border-bottom: 1px solid #000;
+  font-weight: 700;
+}
+
+.setting_table li.no_data {
+  display: flex;
+  justify-content: center;
+  padding: 48px;
+  border-bottom: none;
+  color: #BBB;
+}
+
+/* ---------- 확인 창 ---------- */
+.setting_page .modal_overlay,
+.qr-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.setting_page .modal_overlay.show,
+.qr-modal.active {
+  display: flex;
+}
+
+.setting_page .modal_box,
+.qr-modal-inner {
+  display: flex;
+  flex-flow: column;
+  gap: 20px;
+  width: 360px;
+  max-width: 90vw;
+  padding: 20px;
+  border-radius: 20px;
+  background: #FFF;
+  color: #000;
+}
+
+.setting_page .modal_title,
+.qr-modal-inner h3 {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.setting_page .modal_text {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.setting_page .modal_field {
+  display: flex;
+  flex-flow: column;
+  gap: 8px;
+}
+
+.setting_page .modal_btns,
+.qr-modal-actions {
+  display: flex;
+  gap: 15px;
+}
+
+.setting_page .modal_btns .setting_btn,
+.qr-modal-actions .setting_btn {
+  flex: 1;
+  height: 50px;
+  font-size: 16px;
+}
+
+.setting_btn.red_fill {
+  border-color: #F43E25;
+  background: #F43E25;
+  color: #FFF;
+}
+
+/* 삭제 확인(공통 모달) 문구 */
+.modal .setting_confirm {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.modal .setting_confirm span {
+  display: block;
+  margin-top: 5px;
+  color: #888;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+/* ============================================================
+ * 화면별
+ * ============================================================ */
+
+/* ---------- 단말기 관리 ---------- */
+.terminal_mgmt_page #terminal_info_column {
+  flex: 0 0 360px;
+}
+
+.terminal_mgmt_page #guide_column {
+  flex: 1;
+}
+
+.terminal_mgmt_page .terminal_field {
+  display: flex;
+  flex-flow: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.terminal_guide li {
+  display: flex;
+  gap: 12px;
+  padding: 15px 0;
+  border-bottom: 1px solid #CCC;
+  color: #000;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.terminal_guide li:first-child {
+  padding-top: 0;
+}
+
+.terminal_guide li:last-child {
+  border-bottom: none;
+}
+
+.terminal_guide li>p {
+  flex: 1;
+  min-width: 0;
+  word-break: keep-all;
+}
+
+.terminal_guide li>b {
+  flex: 0 0 20px;
+  font-weight: 700;
+}
+
+.terminal_guide li strong {
+  font-weight: 700;
+}
+
+/* ---------- 프린터 관리 ---------- */
+.printer_mgmt_page #container {
+  display: flex;
+  flex-flow: column;
+  height: 100vh;
+  height: 100dvh;
+}
+
+.printer_mgmt_page main {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+
+.printer_mgmt_page #env_column {
+  flex: 0 0 300px;
+}
+
+.printer_mgmt_page #printer_column {
+  flex: 1;
+}
+
+#unsupported_warning {
+  display: none;
+  padding: 12px 20px;
+  border-bottom: 1px solid #CCC;
+  background: #FFF;
+  color: #F43E25;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+#unsupported_warning.show {
+  display: block;
+}
+
+.env_item .env_name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.env_item .env_actions {
+  display: flex;
+  gap: 8px;
+}
+
+.env_item .env_actions button {
+  color: #999;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.env_item .env_actions button.danger {
+  color: #F43E25;
+}
+
+.printer_card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 12px;
+  border-radius: 5px;
+  border: 1px solid #CCC;
+}
+
+.printer_card_info {
+  flex: 1;
+  min-width: 0;
+}
+
+.printer_card_name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.printer_card_meta {
+  margin-top: 4px;
+  color: #888;
+  font-size: 13px;
+}
+
+.printer_card_actions {
+  display: flex;
+  gap: 10px;
+}
+
+.modal_port_box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.modal_port_box .port_label {
+  flex: 1;
+}
+
+/* ---------- 주문 접수 스테이션 관리 ---------- */
+.kds-station-mgmt aside {
+  flex: 0 0 360px;
+}
+
+.kds-station-mgmt article {
+  flex: 1;
+}
+
+.station-list {
+  display: flex;
+  flex-flow: column;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.station-card {
+  flex-flow: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.station-card-name {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.station-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.station-card-count {
+  color: #888;
+  font-size: 13px;
+}
+
+.kds-station-mgmt .edit-panel {
+  display: flex;
+  flex-flow: column;
+  gap: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #CCC;
+}
+
+.setting_toggle_row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 24px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.kds-station-mgmt .item-panel {
+  display: flex;
+  flex-flow: column;
+  gap: 15px;
+  flex: 1;
+  min-height: 0;
+}
+
+.kds-station-mgmt .show-all-notice {
+  display: none;
+  color: #1FAA9C;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.kds-station-mgmt .show-all-notice.visible {
+  display: block;
+}
+
+.kds-station-mgmt .item-panel-body {
+  display: flex;
+  gap: 20px;
+  flex: 1;
+  min-height: 0;
+}
+
+.kds-station-mgmt .item-section {
+  display: flex;
+  flex-flow: column;
+  flex: 1;
+  min-width: 0;
+  border-radius: 5px;
+  border: 1px solid #CCC;
+  font-size: 14px;
+  overflow-y: auto;
+}
+
+.kds-station-mgmt .item-section-title {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 10px 12px;
+  background: #F5F5F5;
+  border-bottom: 1px solid #000;
+  font-weight: 700;
+  text-align: center;
+}
+
+.kds-station-mgmt .bulk-check-row label,
+.kds-station-mgmt .category-group-title label,
+.kds-station-mgmt .item-check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 5px 12px;
+  border-bottom: 1px solid #CCC;
+  cursor: pointer;
+}
+
+.kds-station-mgmt .bulk-check-row label,
+.kds-station-mgmt .category-group-title label {
+  font-weight: 700;
+}
+
+.kds-station-mgmt .category-group-title label {
+  background: #F5F5F5;
+}
+
+.kds-station-mgmt .item-section input[type="checkbox"] {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: #1FAA9C;
+}
+
+.kds-station-mgmt .item-check-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.kds-station-mgmt .item-check-price {
+  color: #888;
+}
+
+.kds-station-mgmt .item-panel-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.kds-station-mgmt .item-panel-footer .setting_btn {
+  width: 200px;
+}
+
+/* ---------- 직원 호출 관리 ---------- */
+.staff-call-mgmt main article {
+  flex: 1;
+  padding: 20px;
+}
+
+.staff-call-mgmt aside {
+  flex: 0 0 300px;
+}
+
+.staff-call-mgmt .grid-settings {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #000;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.staff-call-mgmt .grid-settings input {
+  width: 50px;
+  height: 36px;
+  padding: 0 8px;
+  text-align: center;
+}
+
+.staff-call-mgmt .grid-settings>i {
+  color: #999;
+  font-style: normal;
+  font-weight: 500;
+}
+
+.staff-call-mgmt .staff-call-grid {
+  flex: 1;
+  min-height: 0;
+  gap: 10px;
+  padding: 0;
+  overflow-y: auto;
+}
+
+.staff-call-mgmt .staff-call-card {
+  min-height: 80px;
+  border-radius: 5px;
+  border: 1px solid #CCC;
+  background: #FFF;
+  box-shadow: none;
+  overflow: hidden;
+  transition: none;
+}
+
+.staff-call-mgmt .staff-call-card:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.staff-call-mgmt .staff-call-card img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.staff-call-mgmt .staff-call-card .content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-flow: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+}
+
+.staff-call-mgmt .staff-call-card img+.content {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.staff-call-mgmt .staff-call-card .name {
+  color: #000;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.staff-call-mgmt .staff-call-card .badge {
+  top: 8px;
+  right: auto;
+  left: 10px;
+  z-index: 2;
+  padding: 0;
+  color: #888;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.staff-call-mgmt .staff-call-card.empty {
+  border: 1px dashed #CCC;
+  background: #FFF;
+  color: #BBB;
+}
+
+.staff-call-mgmt .staff-call-card.empty:hover {
+  border-color: #CCC;
+  background: #FFF;
+}
+
+.staff-call-mgmt .staff-call-card.empty .name {
+  color: inherit;
+  font-weight: 500;
+}
+
+.staff-call-mgmt .staff-call-card.active,
+.staff-call-mgmt .staff-call-card.empty.active {
+  border: 1px solid #1FAA9C;
+  background: #F3FAFA;
+  color: #1FAA9C;
+}
+
+.staff-call-mgmt .staff-call-card.active .badge {
+  color: #1FAA9C;
+}
+
+.staff-call-mgmt .pos-badge {
+  color: #888;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.staff-call-mgmt .image-upload-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 5px;
+  border: 1px dashed #999;
+  color: #888;
+  font-size: 14px;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.staff-call-mgmt .image-upload-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.staff-call-mgmt .setting_panel_body {
+  gap: 20px;
+}
+
+.staff-call-mgmt .info_row {
+  display: flex;
+  flex-flow: column;
+  gap: 8px;
+}
+
+/* ---------- 이전일 미결제 삭제 이력 ---------- */
+.clog_page .setting_panel {
+  flex: 1;
+}
+
+.clog_page .setting_table ul {
+  min-width: 760px;
+}
+
+.clog_page .setting_table li {
+  grid-template-columns: 110px 100px 1fr 60px 140px 140px;
+}
+
+.clog_page .setting_table li .items {
+  line-height: 1.5;
+}
+
+/* ---------- 테이블 QR 발급 ---------- */
+.qr-card {
+  cursor: pointer;
+}
+
+.qr-card .card-title {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+}
+
+.qr-card .card-title h2 {
+  padding: 0;
+  font-size: 18px;
+}
+
+.qr-modal-inner {
+  text-align: center;
+}
+
+.qr-frame {
+  display: inline-block;
+  padding: 15px;
+  border-radius: 5px;
+  border: 1px solid #CCC;
+}
+
+.qr-modal-inner img {
+  display: block;
+  width: 240px;
+  height: 240px;
+  object-fit: contain;
+}
+
+.qr-modal-inner .qr-url {
+  margin: 15px 0 20px;
+  color: #888;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.qr-empty-state {
+  padding: 40px 10px;
+  color: #BBB;
+  font-size: 14px;
+}
+
+/* ---------- 좁은 화면 ---------- */
+@media (max-width: 768px) {
+  .setting_page main {
+    flex-flow: column;
+    height: auto;
+    min-height: calc(100dvh - 40px);
+    overflow: visible;
+  }
+
+  .setting_page main>.setting_panel,
+  .terminal_mgmt_page #terminal_info_column,
+  .printer_mgmt_page #env_column,
+  .kds-station-mgmt aside,
+  .staff-call-mgmt aside {
+    flex: none;
+    width: 100%;
+  }
+
+  .printer_mgmt_page #container {
+    height: auto;
+  }
+
+  .setting_row {
+    flex-flow: column;
+    gap: 12px;
+  }
+
+  .setting_row>h2 {
+    flex: none;
+    padding-top: 0;
+  }
+
+  .setting_field {
+    width: 100%;
+    max-width: none;
+  }
+
+  .kds-station-mgmt .item-panel-body {
+    flex-flow: column;
+  }
+
+  .printer_card {
+    flex-flow: column;
+    align-items: stretch;
+  }
+}

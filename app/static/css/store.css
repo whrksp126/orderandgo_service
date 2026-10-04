@@ -7,7 +7,7 @@
 .store_product main nav {
   width: 250px;
   background: #FFF;
-  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.15);
+  border-right: 1px solid #CCC;
 }
 
 .store_product main nav ul {

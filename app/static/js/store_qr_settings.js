@@ -64,7 +64,7 @@ async function saveGeofence() {
     qr_require_open_session: document.getElementById('requireSession').checked,
   };
   const d = await apiPost('/store/set_store_location', body);
-  alert(d.msg || '저장되었습니다.');
+  showToast(d.msg || '저장되었습니다.', d.code === 200 ? 'success' : 'error');
 }
 
 loadGeofence();

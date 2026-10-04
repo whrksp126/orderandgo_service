@@ -102,7 +102,7 @@ function openQrForTable(tableId, name) {
   document.getElementById('qrModalTitle').textContent = name;
   const content = document.getElementById('qrModalContent');
   document.getElementById('qrModal').classList.add('active');
-  content.innerHTML = '<div class="qr-empty-state">불러오는 중...</div>';
+  content.innerHTML = '<div class="qr-empty-state">불러오는 중</div>';
 
   // 이미 발급된 QR이 있으면 표시, 없으면 자동 생성
   apiGet('/store/get_table_qr/' + tableId).then(d => {
@@ -128,9 +128,9 @@ function renderQrView(d, tableId) {
     <div class="qr-frame"><img src="${d.qr_png}" alt="QR"></div>
     <div class="qr-url">${escapeHtml(d.qr_url)}</div>
     <div class="qr-modal-actions">
-      <button class="qr-btn primary" onclick="downloadQrJpeg()"><i class="ph ph-printer"></i> 인쇄</button>
-      <button class="qr-btn ghost" onclick="reissueQr()"><i class="ph ph-arrows-clockwise"></i> 재발급</button>
-      <button class="qr-btn ghost" onclick="closeQrModal()">닫기</button>
+      <button class="setting_btn gray" onclick="closeQrModal()">닫기</button>
+      <button class="setting_btn" onclick="reissueQr()">재발급</button>
+      <button class="setting_btn fill" onclick="downloadQrJpeg()">인쇄</button>
     </div>`;
 }
 
@@ -139,7 +139,7 @@ function reissueQr() {
   if (!confirm('재발급하면 기존 QR은 더 이상 사용할 수 없습니다. 진행할까요?')) return;
   const tableId = _currentQr.tableId;
   const content = document.getElementById('qrModalContent');
-  content.innerHTML = '<div class="qr-empty-state">재발급 중...</div>';
+  content.innerHTML = '<div class="qr-empty-state">재발급 중</div>';
   apiPost('/store/generate_table_qr', { table_id: tableId }).then(g => {
     if (g.code === 200) renderQrView(g, tableId);
     else content.innerHTML = `<div class="qr-empty-state">재발급 실패</div>`;
