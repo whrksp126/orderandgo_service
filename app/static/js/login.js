@@ -213,9 +213,16 @@ const clickRequestVerifyCode = (event) => {
       .catch(err => {
         if (err === 'handled') return;
         console.error('[Firebase sendCode]', err);
-        var detail = (err && err.code ? err.code : '') + ' ' + (err && err.message ? err.message : err);
-        alert('인증번호 발송 오류\n' + detail);
-        showToast('발송 실패: ' + detail, 'error');
+        const code = (err && err.code) || '';
+        const msgs = {
+          'auth/billing-not-enabled': '현재 문자 발송이 일시적으로 불가합니다. 고객센터로 문의해 주세요.',
+          'auth/quota-exceeded': '오늘 문자 발송 한도를 초과했습니다. 잠시 후 다시 시도해 주세요.',
+          'auth/too-many-requests': '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.',
+          'auth/invalid-phone-number': '전화번호 형식이 올바르지 않습니다.',
+          'auth/captcha-check-failed': '보안 확인에 실패했습니다. 새로고침 후 다시 시도해 주세요.',
+          'auth/network-request-failed': '네트워크 연결을 확인해 주세요.',
+        };
+        showToast(msgs[code] || ('인증번호 발송에 실패했습니다' + (code ? ' (' + code + ')' : '')), 'error');
       })
       .finally(() => { if (btn) btn.disabled = false; });
     return;

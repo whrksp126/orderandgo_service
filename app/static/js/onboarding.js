@@ -64,14 +64,14 @@
       h += '<span class="ob-eyebrow">STEP 2</span><h1 class="ob-title">매장 이름을 알려주세요</h1>' +
         '<p class="ob-sub">손님에게 보이는 이름이에요. 나중에 바꿀 수 있어요.</p>' +
         '<label class="ob-label">매장 이름</label>' +
-        '<input class="ob-input" id="obName" placeholder="예: 빨간중식" value="' + esc(state.storeName) + '" maxlength="30">';
+        '<input class="ob-input" id="obName" placeholder="예: 빨간중식" value="' + esc(state.storeName) + '" maxlength="30" enterkeyhint="next" autocomplete="off">';
     } else if (state.step === 2) {
       h += '<span class="ob-eyebrow">STEP 3</span><h1 class="ob-title">대표 메뉴를 추가해 주세요</h1>' +
         '<p class="ob-sub">2~3개만 넣어도 충분해요. 손님 주문 화면을 바로 보여드릴게요.</p><div id="obMenus">';
       state.menus.forEach(function (m, i) {
         h += '<div class="ob-menu-row" data-i="' + i + '">' +
-          '<input class="ob-input name" placeholder="메뉴 이름" value="' + esc(m.name) + '">' +
-          '<input class="ob-input price" placeholder="가격" inputmode="numeric" value="' + esc(m.price) + '">' +
+          '<input class="ob-input name" placeholder="메뉴 이름" value="' + esc(m.name) + '" enterkeyhint="next" autocomplete="off">' +
+          '<input class="ob-input price" placeholder="가격" inputmode="numeric" value="' + esc(m.price) + '" enterkeyhint="' + (i < state.menus.length - 1 ? 'next' : 'done') + '" autocomplete="off">' +
           (state.menus.length > 1 ? '<button class="ob-menu-del" aria-label="삭제"><i class="ph ph-trash"></i></button>' : '') +
           '</div>';
       });
@@ -202,6 +202,50 @@
   function prev() {
     if (state.step === 0) { location.href = '/'; return; }
     state.step--; save(); render(); window.scrollTo(0, 0);
+  }
+
+  // 키보드 엔터/이동: 다음 입력칸으로, 마지막 칸이면 다음 단계로
+  function onEnter(input) {
+    var row = input.closest('.ob-menu-row');
+    if (row && input.classList.contains('name')) { row.querySelector('.price').focus(); return; }
+    if (row && row.nextElementSibling) { row.nextElementSibling.querySelector('.name').focus(); return; }
+    if (!valid()) return;
+    next();
+    var first = stepEl.querySelector('.ob-input');
+    if (first) first.focus(); else if (document.activeElement) document.activeElement.blur();
+  }
+  // 한글 조합 중 엔터는 조합 확정 이벤트라 무시하고, 조합이 끝난 직후 한 번만 처리
+  var enterWhileComposing = false;
+  stepEl.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' || !e.target.classList.contains('ob-input')) return;
+    if (e.isComposing) { enterWhileComposing = true; return; }
+    if (e.keyCode === 229) return;
+    e.preventDefault();
+    onEnter(e.target);
+  });
+  stepEl.addEventListener('compositionend', function (e) {
+    if (!enterWhileComposing) return;
+    enterWhileComposing = false;
+    var t = e.target;
+    setTimeout(function () { if (document.activeElement === t) onEnter(t); }, 0);
+  });
+  // 입력칸 포커스 시 키보드·하단 버튼에 가리지 않게 화면 안으로
+  stepEl.addEventListener('focusin', function (e) {
+    if (!e.target.classList.contains('ob-input')) return;
+    var t = e.target;
+    setTimeout(function () { if (document.activeElement === t) t.scrollIntoView({ block: 'center', behavior: 'smooth' }); }, 300);
+  });
+
+  // 키보드가 레이아웃을 줄이지 않는 브라우저(iOS Safari 등): 하단 버튼을 키보드 위로 올림
+  var vv = window.visualViewport;
+  if (vv) {
+    var footWrap = footEl.closest('.ob-foot');
+    var syncFoot = function () {
+      var gap = vv.scale > 1.01 ? 0 : Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      footWrap.style.transform = gap > 1 ? 'translateY(-' + gap + 'px)' : '';
+    };
+    vv.addEventListener('resize', syncFoot);
+    vv.addEventListener('scroll', syncFoot);
   }
 
   backEl.addEventListener('click', prev);

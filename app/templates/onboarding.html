@@ -2,6 +2,8 @@
 {% block title %}오더앤고 시작하기 — 3분이면 우리 매장 완성{% endblock %}
 {% block description %}가입 전에 먼저 만들어보세요. 업종·메뉴·테이블만 입력하면 우리 매장이 어떻게 보이는지 바로 확인할 수 있습니다.{% endblock %}
 {% block robots %}noindex, follow{% endblock %}
+{# 키보드가 올라오면 레이아웃 뷰포트를 줄여 하단 고정 버튼이 키보드 위로 올라오게 함 (Android Chrome) #}
+{% block viewport_extra %}, interactive-widget=resizes-content{% endblock %}
 
 {% block head %}<link rel="stylesheet" href="/static/css/onboarding.css">{% endblock %}
 

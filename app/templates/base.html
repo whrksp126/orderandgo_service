@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0{% block viewport_extra %}{% endblock %}">
 
   {# ---------- SEO 기본 메타 (페이지별 override 가능) ---------- #}
   <title>{% block title %}{{ site.default_title }}{% endblock %}</title>
