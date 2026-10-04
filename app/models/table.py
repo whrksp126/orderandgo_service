@@ -8,6 +8,29 @@ from app.models import Order, TableOrderList, TablePaymentList, db, Table, Table
 #################
 
 # 테이블 카테고리 생성/수정
+# 기본 테이블 격자: setTablePosition.js 의 autoLayoutAllTables 와 동일 (20×12 캔버스, 카드 4×3, 한 줄 5개)
+DEFAULT_GRID_COLS, DEFAULT_GRID_W, DEFAULT_GRID_H = 5, 4, 3
+
+def default_grid(index):
+    return {'grid_x': (index % DEFAULT_GRID_COLS) * DEFAULT_GRID_W, 'grid_y': (index // DEFAULT_GRID_COLS) * DEFAULT_GRID_H,
+            'grid_w': DEFAULT_GRID_W, 'grid_h': DEFAULT_GRID_H}
+
+
+def ensure_default_table_layout(store_id):
+    """배치된 테이블이 하나도 없는 카테고리에 기본 격자를 적용 (예전에 만들어져 좌표가 비어 있는 매장용)."""
+    changed = False
+    for category in TableCategory.query.filter_by(store_id=store_id).all():
+        tables = Table.query.filter_by(table_category_id=category.id).order_by(Table.position).all()
+        if not tables or any(t.grid_x is not None for t in tables):
+            continue
+        for i, t in enumerate(tables[:20]):
+            for k, v in default_grid(i).items():
+                setattr(t, k, v)
+        changed = True
+    if changed:
+        db.session.commit()
+
+
 def create_table_category(table_category_list, store_id):
     result = False
     # DB에 있는 테이블 카테고리 정보
@@ -42,7 +65,9 @@ def create_table_category(table_category_list, store_id):
                         'table_category_id' : table_category.id,
                         'position' : i+1
                     }
-                    item = Table(name=data['name'], seat_count=data['seat_count'], is_group=data['is_group'], table_category_id=data['table_category_id'], position=data['position'])
+                    # 테이블 설정 화면의 자동 배치와 동일한 기본 격자 (한 줄 5개 × 4줄) → 배치 화면을 열지 않아도 POS 에 바로 표시
+                    item = Table(name=data['name'], seat_count=data['seat_count'], is_group=data['is_group'], table_category_id=data['table_category_id'], position=data['position'],
+                                 **default_grid(i))
                     db.session.add(item)
             db.session.commit()
         result = True

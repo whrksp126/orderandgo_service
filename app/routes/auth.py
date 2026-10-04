@@ -7,6 +7,7 @@ from flask import redirect, url_for
 
 from app.models.user import create_admin_user, create_store_user, get_store_user_login, get_admin_user_login, update_store_logo_img, get_user_by_tel, get_user_by_id, reset_user_password
 from app.models.store import get_store
+from app.models.table import ensure_default_table_layout
 from app.models.onboarding import create_store_from_onboarding, _unique_store_id
 from app.site_config import FIREBASE
 import json
@@ -81,6 +82,7 @@ def _admin_user_id():
 
 
 def _enter_store(store):
+    ensure_default_table_layout(store.id)
     login_user(store)
     session['user_type'] = 'store'
 
@@ -113,6 +115,7 @@ def login():
     result = get_store_user_login(request.form.get('store_id'), request.form.get('password'))
     if not result:
         return jsonify({'code': 400, 'message': '매장 아이디 또는 비밀번호가 올바르지 않습니다.'})
+    ensure_default_table_layout(result.id)
     session['user_type'] = 'store'
     session.pop('admin_user_id', None)
     return jsonify({'code': 200, 'message': 'Success', 'redirect': '/dashboard'})
