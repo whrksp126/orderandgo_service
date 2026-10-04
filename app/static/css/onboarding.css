@@ -115,3 +115,7 @@ body.ob {
   .ob-menu-row .ob-input.price { width: 104px; } .ob-menu-del { width: 44px; }
   .ob-consult-btns { flex-wrap: wrap; } .ob-consult-btn { flex: 1 1 130px; }
 }
+
+/* 눌림 피드백 */
+.ob-btn:active:not(:disabled), .ob-chip:active, .ob-add-menu:active, .ob-stepper button:active, .ob-consult-btn:active { transform: scale(0.97); }
+.ob-chip:active { border-color: var(--og-primary); background: var(--og-primary-050); }

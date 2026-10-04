@@ -8,15 +8,15 @@
   <link rel="icon" type="image/x-icon" href="/static/images/common/logo.png">
 
   <!-- 시작 초기 css 설정 -->
-  <link rel="stylesheet" href="/static/css/responsive.css">
-  <link rel="stylesheet" href="/static/css/reset.css">
-  <link rel="stylesheet" href="/static/css/common.css">
-  <link rel="stylesheet" href="/static/css/animation.css">
+  <link rel="stylesheet" href="/static/css/responsive.css?v={{ static_v }}">
+  <link rel="stylesheet" href="/static/css/reset.css?v={{ static_v }}">
+  <link rel="stylesheet" href="/static/css/common.css?v={{ static_v }}">
+  <link rel="stylesheet" href="/static/css/animation.css?v={{ static_v }}">
   <!-- 아이콘 -->
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
   <!-- 전용 css -->
-  <link rel="stylesheet" href="/static/css/login.css">
+  <link rel="stylesheet" href="/static/css/login.css?v={{ static_v }}">
 </head>
 <body class="register">
   <div id="app">
@@ -69,7 +69,7 @@
   </div>
   <div class="toast_wrap" id="toast_wrap"></div>
   <script>window.FIREBASE_CONFIG = {{ firebase | tojson }}; window.OG_PHONE_MODE = 'register';</script>
-  <script type="module" src="/static/js/firebase-phone.js"></script>
-  <script src="/static/js/login.js"></script>
+  <script type="module" src="/static/js/firebase-phone.js?v={{ static_v }}"></script>
+  <script src="/static/js/login.js?v={{ static_v }}"></script>
 </body>
 </html>

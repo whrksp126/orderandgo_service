@@ -332,3 +332,35 @@ form > div.verified_badge {
   line-height: 1;
 }
 .verified_badge i { font-size: 20px; line-height: 1; }
+
+/* ── 버튼 클릭 피드백 / 진행 표시 ── */
+form button.border_btn,
+form input[type="submit"] {
+  transition: transform 0.08s, background 0.15s, opacity 0.15s;
+}
+form button.border_btn:active:not(:disabled),
+form input[type="submit"]:active:not(:disabled) {
+  transform: scale(0.97);
+}
+form button.border_btn:active:not(:disabled) { background: #E9F7F5; }
+form input[type="submit"]:active:not(:disabled) { opacity: 0.85; }
+form button.border_btn:disabled { opacity: 0.6; cursor: not-allowed; }
+form button.is-loading {
+  position: relative;
+  color: transparent !important;
+  opacity: 1 !important;
+}
+form button.is-loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border: 2px solid #1FAA9C;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: btnSpin 0.7s linear infinite;
+}
+@keyframes btnSpin { to { transform: rotate(360deg); } }

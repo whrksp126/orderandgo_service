@@ -175,6 +175,30 @@ const onSubmitStoreSelect = (event) => {
     .catch(() => showFormMsg('form_msg', '오류가 발생했습니다.'));
 };
 
+// ── 버튼 진행 표시: 처리 중엔 버튼 안에 스피너를 띄우고 재클릭을 막음 ──
+const setBtnLoading = (btn, on) => {
+  if (!btn) return;
+  btn.disabled = on;
+  btn.classList.toggle('is-loading', on);
+  // input[type=submit] 은 내부에 스피너를 그릴 수 없어 문구로 표시
+  if (btn.tagName === 'INPUT') {
+    if (on) { btn.dataset.label = btn.value; btn.value = '처리 중…'; }
+    else if (btn.dataset.label) btn.value = btn.dataset.label;
+  }
+};
+// 발송 성공 후 일정 시간 재전송 잠금 (연속 클릭으로 문자가 중복 발송되는 것 방지)
+const startResendCooldown = (btn, sec = 30) => {
+  if (!btn) return;
+  btn.disabled = true;
+  const tick = () => {
+    if (sec <= 0) { btn.disabled = false; btn.textContent = '재전송'; return; }
+    btn.textContent = '재전송 ' + sec + '초';
+    sec -= 1;
+    setTimeout(tick, 1000);
+  };
+  tick();
+};
+
 // ── 인증번호 요청 (register.html) ──
 const clickRequestVerifyCode = (event) => {
   const form = event.currentTarget.closest('form');
@@ -189,7 +213,8 @@ const clickRequestVerifyCode = (event) => {
   // Firebase 전화 인증 (실제 SMS 발송) — 발송 전에 가입여부 사전 확인
   if (window.ogFirebasePhone) {
     const btn = event.currentTarget;
-    if (btn) btn.disabled = true;
+    setBtnLoading(btn, true);
+    let sent = false;
     const mode = window.OG_PHONE_MODE || 'register';
     fetch('/check_tel?tel=' + encodeURIComponent(tel))
       .then(r => r.json())
@@ -206,6 +231,7 @@ const clickRequestVerifyCode = (event) => {
         return window.ogFirebasePhone.sendCode(tel);
       })
       .then(() => {
+        sent = true;
         showToast('인증번호가 발송되었습니다', 'success');
         const vb = document.getElementById('verify_btn'); if (vb) vb.style.display = '';
         const codeEl = document.getElementById('code_number'); if (codeEl) codeEl.focus();
@@ -224,7 +250,7 @@ const clickRequestVerifyCode = (event) => {
         };
         showToast(msgs[code] || ('인증번호 발송에 실패했습니다' + (code ? ' (' + code + ')' : '')), 'error');
       })
-      .finally(() => { if (btn) btn.disabled = false; });
+      .finally(() => { setBtnLoading(btn, false); if (sent) startResendCooldown(btn); });
     return;
   }
   // 폴백: 서버 SMS
@@ -250,10 +276,11 @@ const clickVerifyCode = (event) => {
   if (code.length < 4) { showToast('인증번호를 입력해주세요', 'error'); return; }
   if (!window.ogFirebasePhone) { showToast('인증 모듈을 불러오는 중입니다', 'error'); return; }
   const btn = event.currentTarget;
-  btn.disabled = true;
+  setBtnLoading(btn, true);
   window.ogFirebasePhone.confirmCode(code)
     .then(idToken => {
       window.__ogVerifiedToken = idToken;
+      setBtnLoading(btn, false);
       document.querySelectorAll('input[type="tel"]').forEach(el => el.disabled = true);
       const codeEl = document.getElementById('code_number'); if (codeEl) codeEl.disabled = true;
       btn.style.display = 'none';
@@ -266,7 +293,7 @@ const clickVerifyCode = (event) => {
       const pwEl = document.getElementById('password') || document.getElementById('new_password'); if (pwEl) pwEl.focus();
       showToast('전화번호 인증이 완료되었습니다', 'success');
     })
-    .catch(() => { showToast('인증번호가 올바르지 않습니다', 'error'); btn.disabled = false; });
+    .catch(() => { showToast('인증번호가 올바르지 않습니다', 'error'); setBtnLoading(btn, false); });
 };
 
 // ── 관리자 회원가입 (register.html) ──
@@ -297,7 +324,9 @@ const onSubmitRegister = (event) => {
     try { onboarding = localStorage.getItem('og_onboarding'); } catch (e) { onboarding = null; }
   }
 
+  const submitBtn = form.querySelector('input[type="submit"]');
   const postRegister = (idToken) => {
+    setBtnLoading(submitBtn, true);
     const fd = new FormData();
     fd.append('tel', tels);
     fd.append('password', password);
@@ -318,10 +347,11 @@ const onSubmitRegister = (event) => {
             setTimeout(() => { window.location.href = '/login'; }, 2000);
           }
         } else {
+          setBtnLoading(submitBtn, false);
           showFormMsg('form_msg', data.message);
         }
       })
-      .catch(() => showToast('오류가 발생했습니다.', 'error'));
+      .catch(() => { setBtnLoading(submitBtn, false); showToast('오류가 발생했습니다.', 'error'); });
   };
 
   postRegister(window.__ogVerifiedToken || null);

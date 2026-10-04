@@ -1,4 +1,5 @@
 import os
+import time
 from flask import Flask, render_template, jsonify, request
 from flask_socketio import SocketIO
 from config import Config
@@ -65,6 +66,9 @@ def create_app():
     app.register_blueprint(table_order_bp)
     app.register_blueprint(kds_bp, url_prefix='/kds')
 
+    # 정적 파일 캐시 무효화용 버전 — 배포(재기동)마다 바뀌어 브라우저·CDN 이 새 파일을 받음
+    STATIC_VERSION = str(int(time.time()))
+
     # 템플릿 전역 컨텍스트: 회사 법정정보 / SEO 기본값 / GA4
     @app.context_processor
     def inject_site_context():
@@ -73,6 +77,7 @@ def create_app():
             "site": SITE,
             "firebase": FIREBASE,
             "ga4_id": os.environ.get("GA4_MEASUREMENT_ID"),
+            "static_v": STATIC_VERSION,
         }
 
     # 커스텀 에러 페이지 (API 요청은 JSON, 그 외 HTML)
