@@ -25,7 +25,7 @@
     el.className = 'au-msg';
     void el.offsetWidth; // 같은 메시지가 다시 떠도 흔들림 애니메이션 재생
     el.className = 'au-msg show ' + type;
-    el.innerHTML = '<i class="ph ' + (type === 'error' ? 'ph-warning-circle' : 'ph-check-circle') + '"></i><span></span>';
+    el.innerHTML = '<span></span>';
     el.querySelector('span').textContent = msg;
   }
   function hideMsg(id) { var el = $(id); if (el) el.className = 'au-msg'; }
@@ -314,36 +314,25 @@
   // ── 매장 만들기 ──
   var createForm = $('form_store_create');
   if (createForm) {
-    var nameEl = $('new_store_name'), sidEl = $('new_store_id'), spwEl = $('new_store_password');
+    var nameEl = $('new_store_name');
     var createBtn = createForm.querySelector('.au-btn');
-    var FIELDS = { name: nameEl, store_id: sidEl, password: spwEl };
-    var clearErrors = function () {
+    nameEl.addEventListener('input', function () {
       hideMsg('msg_store_create');
-      createForm.querySelectorAll('.au-field.is-error').forEach(function (f) { f.classList.remove('is-error'); });
-    };
-    [nameEl, sidEl, spwEl].forEach(function (el) {
-      el.addEventListener('input', function () {
-        clearErrors();
-        if (!createBtn.classList.contains('is-loading')) createBtn.disabled = nameEl.value.trim().length === 0;
-      });
+      nameEl.closest('.au-field').classList.remove('is-error');
+      if (!createBtn.classList.contains('is-loading')) createBtn.disabled = nameEl.value.trim().length === 0;
     });
     createForm.addEventListener('submit', function (e) {
       e.preventDefault();
       if (createBtn.disabled) return;
-      clearErrors();
       setLoading(createBtn, true);
-      post('/register_store', { name: nameEl.value.trim(), store_id: sidEl.value.trim(), password: spwEl.value })
+      post('/register_store', { name: nameEl.value.trim() })
         .then(function (data) {
           if (data.code === 200) { location.href = data.redirect || '/dashboard'; return; }
           if (data.code === 401) { location.href = data.redirect || '/login'; return; }
           setLoading(createBtn, false);
           showMsg('msg_store_create', data.message || '매장을 만들지 못했어요.');
-          var field = FIELDS[data.field];
-          if (field) {
-            if (field !== nameEl) createForm.querySelector('.au-details').open = true;
-            field.closest('.au-field').classList.add('is-error');
-            field.focus();
-          }
+          nameEl.closest('.au-field').classList.add('is-error');
+          nameEl.focus();
         })
         .catch(function () { setLoading(createBtn, false); showMsg('msg_store_create', '네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'); });
     });

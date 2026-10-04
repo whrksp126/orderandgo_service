@@ -3,46 +3,18 @@
 
 {% block auth %}
 <h1 class="au-title">매장 만들기</h1>
-<p class="au-sub">매장 이름만 정하면 바로 시작할 수 있어요.</p>
+<p class="au-sub">매장 이름을 입력해주세요.</p>
 
 <form id="form_store_create" class="au-form" novalidate>
   <label class="au-field">
     <span class="au-label">매장 이름</span>
-    <span class="au-input"><i class="ph ph-storefront"></i>
+    <span class="au-input">
       <input type="text" id="new_store_name" maxlength="30" autocomplete="organization" placeholder="예: 빨간분식 강남점" enterkeyhint="done">
     </span>
-    <span class="au-field-hint">손님에게 보이는 이름이에요. 나중에 바꿀 수 있어요.</span>
   </label>
-
-  <details class="au-details">
-    <summary><i class="ph ph-device-tablet"></i><span>매장 기기 로그인 설정</span><small>선택</small><i class="ph ph-caret-down au-details-caret"></i></summary>
-    <div class="au-details-body">
-      <p class="au-hint"><i class="ph ph-info"></i><span>POS·주방 화면처럼 매장에 두는 기기에서 쓰는 아이디예요. 비워두면 아이디는 자동으로 만들어지고, 비밀번호는 사장님 계정과 같게 설정돼요.</span></p>
-      <label class="au-field">
-        <span class="au-label">매장 아이디</span>
-        <span class="au-input"><i class="ph ph-at"></i>
-          <input type="text" id="new_store_id" maxlength="30" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="자동으로 만들기">
-        </span>
-      </label>
-      <label class="au-field">
-        <span class="au-label">매장 비밀번호</span>
-        <span class="au-input"><i class="ph ph-lock-simple"></i>
-          <input type="password" id="new_store_password" autocomplete="new-password" placeholder="사장님 계정 비밀번호와 같게">
-          <button type="button" class="au-eye js-eye" aria-label="비밀번호 보기"><i class="ph ph-eye"></i></button>
-        </span>
-      </label>
-    </div>
-  </details>
-
   <div class="au-msg" id="msg_store_create" role="alert"></div>
   <button type="submit" class="au-btn" disabled><span class="au-btn-label">매장 만들기</span></button>
 </form>
 
-<div class="au-links">
-  {% if has_store %}
-  <a class="au-link" href="/stores"><i class="ph ph-arrow-left"></i>매장 선택으로</a>
-  {% else %}
-  <button type="button" class="au-link js-logout"><i class="ph ph-sign-out"></i>로그아웃</button>
-  {% endif %}
-</div>
+<div class="au-links"><a class="au-link" href="/stores">매장 목록으로</a></div>
 {% endblock %}

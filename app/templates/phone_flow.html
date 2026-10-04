@@ -8,7 +8,6 @@
 
 {% if is_register %}
 <div class="au-banner" id="onboardingBanner" hidden>
-  <i class="ph ph-storefront"></i>
   <span><strong id="onboardingStore"></strong> 매장이 준비됐어요. 가입하면 그대로 저장돼요.</span>
 </div>
 {% endif %}
@@ -21,7 +20,7 @@
     <p class="au-sub">{{ '본인 확인을 위해 인증번호를 문자로 보내드려요.' if is_register else '가입한 휴대폰 번호로 인증번호를 보내드려요.' }}</p>
     <label class="au-field">
       <span class="au-label">휴대폰 번호</span>
-      <span class="au-input"><i class="ph ph-phone"></i>
+      <span class="au-input">
         <input type="tel" id="flow_tel" class="js-tel" inputmode="numeric" autocomplete="tel-national" placeholder="010-0000-0000" maxlength="13" enterkeyhint="send">
       </span>
     </label>
@@ -42,7 +41,7 @@
     <div class="au-msg" id="msg_step2" role="alert"></div>
     <button type="button" class="au-btn" id="verifyCodeBtn" disabled><span class="au-btn-label">확인</span></button>
     <div class="au-links au-links--split">
-      <button type="button" class="au-link" id="changeTelBtn"><i class="ph ph-arrow-left"></i>번호 다시 입력</button>
+      <button type="button" class="au-link" id="changeTelBtn">번호 다시 입력</button>
       <button type="button" class="au-link" id="resendBtn" disabled>재전송</button>
     </div>
   </section>
@@ -54,14 +53,14 @@
     <p class="au-sub">8자 이상으로 입력해주세요.</p>
     <label class="au-field">
       <span class="au-label">{{ '비밀번호' if is_register else '새 비밀번호' }}</span>
-      <span class="au-input"><i class="ph ph-lock-simple"></i>
+      <span class="au-input">
         <input type="password" id="flow_password" autocomplete="new-password" placeholder="8자 이상" enterkeyhint="next">
         <button type="button" class="au-eye js-eye" aria-label="비밀번호 보기"><i class="ph ph-eye"></i></button>
       </span>
     </label>
     <label class="au-field">
       <span class="au-label">비밀번호 확인</span>
-      <span class="au-input"><i class="ph ph-lock-simple"></i>
+      <span class="au-input">
         <input type="password" id="flow_password2" autocomplete="new-password" placeholder="한 번 더 입력" enterkeyhint="done">
         <button type="button" class="au-eye js-eye" aria-label="비밀번호 보기"><i class="ph ph-eye"></i></button>
       </span>

@@ -106,13 +106,10 @@ def login():
         logout_user()
         session['admin_user_id'] = user.id
         session['user_type'] = 'admin'
-        stores = get_store(user.id)
-        if len(stores) == 1:                            # 매장이 하나면 바로 입장
-            _enter_store(stores[0])
-            return jsonify({'code': 200, 'message': 'Success', 'redirect': '/dashboard'})
-        return jsonify({'code': 200, 'message': 'Success', 'redirect': '/stores' if stores else '/stores/new'})
+        # 사장님은 여러 매장을 가질 수 있음 → 내 매장 목록에서 선택/생성
+        return jsonify({'code': 200, 'message': 'Success', 'redirect': '/stores'})
 
-    # 매장 기기 로그인 (매장 아이디)
+    # 매장 로그인 (매장 아이디) → 해당 매장으로 바로 입장
     result = get_store_user_login(request.form.get('store_id'), request.form.get('password'))
     if not result:
         return jsonify({'code': 400, 'message': '매장 아이디 또는 비밀번호가 올바르지 않습니다.'})
@@ -147,7 +144,7 @@ def stores_enter():
 def stores_new():
     if not _admin_user_id():
         return redirect('/login')
-    return render_template('store_create.html', has_store=bool(get_store(_admin_user_id())))
+    return render_template('store_create.html')
 
 
 # 관리자 회원가입
@@ -212,21 +209,14 @@ def register_store_user():
         return jsonify({'message': '로그인이 필요합니다.', 'code': 401, 'redirect': '/login'})
 
     name = (request.form.get('name') or '').strip()
-    store_id = (request.form.get('store_id') or '').strip()
-    password = request.form.get('password') or ''
     if not name:
-        return jsonify({'message': '매장 이름을 입력해주세요.', 'code': 400, 'field': 'name'})
-    if password and len(password) < MIN_PASSWORD_LEN:
-        return jsonify({'message': f'매장 비밀번호는 {MIN_PASSWORD_LEN}자 이상으로 입력해주세요.', 'code': 400, 'field': 'password'})
+        return jsonify({'message': '매장 이름을 입력해주세요.', 'code': 400})
 
-    # 매장 기기용 아이디/비밀번호를 비워두면: 아이디 자동 발급, 비밀번호 = 사장님 계정 비밀번호
-    result = create_store_user(user.id, store_id or _unique_store_id(), password, name, '',
-                               password_hash=None if password else user.password)
+    # 매장 계정: 아이디는 자동 발급, 비밀번호는 사장님 계정 비밀번호와 동일
+    result = create_store_user(user.id, _unique_store_id(), '', name, '', password_hash=user.password)
 
-    if result == 'duplicate':
-        return jsonify({'message': '이미 사용 중인 매장 아이디입니다.', 'code': 409, 'field': 'store_id'})
     if result == 'duplicate_name':
-        return jsonify({'message': '이미 사용 중인 매장 이름입니다.', 'code': 409, 'field': 'name'})
+        return jsonify({'message': '이미 사용 중인 매장 이름입니다.', 'code': 409})
     if result == False:
         return jsonify({'message': '매장을 만드는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.', 'code': 400})
 
