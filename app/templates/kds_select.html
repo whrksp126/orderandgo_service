@@ -20,113 +20,68 @@
 
   <link rel="stylesheet" href="/static/css/store.css">
   <style>
-    /* POS 테이블 목록과 동일한 밝은 보드 + 화이트 카드 스타일 */
-    .kds-select body,
-    body.kds-select {
-      background: #f8f9fa;
-    }
-
+    /* 매장 관리(/store/product)와 같은 규격: 회색 바탕, 왼쪽 제목 + 흰 테두리 버튼 목록 */
     body.kds-select main {
-      min-height: calc(100dvh - 40px);
-      padding: 20px;
-      background: #f8f9fa;
       display: block;
-    }
-
-    /* store.css(.set_menu_product main>*)가 자식에 씌우는 흰 패널 제거 → POS처럼 카드가 보드에 바로 놓임 */
-    body.kds-select main > * {
-      background: transparent;
-      border: none;
-      border-radius: 0;
-      padding: 0;
-    }
-
-    .kds-select-wrap {
-      width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .kds-station-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 16px;
-    }
-
-    /* POS view-card 룩: 흰 카드, 10px 라운드, 얇은 테두리, 이름만 표시 */
-    .kds-station-card {
-      background: #fff;
-      border: 1.5px solid #d5d8de;
-      border-radius: 10px;
+      height: calc(100vh - 40px);
+      height: calc(100dvh - 40px);
       padding: 20px;
-      min-height: 120px;
-      cursor: pointer;
-      transition: border-color 0.15s, box-shadow 0.1s;
+      overflow-y: auto;
+      background: #F5F5F5;
+    }
+    .kds-select-row {
       display: flex;
-      flex-direction: column;
+      align-items: flex-start;
+      gap: 20px;
+      padding: 20px 0;
     }
-
-    .kds-station-card:hover {
-      border-color: #1FAA9C;
-    }
-
-    .kds-station-card:active {
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-    }
-
-    .kds-station-name {
-      font-size: 20px;
-      font-weight: 700;
-      color: #222;
-    }
-
-    /* 빈 상태 */
-    .kds-empty {
-      text-align: center;
-      padding: 60px 20px;
-      color: #ccc;
-    }
-
-    .kds-empty i {
-      font-size: 56px;
-      display: block;
-      margin-bottom: 16px;
-    }
-
-    .kds-empty p {
+    .kds-select-row h2 {
+      width: 150px;
+      padding-top: 15px;
+      color: #000;
       font-size: 16px;
       font-weight: 700;
-      margin-bottom: 8px;
-      color: #bbb;
+      line-height: 1.25;
     }
-
-    .kds-empty small {
-      font-size: 13px;
-      color: #ccc;
+    .kds-select-list {
+      flex: 1 1 0;
+      min-width: 0;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
     }
-
-    .btn-goto-mgmt {
-      display: inline-flex;
+    .kds-select-list a {
+      display: flex;
       align-items: center;
-      gap: 6px;
-      margin-top: 20px;
-      padding: 12px 24px;
-      background: #1FAA9C;
-      color: #fff;
-      border-radius: 10px;
+      min-height: 50px;
+      padding: 12px;
+      border-radius: 5px;
+      border: 1px solid #CCC;
+      background: #FFF;
+      color: #000;
       font-size: 14px;
-      font-weight: 800;
-      text-decoration: none;
-      transition: background 0.2s;
+      font-weight: 600;
+      transition: border-color 0.15s, background 0.15s;
     }
-
-    .btn-goto-mgmt:hover {
-      background: #178a7e;
+    .kds-select-list a:hover { border-color: #1FAA9C; }
+    .kds-select-list a:active { background: #F3FAFA; }
+    .kds-select-empty {
+      grid-column: 1 / -1;
+      padding-top: 15px;
+      color: #666;
+      font-size: 14px;
+      line-height: 1.25;
+    }
+    @media (max-width: 700px) {
+      .kds-select-row { flex-direction: column; gap: 12px; }
+      .kds-select-row h2 { width: auto; padding-top: 0; }
+      .kds-select-list { width: 100%; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+      .kds-select-empty { padding-top: 0; }
     }
   </style>
 </head>
 
-<body class="kds-select set_menu_product">
+<body class="kds-select">
   <div id="container">
     <header>
       <a class="back_btn" href="/dashboard">
@@ -146,32 +101,25 @@
     </header>
 
     <main>
-      <div class="kds-select-wrap">
-        {% if stations %}
-        <div class="kds-station-grid">
+      <div class="kds-select-row">
+        <h2>주문 접수</h2>
+        <div class="kds-select-list">
+          {% if stations %}
           {% for s in stations %}
-          <div class="kds-station-card" onclick="location.href='/kds/station/{{ s.id }}'">
-            <div class="kds-station-name">{{ s.name }}</div>
-          </div>
+          <a href="/kds/station/{{ s.id }}">{{ s.name }}</a>
           {% endfor %}
+          {% else %}
+          <p class="kds-select-empty">등록된 스테이션이 없습니다.</p>
+          <a href="/store/kds_station_mgmt">스테이션 설정</a>
+          {% endif %}
         </div>
-        {% else %}
-        <div class="kds-empty">
-          <i class="ph ph-cooking-pot"></i>
-          <p>등록된 스테이션이 없습니다</p>
-          <small>매장 관리에서 주문 접수 스테이션을 먼저 설정해주세요</small><br>
-          <a href="/store/kds_station_mgmt" class="btn-goto-mgmt">
-            <i class="ph ph-gear"></i>
-            스테이션 설정하기
-          </a>
-        </div>
-        {% endif %}
       </div>
     </main>
   </div>
 
   <script src="/static/js/og_sound.js?v=10"></script>
-  <script src="/static/js/common.js?v=4"></script>
+  <script src="/static/js/common.js?v={{ static_v }}"></script>
+  <script src="/static/js/device-notice.js?v={{ static_v }}"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       updateTime();
