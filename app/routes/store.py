@@ -1521,7 +1521,7 @@ def cancel_toss_payment_item():
     import uuid as _uuid
     import time as _time
     from app.models import Payment, TablePaymentList
-    from app.routes.pos import _pending_payments
+    from app.routes.pos import _pending_payments, register_terminal_request
 
     data = request.get_json()
     payment_id = data.get('payment_id')
@@ -1580,7 +1580,7 @@ def cancel_toss_payment_item():
         return jsonify({'error': '환불에 필요한 정보(결제 키)가 저장되어 있지 않습니다.\n해당 결제는 단말기 직접 취소가 필요합니다.'}), 400
 
     tmp_id = _uuid.uuid4().hex
-    _pending_payments[tmp_id] = {
+    register_terminal_request({
         'payment_id': tmp_id,
         'store_id': current_user.id,
         'table_id': tpl.table_id,
@@ -1591,7 +1591,7 @@ def cancel_toss_payment_item():
         'db_payment_id': payment_id,
         'status': 'pending',
         'last_active_at': _time.time(),
-    }
+    })
 
     return jsonify({'payment_id': tmp_id, 'status': 'ok'})
 
@@ -1603,7 +1603,7 @@ def cancel_toss_payment():
     import uuid as _uuid
     import time as _time
     from app.models import TablePaymentList
-    from app.routes.pos import _pending_payments
+    from app.routes.pos import _pending_payments, register_terminal_request
 
     data = request.get_json()
     tpl_id = data.get('table_payment_list_id')
@@ -1660,7 +1660,7 @@ def cancel_toss_payment():
         return jsonify({'error': '환불에 필요한 정보(결제 키)가 저장되어 있지 않습니다.\n해당 결제는 단말기 직접 취소가 필요합니다.'}), 400
 
     payment_id = _uuid.uuid4().hex
-    _pending_payments[payment_id] = {
+    register_terminal_request({
         'payment_id': payment_id,
         'store_id': current_user.id,
         'table_id': tpl.table_id,
@@ -1670,7 +1670,7 @@ def cancel_toss_payment():
         'table_payment_list_id': tpl_id,
         'status': 'pending',
         'last_active_at': _time.time(),
-    }
+    })
 
     return jsonify({'payment_id': payment_id, 'status': 'ok'})
 

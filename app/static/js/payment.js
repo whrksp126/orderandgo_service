@@ -350,7 +350,17 @@ function _buildTerminalOrderData() {
   return { orderData: orderData, tax: tax, supplyValue: supplyValue };
 }
 
-async function _initDisplayPending() {
+// 초기화·단말기 온라인 감지가 동시에 호출하면 display 결제가 2건 생성돼 단말기가 엉뚱한 건을 표시 → 진행 중 요청 공유
+var _displayPendingInFlight = null;
+function _initDisplayPending() {
+  if (_displayPaymentId) return Promise.resolve();
+  if (!_displayPendingInFlight) {
+    _displayPendingInFlight = _createDisplayPending().finally(function() { _displayPendingInFlight = null; });
+  }
+  return _displayPendingInFlight;
+}
+
+async function _createDisplayPending() {
   if (_displayPaymentId) return;
   if (!_terminalOnline || !payment_history?.curPaymentPrice) return;
   var bd = _buildTerminalOrderData();
@@ -371,6 +381,8 @@ async function _initDisplayPending() {
       var d = await res.json();
       _displayPaymentId = d.payment_id;
       console.log('[Terminal] Display pending:', _displayPaymentId);
+      // 생성 요청 중에 바뀐 할인/금액이 있으면 바로 반영
+      if (JSON.stringify(_buildTerminalOrderData().orderData) !== JSON.stringify(bd.orderData)) _updateDisplayPendingOrder();
     }
   } catch (e) {}
 }

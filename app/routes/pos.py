@@ -203,12 +203,33 @@ def _has_pending(store_id):
 
 
 def _claim_pending(store_id):
-    """대기 중인 결제 1건을 processing으로 전환하고 반환 (없으면 None)"""
-    for payment in list(_pending_payments.values()):
-        if payment.get('status') == 'pending' and payment.get('store_id') == store_id:
-            payment['status'] = 'processing'
-            return payment
-    return None
+    """대기 중인 요청 1건(가장 최근 것)을 processing으로 전환하고 반환 (없으면 None)"""
+    candidates = [p for p in _pending_payments.values()
+                  if p.get('status') == 'pending' and p.get('store_id') == store_id]
+    if not candidates:
+        return None
+    payment = max(candidates, key=lambda p: p.get('created_at', 0))
+    payment['status'] = 'processing'
+    return payment
+
+
+def register_terminal_request(payment):
+    """POS 결제/이력 환불 요청 등록 → 단말기에 즉시 push.
+    같은 매장의 대체되는 이전 요청은 정리: display는 기존 display(대기·표시 중) 취소,
+    cancel(환불)은 아직 단말기가 안 가져간 이전 환불 요청 제거 → 지금 보낸 요청만 단말기에 표시."""
+    store_id = payment['store_id']
+    ptype = payment.get('payment_type')
+    payment.setdefault('created_at', time.time())
+    for pid, p in list(_pending_payments.items()):
+        if p.get('store_id') != store_id or p.get('status') == 'cancelled' or p.get('payment_type') != ptype:
+            continue
+        if ptype == 'display':
+            _cancel_pending(pid)
+        elif ptype == 'cancel' and p.get('status') == 'pending':
+            _pending_payments.pop(pid, None)
+    _pending_payments[payment['payment_id']] = payment
+    _ensure_terminal_sweeper()
+    _push_terminal(store_id, 'toss_pending_available')
 
 
 def _cancel_pending(payment_id):
@@ -251,6 +272,10 @@ def _ensure_terminal_sweeper():
                 if p.get('status') == 'cancelled':
                     if now - p.get('cancelled_at', now) > 30:
                         _pending_payments.pop(pid, None)
+                elif p.get('payment_type') == 'cancel' and p.get('status') == 'pending' \
+                        and now - p.get('created_at', now) > 90:
+                    # 단말기가 90초 내 못 가져간 환불 요청은 폐기 (나중에 엉뚱하게 뜨지 않도록)
+                    _pending_payments.pop(pid, None)
                 elif p.get('payment_type') == 'display' and now - p.get('last_active_at', now) > 20:
                     _pending_payments.pop(pid, None)
                     _push_terminal(p['store_id'], 'payment_cancelled', {'payment_id': pid})
@@ -379,8 +404,7 @@ def create_toss_pending():
         'order_version': 1,                                # 주문 데이터 버전 (단말기 재렌더링 감지용)
         'last_active_at': time.time(),                     # POS heartbeat 타임스탬프 (TTL용)
     }
-    _pending_payments[payment_id] = payment
-    _push_terminal(store_id, 'toss_pending_available')
+    register_terminal_request(payment)
 
     ws_address = _terminal_ws.get(store_id)
     print(f'[Toss] 결제 요청 생성: {payment_id}, store={store_id}, table={data.get("table_id")}, ws={ws_address}')
@@ -420,7 +444,8 @@ def update_toss_pending():
     data = request.get_json()
     payment_id = data.get('payment_id')
     if not payment_id or payment_id not in _pending_payments \
-            or not _is_my_store(_pending_payments[payment_id].get('store_id')):
+            or not _is_my_store(_pending_payments[payment_id].get('store_id')) \
+            or _pending_payments[payment_id].get('status') == 'cancelled':
         return jsonify({'error': 'not_found'}), 404
     payment = _pending_payments[payment_id]
     if 'payment_type' in data and data['payment_type']:
