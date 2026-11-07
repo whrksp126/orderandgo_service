@@ -232,10 +232,11 @@
             (printer.description ? ` · ${escapeHtml(printer.description)}` : '');
 
           const hasPort = printer.usb_vendor_id !== null && printer.usb_vendor_id !== undefined;
-          const portBadge = hasPort
-            ? `<span class="setting_state connected">USB 연결됨</span>`
-            : `<span class="setting_state">포트 미선택</span>`;
+          // 실제 연결 여부는 refreshPortStates()가 브라우저 포트 목록으로 판정
           const vendorAttr = hasPort ? `data-vendor-id="${printer.usb_vendor_id}" data-product-id="${printer.usb_product_id}"` : '';
+          const portBadge = hasPort
+            ? `<span class="setting_state" data-port-state ${vendorAttr}>확인 중</span>`
+            : `<span class="setting_state">포트 미선택</span>`;
 
           const card = document.createElement('div');
           card.className = 'printer_card';
@@ -253,6 +254,32 @@
           container.appendChild(card);
         });
       }
+      refreshPortStates();
+    }
+
+    // ─── USB 실제 연결 상태 ──────────────────────────────
+    // getPorts()는 권한이 있고 현재 꽂혀 있는 포트만 반환 → 저장된 vendor/product와 대조
+    async function refreshPortStates() {
+      const badges = document.querySelectorAll('[data-port-state]');
+      if (!badges.length) return;
+      let ports = [];
+      if (PrinterManager.isSupported()) {
+        try { ports = await navigator.serial.getPorts(); } catch (e) {}
+      }
+      const infos = ports.map(p => p.getInfo());
+      badges.forEach(badge => {
+        const vendorId = parseInt(badge.dataset.vendorId);
+        const productId = parseInt(badge.dataset.productId);
+        const connected = infos.some(i => i.usbVendorId === vendorId
+          && (isNaN(productId) || i.usbProductId === productId));
+        badge.classList.toggle('connected', connected);
+        badge.textContent = connected ? 'USB 연결됨' : '연결 안 됨';
+      });
+    }
+
+    if (PrinterManager.isSupported()) {
+      navigator.serial.addEventListener('connect', refreshPortStates);
+      navigator.serial.addEventListener('disconnect', refreshPortStates);
     }
 
     // ─── 환경 선택 ────────────────────────────────────────
