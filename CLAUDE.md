@@ -78,7 +78,7 @@ git push && ./deploy.sh prod  # prod 배포
 - Blueprint 구조 유지
 - WebSocket은 eventlet 기반 → gunicorn eventlet worker (prod), `socketio.run()` (local/dev)
 - 마이그레이션은 Alembic/Flask-Migrate 사용
-- 토스 단말기 통신은 반드시 HTTP polling 사용 (WebSocket/socket.io 불가)
+- 토스 단말기 통신은 단말기가 클라이언트로 접속하는 wss(socket.io) push 방식 (상세: rules/toss.md). 구버전 플러그인용 HTTP 폴링 API는 유지
 - 배포 전 반드시 `git push` 먼저 실행
 
 ## 상세 규칙 참조
