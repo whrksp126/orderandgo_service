@@ -171,13 +171,139 @@ def terminal_join(data):
         return
 
     store_id = record.store_id
-    room = f'terminal_{store_id}'
-    join_room(room)
+    record.last_polled_at = datetime.now()
+    db.session.commit()
+    join_room(terminal_room(store_id))
     _socket_store_map[flask_request.sid] = store_id
+    _ensure_terminal_sweeper()
 
     emit('terminal_join_success', {'store_id': store_id})
     socketio.emit('terminal_online', {'store_id': store_id}, to=pos_room(store_id))
     print(f'[Terminal] 연결됨: store={store_id}, sid={flask_request.sid}')
+    if _has_pending(store_id):
+        emit('toss_pending_available', {})
+
+
+# ─── 단말기 WebSocket (wss) ─────────────────────────────────────────────────
+# 단말기 플러그인이 socket.io 클라이언트로 서버에 접속(wss) → 서버가 상태 변경을 push.
+# 재연결 중 놓친 이벤트는 단말기가 연결 직후 terminal_payment_state로 스냅샷을 받아 복구한다.
+# 기존 HTTP 폴링 API는 구버전 플러그인 호환을 위해 유지.
+
+def terminal_room(store_id):
+    return f'terminal_{int(store_id)}'
+
+
+def _push_terminal(store_id, event, data=None):
+    socketio.emit(event, data or {}, to=terminal_room(store_id))
+
+
+def _has_pending(store_id):
+    return any(p.get('status') == 'pending' and p.get('store_id') == store_id
+               for p in _pending_payments.values())
+
+
+def _claim_pending(store_id):
+    """대기 중인 결제 1건을 processing으로 전환하고 반환 (없으면 None)"""
+    for payment in list(_pending_payments.values()):
+        if payment.get('status') == 'pending' and payment.get('store_id') == store_id:
+            payment['status'] = 'processing'
+            return payment
+    return None
+
+
+def _cancel_pending(payment_id):
+    """결제 대기 취소 + 단말기 push. 구버전 폴링 단말기도 감지하도록 레코드는 잠시 유지(sweeper가 정리)."""
+    payment = _pending_payments.get(payment_id)
+    if not payment:
+        return
+    payment['status'] = 'cancelled'
+    payment['cancelled_at'] = time.time()
+    _push_terminal(payment['store_id'], 'payment_cancelled', {'payment_id': payment_id})
+
+
+def _payment_update_payload(payment):
+    return {
+        'payment_id': payment['payment_id'],
+        'payment_type': payment.get('payment_type', 'display'),
+        'order': payment.get('order'),
+        'tax': payment.get('tax'),
+        'supply_value': payment.get('supply_value'),
+        'payment_key': payment.get('payment_key'),
+        'order_version': payment.get('order_version', 1),
+    }
+
+
+_sweeper_started = False
+
+
+def _ensure_terminal_sweeper():
+    """폴링이 없어졌으므로 TTL 만료(POS 이탈한 display 결제)를 서버가 주기적으로 감지해 push"""
+    global _sweeper_started
+    if _sweeper_started:
+        return
+    _sweeper_started = True
+
+    def _sweep():
+        while True:
+            socketio.sleep(5)
+            now = time.time()
+            for pid, p in list(_pending_payments.items()):
+                if p.get('status') == 'cancelled':
+                    if now - p.get('cancelled_at', now) > 30:
+                        _pending_payments.pop(pid, None)
+                elif p.get('payment_type') == 'display' and now - p.get('last_active_at', now) > 20:
+                    _pending_payments.pop(pid, None)
+                    _push_terminal(p['store_id'], 'payment_cancelled', {'payment_id': pid})
+
+    socketio.start_background_task(_sweep)
+
+
+@socketio.on('terminal_heartbeat')
+def terminal_heartbeat(data):
+    """단말기 연결 상태 갱신 (단말기 관리 화면/POS 온라인 표시용 last_polled_at)"""
+    store_id = _terminal_store_id((data or {}).get('token'))
+    return {'logout': store_id is None}
+
+
+@socketio.on('terminal_claim_pending')
+def terminal_claim_pending(data):
+    """단말기가 대기 결제를 가져감 (ack로 결제 데이터 반환)"""
+    store_id = _terminal_store_id((data or {}).get('token'))
+    if store_id is None:
+        return {'logout': True}
+    payment = _claim_pending(store_id)
+    if not payment:
+        return {'pending': False}
+    return {'pending': True, **payment}
+
+
+@socketio.on('terminal_payment_state')
+def terminal_payment_state(data):
+    """재연결 시 놓친 이벤트 복구용 스냅샷"""
+    data = data or {}
+    store_id = _terminal_store_id(data.get('token'))
+    if store_id is None:
+        return {'logout': True}
+    payment_id = data.get('payment_id')
+    state = {'payment_id': payment_id}
+
+    payment = _pending_payments.get(payment_id) if payment_id else None
+    if payment and payment.get('store_id') == store_id:
+        state.update(_payment_update_payload(payment))
+        state['cancelled'] = payment.get('status') == 'cancelled'
+        state['cash_ready'] = payment.get('cash_ready', False)
+        state['identity_number'] = payment.get('identity_number')
+        state['issuer_type'] = payment.get('issuer_type')
+    else:
+        state['cancelled'] = True
+
+    completed = _completed_payments.get(payment_id) if payment_id else None
+    if completed and completed.get('store_id') == store_id:
+        state['approval_status'] = completed.get('status')
+    receipt = _cash_receipt_cancels.get(payment_id) if payment_id else None
+    if receipt and receipt.get('store_id') == store_id:
+        state['cash_receipt_status'] = receipt.get('status')
+    return state
 
 
 @socketio.on('terminal_status_update')
@@ -208,9 +334,7 @@ def request_cancel_payment(data):
     if not payment or not _is_my_store(payment.get('store_id')):
         return
 
-    payment['status'] = 'cancelled'
-
-    socketio.emit('payment_cancelled', {'payment_id': payment_id}, to=f'terminal_{store_id}')
+    _cancel_pending(payment_id)
     print(f'[Toss] 결제 취소 요청: payment_id={payment_id}, store={store_id}')
 
 
@@ -256,6 +380,7 @@ def create_toss_pending():
         'last_active_at': time.time(),                     # POS heartbeat 타임스탬프 (TTL용)
     }
     _pending_payments[payment_id] = payment
+    _push_terminal(store_id, 'toss_pending_available')
 
     ws_address = _terminal_ws.get(store_id)
     print(f'[Toss] 결제 요청 생성: {payment_id}, store={store_id}, table={data.get("table_id")}, ws={ws_address}')
@@ -283,12 +408,9 @@ def get_toss_pending():
     record.last_polled_at = datetime.now()
     db.session.commit()
 
-    for payment_id, payment in list(_pending_payments.items()):
-        if payment['status'] == 'pending':
-            if payment.get('store_id') != store_id:
-                continue
-            payment['status'] = 'processing'
-            return jsonify({'pending': True, **payment})
+    payment = _claim_pending(store_id)
+    if payment:
+        return jsonify({'pending': True, **payment})
     return jsonify({'pending': False})
 
 @pos_bp.route('/toss/update_pending', methods=['POST'])
@@ -318,6 +440,8 @@ def update_toss_pending():
     if order_changed:
         payment['order_version'] = payment.get('order_version', 1) + 1
     payment['last_active_at'] = time.time()   # heartbeat 갱신
+    if order_changed or 'payment_type' in data:
+        _push_terminal(payment['store_id'], 'toss_payment_update', _payment_update_payload(payment))
     return jsonify({'status': 'ok'})
 
 
@@ -365,6 +489,11 @@ def cash_payment_ready():
         _pending_payments[payment_id]['cash_ready'] = True
         _pending_payments[payment_id]['identity_number'] = data.get('identity_number')
         _pending_payments[payment_id]['issuer_type'] = data.get('issuer_type')
+        _push_terminal(_pending_payments[payment_id]['store_id'], 'toss_cash_ready', {
+            'payment_id': payment_id,
+            'identity_number': data.get('identity_number'),
+            'issuer_type': data.get('issuer_type'),
+        })
     return jsonify({'status': 'ok'})
 
 
@@ -437,7 +566,7 @@ def cancel_toss_pending():
     payment_id = data.get('payment_id')
     if payment_id and payment_id in _pending_payments \
             and _is_my_store(_pending_payments[payment_id].get('store_id')):
-        _pending_payments[payment_id]['status'] = 'cancelled'
+        _cancel_pending(payment_id)
     print(f'[Toss] 결제 취소: payment_id={payment_id}')
     return jsonify({'status': 'ok'})
 
@@ -615,6 +744,7 @@ def cancel_toss_approval():
     if not payment or not _is_my_store(payment.get('store_id')):
         return jsonify({'error': '결제 정보를 찾을 수 없습니다.'}), 404
     payment['status'] = 'cancel_requested'
+    _push_terminal(payment['store_id'], 'toss_approval_status', {'payment_id': payment_id, 'status': 'cancel_requested'})
     print(f'[Toss] 승인 취소 요청: payment_id={payment_id}')
     return jsonify({'status': 'ok'})
 
@@ -628,6 +758,7 @@ def confirm_toss_approval():
     payment = _completed_payments.get(payment_id)
     if payment and _is_my_store(payment.get('store_id')):
         payment['status'] = 'confirmed'
+        _push_terminal(payment['store_id'], 'toss_approval_status', {'payment_id': payment_id, 'status': 'confirmed'})
     print(f'[Toss] 승인 확정: payment_id={payment_id}')
     return jsonify({'status': 'ok'})
 
@@ -1226,6 +1357,7 @@ def cash_receipt_cancel():
             or not _is_my_store(_cash_receipt_cancels[payment_id].get('store_id')):
         return jsonify({'error': '취소 정보를 찾을 수 없습니다.'}), 404
     _cash_receipt_cancels[payment_id]['status'] = 'cancel_requested'
+    _push_terminal(_cash_receipt_cancels[payment_id]['store_id'], 'toss_cash_receipt_cancel', {'payment_id': payment_id})
     print(f'[Toss] 현금영수증 취소 요청: payment_id={payment_id}')
     return jsonify({'status': 'ok'})
 

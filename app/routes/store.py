@@ -989,6 +989,8 @@ def api_terminal_logout():
         return jsonify({'code': 404, 'msg': '매장 정보를 찾을 수 없습니다.'}), 404
     TerminalToken.query.filter_by(store_id=store.id).delete()
     db.session.commit()
+    from app import socketio
+    socketio.emit('terminal_logout', {}, to=f'terminal_{store.id}')
     return jsonify({'code': 200, 'msg': '단말기 로그아웃 처리되었습니다.'})
 
 
